@@ -123,5 +123,6 @@ class CollisionDetector:
           margin: Distance at which objects are considered in collision.
              Default is 0.0.
         """
-        ds = self.compute_distances(q, max_distance=margin)
+        ds = self.compute_distances(q, max_distance=0.01)#margin)
+        #print(ds)
         return (ds < margin).any()
