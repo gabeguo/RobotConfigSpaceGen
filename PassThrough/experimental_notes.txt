@@ -1,0 +1,2 @@
+08/05/22:
+-GUI seems to update one iteration behind calculation
