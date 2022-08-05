@@ -58,7 +58,7 @@ def main():
     link3 = NamedCollisionObject("robot", "link3")
     collision_objects = [ground, cube1, link1, link2, link3]
 
-    collision_pairs = [(link1, link3)]
+    collision_pairs = [(link3, cube1), (link1, link3), (ground, link3)]
     #collision_pairs = list(combinations(collision_objects, 2))
 
     col_detector = CollisionDetector(
@@ -75,12 +75,14 @@ def main():
         input()
 
         # compute shortest distances for a configuration
-        q = [0, np.pi * 2 *  i / MAX_ITERATIONS, np.pi * 2 *  i / MAX_ITERATIONS]
+        #q = [np.pi / 4, np.pi * 2 *  i / MAX_ITERATIONS, np.pi * 2 *  i / MAX_ITERATIONS]
+        q = [np.pi / 4, np.pi * 3/4 * np.random.random(), np.pi * 3/4 * np.random.random()]
         d = col_detector.compute_distances(q, max_distance=20)
         in_col = col_detector.in_collision(q)
 
         if True:#in_col:
-            print(f"Configuration = {q}")
+            q_deg = [x / np.pi * 180 for x in q]
+            print(f"Configuration = {q_deg}")
             print(f"Distance to obstacles = {d}")
             print(f"In collision = {in_col}")
 
