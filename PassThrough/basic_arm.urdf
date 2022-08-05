@@ -26,13 +26,13 @@
       <origin xyz="0 0 0.05"/>
     </collision>
   </link>
-  <joint name = "base_to_bottom" type="continuous">
+  <joint name = "base_link1" type="continuous">
     <parent link="base"/>
-    <child link="bottom_arm"/>
+    <child link="link1"/>
     <origin xyz="0 0 0.1"/>
     <axis xyz="0 0 1"/>
   </joint>
-  <link name="bottom_arm">
+  <link name="link1">
     <visual>
       <geometry>
         <box size="0.1 0.1 1"/>
@@ -47,13 +47,13 @@
       <origin xyz="0 0 0.5"/>
     </collision>
   </link>
-  <joint name="bottom_to_middle" type="continuous">
-    <parent link="bottom_arm"/>
-    <child link="middle_arm"/>
+  <joint name="link1_link2" type="continuous">
+    <parent link="link1"/>
+    <child link="link2"/>
     <origin xyz="0 0 1"/>
     <axis xyz="0 1 0"/>
   </joint>
-  <link name="middle_arm">
+  <link name="link2">
     <visual>
       <geometry>
         <box size="0.1 0.1 1"/>
@@ -68,13 +68,13 @@
       <origin xyz="0 0 0.5 "/>
     </collision>
   </link>
-  <joint name="middle_to_top" type="continuous">
-    <parent link="middle_arm"/>
-    <child link="top_arm"/>
+  <joint name="link2_link3" type="continuous">
+    <parent link="link2"/>
+    <child link="link3"/>
     <origin xyz="0 0 1"/>
     <axis xyz="0 1 0"/>
   </joint>
-  <link name="top_arm">
+  <link name="link3">
     <visual>
       <geometry>
         <box size="0.1 0.1 1"/>
