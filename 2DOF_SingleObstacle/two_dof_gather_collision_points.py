@@ -79,7 +79,7 @@ def main():
     COLLISION_DATA_LABELS = ['theta1', 'theta2', 'collision']
     _collision_data = []
 
-    NUM_ITERATIONS = 20
+    NUM_ITERATIONS = 1000
     for i in range(0, NUM_ITERATIONS):
 
         # compute shortest distances for a configuration
