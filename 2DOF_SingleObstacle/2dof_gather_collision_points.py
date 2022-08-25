@@ -45,9 +45,9 @@ def load_environment(client_id):
 def main():
 
     # main simulation server, with a GUI
-    gui_id = pyb.connect(pyb.GUI)
+    sim_id = pyb.connect(pyb.DIRECT)
 
-    collision_bodies = load_environment(gui_id)
+    collision_bodies = load_environment(sim_id)
 
     # define bodies (and links) to use for shortest distance computations and
     # collision checking
@@ -62,17 +62,19 @@ def main():
     #collision_pairs = list(combinations(collision_objects, 2))
 
     col_detector = CollisionDetector(
-        gui_id,
+        sim_id,
         collision_bodies,
         collision_pairs
     )
 
     #pyb.resetDebugVisualizerCamera( cameraDistance=10, cameraYaw=0, cameraPitch=-60, cameraTargetPosition=[0, 0, 0])
 
+    print('***\nNote: output is ahead of screen by one step\n***')
+
     MAX_ITERATIONS = 50
     for i in range(0, MAX_ITERATIONS + 1):
         # wait for user to press enter to continue
-        input()
+        #input()
 
         # compute shortest distances for a configuration
         #q = [np.pi / 4, np.pi * 2 *  i / MAX_ITERATIONS, np.pi * 2 *  i / MAX_ITERATIONS]
