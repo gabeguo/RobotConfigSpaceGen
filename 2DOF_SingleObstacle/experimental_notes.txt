@@ -8,3 +8,4 @@
 -have (supposedly) since fixed in_collision by using max_distance=SMALL_VAL
 -TODO: need to double check in_collision for correctness later on
 -TODO: what happens if robot collides with itself? Will consider this case later
+-TODO: add command line options to simulator, predictor
