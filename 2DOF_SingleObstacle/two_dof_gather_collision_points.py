@@ -84,8 +84,10 @@ def main():
 
         # compute shortest distances for a configuration
         FIXED_JOINT_ANGLE = np.pi / 4
-        MAX_JOINT_ANGLE = np.pi * 3/4
-        q = [FIXED_JOINT_ANGLE, MAX_JOINT_ANGLE * np.random.random(), MAX_JOINT_ANGLE * np.random.random()]
+        MAX_JOINT_ANGLE = np.pi * 7/8
+        q = [FIXED_JOINT_ANGLE, \
+            MAX_JOINT_ANGLE * 2 * np.random.random() - MAX_JOINT_ANGLE, \
+            MAX_JOINT_ANGLE * 2 * np.random.random() - MAX_JOINT_ANGLE]
         distances = col_detector.compute_distances(q, max_distance=20)
         in_col = (distances < 0).any()
 
