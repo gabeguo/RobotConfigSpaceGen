@@ -77,16 +77,17 @@ def main():
         #input()
 
         # compute shortest distances for a configuration
-        #q = [np.pi / 4, np.pi * 2 *  i / MAX_ITERATIONS, np.pi * 2 *  i / MAX_ITERATIONS]
-        q = [np.pi / 4, np.pi * 3/4 * np.random.random(), np.pi * 3/4 * np.random.random()]
-        d = col_detector.compute_distances(q, max_distance=20)
-        in_col = col_detector.in_collision(q)
+        FIXED_JOINT_ANGLE = np.pi / 4
+        MAX_JOINT_ANGLE = np.pi * 3/4
+        q = [FIXED_JOINT_ANGLE, MAX_JOINT_ANGLE * np.random.random(), MAX_JOINT_ANGLE * np.random.random()]
+        distances = col_detector.compute_distances(q, max_distance=20)
+        in_col = (distances < 0).any()#in_col = col_detector.in_collision(q)
 
-        if True:#in_col:
-            q_deg = [x / np.pi * 180 for x in q]
-            print(f"Configuration = {q_deg}")
-            print(f"Distance to obstacles = {d}")
-            print(f"In collision = {in_col}")
+        q_deg = [x / np.pi * 180 for x in q]
+        print()
+        print(f"Configuration = {q_deg}")
+        print(f"Distance to obstacles = {distances}")
+        print(f"In collision = {in_col}")
 
 
 if __name__ == "__main__":

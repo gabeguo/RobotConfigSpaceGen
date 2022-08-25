@@ -3,3 +3,8 @@
 -hard to figure out what's going on - need to figure out how to do this with simpler robot
 -pretty sure collision_detection.py in_collision method was buggy
   when we implemented it with max_distance=margin=0
+
+08/24/22:
+-have (supposedly) since fixed in_collision by using max_distance=SMALL_VAL
+-TODO: need to double check in_collision for correctness later on
+-TODO: what happens if robot collides with itself? Will consider this case later
