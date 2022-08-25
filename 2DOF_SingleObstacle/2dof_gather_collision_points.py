@@ -9,6 +9,8 @@ import pybullet_data
 from collision_detection import NamedCollisionObject, CollisionDetector
 from itertools import combinations
 
+import csv
+
 def load_environment(client_id):
     pyb.setAdditionalSearchPath(
         pybullet_data.getDataPath(), physicsClientId=client_id
@@ -41,6 +43,13 @@ def load_environment(client_id):
     }
     return bodies
 
+def write_collision_data(fields, data):
+    assert len(fields) == len(data[0])
+    with open('collision_data.csv', 'w') as output:
+        writer = csv.writer(output)
+        writer.writerow(fields)
+        writer.writerows(data)
+    return
 
 def main():
 
@@ -67,28 +76,23 @@ def main():
         collision_pairs
     )
 
-    #pyb.resetDebugVisualizerCamera( cameraDistance=10, cameraYaw=0, cameraPitch=-60, cameraTargetPosition=[0, 0, 0])
+    COLLISION_DATA_LABELS = ['theta1', 'theta2', 'collision']
+    _collision_data = []
 
-    print('***\nNote: output is ahead of screen by one step\n***')
-
-    MAX_ITERATIONS = 50
-    for i in range(0, MAX_ITERATIONS + 1):
-        # wait for user to press enter to continue
-        #input()
+    NUM_ITERATIONS = 50
+    for i in range(0, NUM_ITERATIONS):
 
         # compute shortest distances for a configuration
         FIXED_JOINT_ANGLE = np.pi / 4
         MAX_JOINT_ANGLE = np.pi * 3/4
         q = [FIXED_JOINT_ANGLE, MAX_JOINT_ANGLE * np.random.random(), MAX_JOINT_ANGLE * np.random.random()]
         distances = col_detector.compute_distances(q, max_distance=20)
-        in_col = (distances < 0).any()#in_col = col_detector.in_collision(q)
+        in_col = (distances < 0).any()
 
-        q_deg = [x / np.pi * 180 for x in q]
-        print()
-        print(f"Configuration = {q_deg}")
-        print(f"Distance to obstacles = {distances}")
-        print(f"In collision = {in_col}")
+        _collision_data.append([q[1], q[2], int(in_col)])
 
+    write_collision_data(COLLISION_DATA_LABELS, _collision_data)
+    return
 
 if __name__ == "__main__":
     main()
