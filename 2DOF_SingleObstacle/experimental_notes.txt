@@ -1,0 +1,5 @@
+08/05/22:
+*** Known issue: GUI seems to update one step behind calculation ***
+-hard to figure out what's going on - need to figure out how to do this with simpler robot
+-pretty sure collision_detection.py in_collision method was buggy
+  when we implemented it with max_distance=margin=0
