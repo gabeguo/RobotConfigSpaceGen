@@ -53,7 +53,7 @@ def write_collision_data(fields, data):
 
 def main():
 
-    # main simulation server, with a GUI
+    # main simulation server
     sim_id = pyb.connect(pyb.DIRECT)
 
     collision_bodies = load_environment(sim_id)
@@ -79,12 +79,12 @@ def main():
     COLLISION_DATA_LABELS = ['theta1', 'theta2', 'collision']
     _collision_data = []
 
-    NUM_ITERATIONS = 1000
+    NUM_ITERATIONS = 5000
     for i in range(0, NUM_ITERATIONS):
 
         # compute shortest distances for a configuration
         FIXED_JOINT_ANGLE = np.pi / 4
-        MAX_JOINT_ANGLE = np.pi * 7/8
+        MAX_JOINT_ANGLE = np.pi * 15/16
         q = [FIXED_JOINT_ANGLE, \
             MAX_JOINT_ANGLE * 2 * np.random.random() - MAX_JOINT_ANGLE, \
             MAX_JOINT_ANGLE * 2 * np.random.random() - MAX_JOINT_ANGLE]
@@ -94,6 +94,21 @@ def main():
         _collision_data.append([q[1], q[2], int(in_col)])
 
     write_collision_data(COLLISION_DATA_LABELS, _collision_data)
+
+    """
+    # GUI dummy demo of simulation starting point; does not move
+    gui_id = pyb.connect(pyb.GUI)
+    gui_collision_bodies = load_environment(gui_id)
+    gui_col_detector = CollisionDetector(gui_id, gui_collision_bodies, collision_pairs)
+    for i in range(10):
+        q = [FIXED_JOINT_ANGLE, \
+            MAX_JOINT_ANGLE * 2 * np.random.random() - MAX_JOINT_ANGLE, \
+            MAX_JOINT_ANGLE * 2 * np.random.random() - MAX_JOINT_ANGLE]
+        gui_col_detector.compute_distances(q, max_distance=20)
+        input()
+        pyb.stepSimulation(physicsClientId=gui_id)
+    """
+
     return
 
 if __name__ == "__main__":

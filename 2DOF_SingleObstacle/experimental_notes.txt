@@ -11,3 +11,7 @@
 -TODO: add command line options to simulator, predictor
 -when I change the robot possible positions, accuracy changes
 -TODO: need to generate possible diagrams
+
+08/26/22:
+-boundary points seem to be most difficult to predict: include uncertainty score?
+-do no-repeat sampling to prevent duplicates?
