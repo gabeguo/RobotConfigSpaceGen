@@ -106,7 +106,7 @@ def main():
 
     end = time.time()
     elapsed = round(end - start, 3)
-    print('\n***\ntime elapsed in sampling', NUM_ITERATIONS, 'points:', elapsed, 'seconds\n***')
+    print('time elapsed in sampling', NUM_ITERATIONS, 'points:', elapsed, 'seconds')
 
     write_collision_data(COLLISION_DATA_LABELS, _collision_data)
 

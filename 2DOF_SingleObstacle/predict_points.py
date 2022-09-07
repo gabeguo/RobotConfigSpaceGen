@@ -136,7 +136,7 @@ def plot_errors(X, Y, test_size):
 
     end = time.time()
     elapsed = round(end - start, 3)
-    print('\n***\ntime elapsed in fitting on', len(X_train), 'points and testing on', len(X_test), 'points:', elapsed, 'seconds\n***')
+    print('time elapsed in fitting on', len(X_train), 'points and testing on', len(X_test), 'points:', elapsed, 'seconds')
 
     plot_training_data(X_train, Y_train)
     plot_results(X=X_test, Y_actual=Y_test, Y_pred=Y_pred)
