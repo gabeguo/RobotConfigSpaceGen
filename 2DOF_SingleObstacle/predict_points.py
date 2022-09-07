@@ -8,12 +8,16 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, \
 import matplotlib.pyplot as plt
 import numpy as np
 
+import time
+
 # CONSTANTS
 
 TN = 0
 TP = 1
 FN = 2
 FP = 3
+
+N_NEIGHBORS = 5
 
 # METHODS
 
@@ -32,7 +36,7 @@ def read_data():
 def rad2deg(X):
     return [[x[0] / np.pi * 180, x[1] / np.pi * 180] for x in X]
 
-def plot_data(X, Y):
+def plot_training_data(X, Y):
     X = rad2deg(X)
     X_pos = []
     X_neg = []
@@ -47,6 +51,7 @@ def plot_data(X, Y):
     plt.xlabel('theta1 (deg)')
     plt.ylabel('theta2 (deg)')
     plt.grid(visible=True)
+    plt.title('training data')
     plt.legend()
 
     plt.show()
@@ -54,6 +59,9 @@ def plot_data(X, Y):
     return
 
 def plot_results(X, Y_actual, Y_pred):
+    # convert to deg
+    X = rad2deg(X)
+
     # first show confusion matrix
     cm = confusion_matrix(Y_actual, Y_pred)
     disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['free space', 'collision'])
@@ -109,20 +117,28 @@ def do_cross_val(X, Y, folds):
     print(scores)
 
     print('KNN')
-    clf = KNeighborsClassifier(n_neighbors=5)
+    clf = KNeighborsClassifier(n_neighbors=N_NEIGHBORS)
     scores = cross_val_score(clf, X, Y, cv=folds)
     print(scores)
 
 def plot_errors(X, Y, test_size):
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, \
         test_size=test_size, random_state=42)
-    clf = KNeighborsClassifier(n_neighbors=5)
-    clf.fit(X_train, Y_train)
+
+    clf = KNeighborsClassifier(n_neighbors=N_NEIGHBORS)
 
     print('training dataset size:', len(X_train))
 
+    start = time.time()
+
+    clf.fit(X_train, Y_train)
     Y_pred = clf.predict(X_test)
 
+    end = time.time()
+    elapsed = round(end - start, 3)
+    print('\n***\ntime elapsed in fitting on', len(X_train), 'points and testing on', len(X_test), 'points:', elapsed, 'seconds\n***')
+
+    plot_training_data(X_train, Y_train)
     plot_results(X=X_test, Y_actual=Y_test, Y_pred=Y_pred)
 
     return
@@ -130,7 +146,7 @@ def plot_errors(X, Y, test_size):
 def main():
     X, Y = read_data()
 
-    #plot_data(X, Y)
+    #plot_training_data(X, Y)
     #do_cross_val(X, Y, folds=5)
 
     plot_errors(X, Y, test_size=0.5)

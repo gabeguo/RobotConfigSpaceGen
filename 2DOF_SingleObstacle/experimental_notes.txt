@@ -15,3 +15,9 @@
 08/26/22:
 -boundary points seem to be most difficult to predict: include uncertainty score?
 -do no-repeat sampling to prevent duplicates?
+
+09/06/22:
+-making obstacles more complex (and having multiple) slightly decreases
+  accuracy, but still in mid-90s
+-increasing number of points does increase accuracy
+-on 100,000 points: sampling takes 26 seconds, ML takes only 1 second with 99% accuracy

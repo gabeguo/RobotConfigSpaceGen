@@ -11,6 +11,8 @@ from itertools import combinations
 
 import csv
 
+import time
+
 def load_environment(client_id):
     pyb.setAdditionalSearchPath(
         pybullet_data.getDataPath(), physicsClientId=client_id
@@ -32,7 +34,13 @@ def load_environment(client_id):
 
     # some cubes for obstacles
     cube1_id = pyb.loadURDF(
-        "cube.urdf", [1, 1, 0.5], useFixedBase=True, physicsClientId=client_id
+        "r2d2.urdf", [1, 1, 1.5], useFixedBase=True, globalScaling=1, physicsClientId=client_id
+    )
+    cube2_id = pyb.loadURDF(
+        "duck_vhacd.urdf", [-1, -1, 1.5], useFixedBase=True, globalScaling=5, physicsClientId=client_id
+    )
+    cube3_id = pyb.loadURDF(
+        "teddy_vhacd.urdf", [0, 0, 1.5], useFixedBase=True, globalScaling=5, physicsClientId=client_id
     )
 
     # store body indices in a dict with more convenient key names
@@ -40,6 +48,8 @@ def load_environment(client_id):
         "robot": arm_id,
         "ground": ground_id,
         "cube1": cube1_id,
+        "cube2": cube2_id,
+        "cube3": cube3_id,
     }
     return bodies
 
@@ -62,12 +72,15 @@ def main():
     # collision checking
     ground = NamedCollisionObject("ground")
     cube1 = NamedCollisionObject("cube1")
+    cube2 = NamedCollisionObject("cube2")
+    cube3 = NamedCollisionObject("cube3")
     link1 = NamedCollisionObject("robot", "link1")
     link2 = NamedCollisionObject("robot", "link2")
     link3 = NamedCollisionObject("robot", "link3")
-    collision_objects = [ground, cube1, link1, link2, link3]
+    collision_objects = [ground, cube1, cube2, cube3, link1, link2, link3]
 
-    collision_pairs = [(link3, cube1), (link1, link3), (ground, link3)]
+    collision_pairs = [(link3, cube1), (link3, cube2), (link3, cube3), (link3, link1), (link3, ground),\
+        (link2, cube1), (link2, cube2), (link2, cube3), (link2, ground)]
     #collision_pairs = list(combinations(collision_objects, 2))
 
     col_detector = CollisionDetector(
@@ -79,7 +92,10 @@ def main():
     COLLISION_DATA_LABELS = ['theta1', 'theta2', 'collision']
     _collision_data = []
 
-    NUM_ITERATIONS = 5000
+    NUM_ITERATIONS = 100000
+
+    start = time.time()
+
     for i in range(0, NUM_ITERATIONS):
 
         # compute shortest distances for a configuration
@@ -93,9 +109,12 @@ def main():
 
         _collision_data.append([q[1], q[2], int(in_col)])
 
+    end = time.time()
+    elapsed = round(end - start, 3)
+    print('\n***\ntime elapsed in sampling', NUM_ITERATIONS, 'points:', elapsed, 'seconds\n***')
+
     write_collision_data(COLLISION_DATA_LABELS, _collision_data)
 
-    """
     # GUI dummy demo of simulation starting point; does not move
     gui_id = pyb.connect(pyb.GUI)
     gui_collision_bodies = load_environment(gui_id)
@@ -107,7 +126,7 @@ def main():
         gui_col_detector.compute_distances(q, max_distance=20)
         input()
         pyb.stepSimulation(physicsClientId=gui_id)
-    """
+
 
     return
 
