@@ -25,10 +25,14 @@
       </geometry>
       <origin xyz="0 0 0.05"/>
     </collision>
+    <inertial>
+      <mass value="10"/>
+      <inertia ixx="1e-3" ixy="0.0" ixz="0.0" iyy="1e-3" iyz="0.0" izz="1e-3"/>
+    </inertial>
   </link>
   <joint name = "base_link1" type="continuous">
     <parent link="base"/>
-    <child link="link1"/>
+    <child link="link_1"/>
     <origin xyz="0 0 0.1"/>
     <axis xyz="0 0 1"/>
   </joint>
@@ -46,10 +50,14 @@
       </geometry>
       <origin xyz="0 0 0.5"/>
     </collision>
+    <inertial>
+      <mass value="10"/>
+      <inertia ixx="1e-3" ixy="0.0" ixz="0.0" iyy="1e-3" iyz="0.0" izz="1e-3"/>
+    </inertial>
   </link>
   <joint name="link1_link2" type="continuous">
-    <parent link="link1"/>
-    <child link="link2"/>
+    <parent link="link_1"/>
+    <child link="link_2"/>
     <origin xyz="0 0 1"/>
     <axis xyz="0 1 0"/>
   </joint>
@@ -67,10 +75,14 @@
       </geometry>
       <origin xyz="0 0 0.5 "/>
     </collision>
+    <inertial>
+      <mass value="10"/>
+      <inertia ixx="1e-3" ixy="0.0" ixz="0.0" iyy="1e-3" iyz="0.0" izz="1e-3"/>
+    </inertial>
   </link>
   <joint name="link2_link3" type="continuous">
-    <parent link="link2"/>
-    <child link="link3"/>
+    <parent link="link_2"/>
+    <child link="link_3"/>
     <origin xyz="0 0 1"/>
     <axis xyz="0 1 0"/>
   </joint>
@@ -88,5 +100,9 @@
       </geometry>
       <origin xyz="0 0 0.5"/>
     </collision>
+    <inertial>
+      <mass value="10"/>
+      <inertia ixx="1e-3" ixy="0.0" ixz="0.0" iyy="1e-3" iyz="0.0" izz="1e-3"/>
+    </inertial>
   </link>
 </robot>

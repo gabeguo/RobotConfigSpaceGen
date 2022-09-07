@@ -6,6 +6,7 @@ from sklearn.model_selection import cross_val_score
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, \
     accuracy_score, precision_score, recall_score, f1_score
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 
 import time
@@ -34,25 +35,32 @@ def read_data():
     return X, Y
 
 def rad2deg(X):
-    return [[x[0] / np.pi * 180, x[1] / np.pi * 180] for x in X]
+    return [[the_theta / np.pi * 180 for the_theta in x] for x in X]
 
 def plot_training_data(X, Y):
     X = rad2deg(X)
     X_pos = []
     X_neg = []
+
     for i in range(len(X)):
         if Y[i] == 1:
             X_pos.append(X[i])
         else:
             X_neg.append(X[i])
-    plt.scatter([x[0] for x in X_pos], [x[1] for x in X_pos], c='#ff0000', label='collision')
-    plt.scatter([x[0] for x in X_neg], [x[1] for x in X_neg], c='#00ff00', label='free')
 
-    plt.xlabel('theta1 (deg)')
-    plt.ylabel('theta2 (deg)')
-    plt.grid(visible=True)
-    plt.title('training data')
-    plt.legend()
+    # make 3D plot
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    ax.scatter([x[0] for x in X_pos], [x[1] for x in X_pos], [x[2] for x in X_pos], c='#ff0000', label='collision')
+    ax.scatter([x[0] for x in X_neg], [x[1] for x in X_neg], [x[2] for x in X_neg], c='#00ff00', label='free')
+
+    ax.set_xlabel('theta1 (deg)')
+    ax.set_ylabel('theta2 (deg)')
+    ax.set_zlabel('theta3 (deg)')
+    ax.grid(visible=True)
+    ax.set_title('training data')
+    ax.legend()
 
     plt.show()
 
@@ -88,16 +96,25 @@ def plot_results(X, Y_actual, Y_pred):
     X_fn = [X[i] for i in range(len(X)) if confusion_array[i] == FN]
     X_fp = [X[i] for i in range(len(X)) if confusion_array[i] == FP]
 
-    plt.scatter([x[0] for x in X_tn], [x[1] for x in X_tn], c='#00ff00', label='correctly predicted free space')
-    plt.scatter([x[0] for x in X_tp], [x[1] for x in X_tp], c='#0000ff', label='correctly predicted collision')
-    plt.scatter([x[0] for x in X_fn], [x[1] for x in X_fn], c='#ff0000', label='wrongly predicted free space')
-    plt.scatter([x[0] for x in X_fp], [x[1] for x in X_fp], c='#888888', label='wrongly predicted collision')
+    # make 3D plot
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
 
-    plt.xlabel('theta1 (deg)')
-    plt.ylabel('theta2 (deg)')
-    plt.grid(visible=True)
-    plt.legend()
-    plt.title('configuration space predictions for 2DOF arm')
+    ax.scatter([x[0] for x in X_tn], [x[1] for x in X_tn], [x[2] for x in X_tn], \
+        c='#00ff00', label='correctly predicted free space')
+    ax.scatter([x[0] for x in X_tp], [x[1] for x in X_tp], [x[2] for x in X_tp], \
+        c='#0000ff', label='correctly predicted collision')
+    ax.scatter([x[0] for x in X_fn], [x[1] for x in X_fn], [x[2] for x in X_fn], \
+        c='#ff0000', label='wrongly predicted free space')
+    ax.scatter([x[0] for x in X_fp], [x[1] for x in X_fp], [x[2] for x in X_fp], \
+        c='#888888', label='wrongly predicted collision')
+
+    ax.set_xlabel('theta1 (deg)')
+    ax.set_ylabel('theta2 (deg)')
+    ax.set_zlabel('theta3 (deg)')
+    ax.grid(visible=True)
+    ax.legend()
+    ax.set_title('configuration space predictions for 2DOF arm')
 
     plt.show()
 

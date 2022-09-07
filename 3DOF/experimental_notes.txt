@@ -21,3 +21,10 @@
   accuracy, but still in mid-90s
 -increasing number of points does increase accuracy
 -on 100,000 points: sampling takes 26 seconds, ML takes only 1 second with 99% accuracy
+
+09/07/22:
+-on 100,000 points in 3DOF:
+  -generating points takes 0.2 seconds,
+  -checking them for collision takes 25 seconds
+  -ML takes 1 second
+  -ML has 97% accuracy
