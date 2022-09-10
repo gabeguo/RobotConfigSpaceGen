@@ -41,6 +41,17 @@ def load_environment(client_id):
         baseOrientation=pyb.getQuaternionFromEuler([np.pi * 2/3, np.pi * 4/5, np.pi * 5/8]), \
         useFixedBase=True, globalScaling=4, physicsClientId=client_id
     )
+    cube4_id = pyb.loadURDF(
+        "cube.urdf", [0.5, 0, 2.5], \
+        baseOrientation=pyb.getQuaternionFromEuler([np.pi * 1/2, np.pi * 2/3, np.pi * 1/4]), \
+        useFixedBase=True, globalScaling=0.5, physicsClientId=client_id
+    )
+    cube5_id = pyb.loadURDF(
+        "soccerball.urdf", [0, -0.5, 0], \
+        baseOrientation=pyb.getQuaternionFromEuler([0, 0, 0]), \
+        useFixedBase=True, globalScaling=0.5, physicsClientId=client_id
+    )
+
 
     # store body indices in a dict with more convenient key names
     bodies = {
@@ -48,6 +59,8 @@ def load_environment(client_id):
         "cube1": cube1_id,
         "cube2": cube2_id,
         "cube3": cube3_id,
+        "cube4": cube4_id,
+        "cube5": cube5_id,
     }
     return bodies
 
@@ -71,12 +84,14 @@ def main():
     cube1 = NamedCollisionObject("cube1")
     cube2 = NamedCollisionObject("cube2")
     cube3 = NamedCollisionObject("cube3")
+    cube4 = NamedCollisionObject("cube4")
+    cube5 = NamedCollisionObject("cube4")
     link1 = NamedCollisionObject("robot", "link_1")
     link2 = NamedCollisionObject("robot", "link_2")
     link3 = NamedCollisionObject("robot", "link_3")
-    collision_objects = [cube1, cube2, cube3, link1, link2, link3]
+    collision_objects = [cube1, cube2, cube3, cube4, cube5, link1, link2, link3]
 
-    obstacles = (cube1, cube2, cube3)
+    obstacles = (cube1, cube2, cube3, cube4, cube5)
     links = (link1, link2, link3)
 
     collision_pairs = [(the_link, the_obstacle) \
@@ -115,7 +130,7 @@ def main():
 
     for i in range(0, NUM_ITERATIONS):
         # compute shortest distances for a configuration
-        distances = col_detector.compute_distances(Q[i], max_distance=20)
+        distances = col_detector.compute_distances(Q[i], max_distance=0)
         in_col = (distances < 0).any()
 
         _collision_data.append([Q[i][0], Q[i][1], Q[i][2], int(in_col)])
