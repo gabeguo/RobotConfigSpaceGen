@@ -87,26 +87,38 @@ def main():
     COLLISION_DATA_LABELS = ['theta1', 'theta2', 'collision']
     _collision_data = []
 
-    NUM_ITERATIONS = 100000
+    NUM_ITERATIONS = 1000
+    FIXED_JOINT_ANGLE = np.pi / 4
+    MAX_JOINT_ANGLE = np.pi * 15/16
 
+    # generate angles (since it is biased to generate them while also detecting if they collide)
     start = time.time()
 
+    Q = []
     for i in range(0, NUM_ITERATIONS):
-
-        # compute shortest distances for a configuration
-        FIXED_JOINT_ANGLE = np.pi / 4
-        MAX_JOINT_ANGLE = np.pi * 15/16
         q = [MAX_JOINT_ANGLE * 2 * np.random.random() - MAX_JOINT_ANGLE, \
             MAX_JOINT_ANGLE * 2 * np.random.random() - MAX_JOINT_ANGLE, \
             FIXED_JOINT_ANGLE]
-        distances = col_detector.compute_distances(q, max_distance=20)
-        in_col = (distances < 0).any()
-
-        _collision_data.append([q[0], q[1], int(in_col)])
+        Q.append(q)
 
     end = time.time()
     elapsed = round(end - start, 3)
-    print('time elapsed in sampling', NUM_ITERATIONS, 'points:', elapsed, 'seconds')
+    print('time elapsed in generating', NUM_ITERATIONS, 'configurations:', elapsed, 'seconds')
+
+    # start detecting collisions
+    start = time.time()
+
+    for i in range(0, NUM_ITERATIONS):
+        # compute shortest distances for a configuration
+        distances = col_detector.compute_distances(Q[i], max_distance=0)
+        in_col = (distances < 0).any()
+
+        _collision_data.append([Q[i][0], Q[i][1], int(in_col)])
+
+    end = time.time()
+    elapsed = round(end - start, 3)
+    print('time elapsed in checking', NUM_ITERATIONS, 'configurations for collision:', elapsed, 'seconds')
+    # stop detecting collisions
 
     write_collision_data(COLLISION_DATA_LABELS, _collision_data)
 
