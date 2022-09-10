@@ -85,7 +85,7 @@ def main():
     cube2 = NamedCollisionObject("cube2")
     cube3 = NamedCollisionObject("cube3")
     cube4 = NamedCollisionObject("cube4")
-    cube5 = NamedCollisionObject("cube4")
+    cube5 = NamedCollisionObject("cube5")
     link1 = NamedCollisionObject("robot", "link_1")
     link2 = NamedCollisionObject("robot", "link_2")
     link3 = NamedCollisionObject("robot", "link_3")
