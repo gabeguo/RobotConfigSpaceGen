@@ -1,0 +1,33 @@
+08/05/22:
+*** Known issue: GUI seems to update one step behind calculation ***
+-hard to figure out what's going on - need to figure out how to do this with simpler robot
+-pretty sure collision_detection.py in_collision method was buggy
+  when we implemented it with max_distance=margin=0
+
+08/24/22:
+-have (supposedly) since fixed in_collision by using max_distance=SMALL_VAL
+-TODO: need to double check in_collision for correctness later on
+-TODO: what happens if robot collides with itself? Will consider this case later
+-TODO: add command line options to simulator, predictor
+-when I change the robot possible positions, accuracy changes
+-TODO: need to generate possible diagrams
+
+08/26/22:
+-boundary points seem to be most difficult to predict: include uncertainty score?
+-do no-repeat sampling to prevent duplicates?
+
+09/06/22:
+-making obstacles more complex (and having multiple) slightly decreases
+  accuracy, but still in mid-90s
+-increasing number of points does increase accuracy
+-on 100,000 points: sampling takes 26 seconds, ML takes only 1 second with 99% accuracy
+
+09/07/22:
+-on 100,000 points in 3DOF:
+  -generating points takes 0.2 seconds,
+  -checking them for collision takes 25 seconds
+  -ML takes 1 second
+  -ML has 97% accuracy
+
+09/14/22:
+-for now, deep learning doesn't work for basic point-by-point interpolation, but can try to generate map from picture of scene"
