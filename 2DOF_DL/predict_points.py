@@ -44,11 +44,11 @@ class Net(nn.Module):
         x = self.fc3(x)
         return x
 
-def train_test_deep_learning(X_train, Y_train, X_test, learning_rate=0.005):
+def train_test_deep_learning(X_train, Y_train, X_test, learning_rate=0.1):
     model = nn.Sequential(
-          nn.Linear(2, 100),
+          nn.Linear(2, 200),
           nn.ReLU(),
-          nn.Linear(100, 200),
+          nn.Linear(200, 200),
           nn.ReLU(),
           nn.Linear(200, 50),
           nn.ReLU(),
@@ -61,9 +61,11 @@ def train_test_deep_learning(X_train, Y_train, X_test, learning_rate=0.005):
     criterion = nn.MSELoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 
-    for t in range(len(Y_train)):
-        x = torch.FloatTensor(X_train[t])
-        y = torch.FloatTensor([Y_train[t]])
+    BATCH_SIZE = 10
+
+    for t in range(0, len(Y_train), BATCH_SIZE):
+        x = torch.FloatTensor(X_train[t:t+BATCH_SIZE])
+        y = torch.FloatTensor([Y_train[t:t+BATCH_SIZE]]).reshape((BATCH_SIZE, 1))
 
         # Forward pass: compute predicted y by passing x to the model.
         y_pred = model(x)
@@ -71,8 +73,10 @@ def train_test_deep_learning(X_train, Y_train, X_test, learning_rate=0.005):
         # values of y, and the loss function returns a Tensor containing the
         # loss.
         loss = criterion(y_pred, y)
+        """
         if t % 1000 == 0:
             print(t, loss.item())
+        """
         # Zero the gradients before running the backward pass.
         model.zero_grad()
         # Backward pass: compute gradient of the loss with respect to all the learnable
@@ -84,7 +88,8 @@ def train_test_deep_learning(X_train, Y_train, X_test, learning_rate=0.005):
         # we can access its gradients like we did before.
         optimizer.step()
 
-    return [int(model(torch.FloatTensor(x)).item()+0.5) for x in X_test]
+    return [int(y[0] + 0.5) for y in model(torch.FloatTensor(X_test)).tolist()]
+    #return [int(model(torch.FloatTensor(x)).item()+0.5) for x in X_test]
 
 # METHODS
 
@@ -206,7 +211,7 @@ def plot_errors(X, Y, test_size):
 def main():
     X, Y = read_data()
 
-    plot_errors(X, Y, test_size=0.5)
+    plot_errors(X, Y, test_size=0.95)
 
     return
 
