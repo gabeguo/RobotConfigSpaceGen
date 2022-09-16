@@ -55,13 +55,23 @@ def plot_results(X, Y_actual, Y_confidence, Y_pred):
     plt.show()
 
     print('testing dataset size:', len(X))
+
     # traditional accuracy, including uncertain points
+    print()
     print('accuracy with all points:', round(accuracy_score(y_true=Y_actual, y_pred=Y_pred), 3))
+    print('precision excluding uncertain points:', round(precision_score(y_true=Y_actual, y_pred=Y_pred), 3))
+    print('recall excluding uncertain points:', round(recall_score(y_true=Y_actual, y_pred=Y_pred), 3))
+    print('f1 excluding uncertain points:', round(f1_score(y_true=Y_actual, y_pred=Y_pred), 3))
+
     # accuracy, EXCLUDING uncertain points (only have points we are confident in)
     certain_indices = [i for i in range(len(Y_pred_with_uncertain)) if Y_pred_with_uncertain[i] != UNCERTAIN]
     certain_y_pred = [Y_pred[i] for i in certain_indices]
     certain_y_true = [Y_actual[i] for i in certain_indices]
+    print()
     print('accuracy excluding uncertain points:', round(accuracy_score(y_true=certain_y_true, y_pred=certain_y_pred), 3))
+    print('precision excluding uncertain points:', round(precision_score(y_true=certain_y_true, y_pred=certain_y_pred), 3))
+    print('recall excluding uncertain points:', round(recall_score(y_true=certain_y_true, y_pred=certain_y_pred), 3))
+    print('f1 excluding uncertain points:', round(f1_score(y_true=certain_y_true, y_pred=certain_y_pred), 3))
     # Count number of uncertain points
     print('proportion of points that model is uncertain about:', round(1 - len(certain_indices) / len(Y_actual), 3))
     print()
