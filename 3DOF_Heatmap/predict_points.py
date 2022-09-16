@@ -78,15 +78,40 @@ def plot_results(X, Y_actual, Y_confidence, Y_pred):
 
     return
 
+# returns training dataset with same numbers of positive and negative labels
+def resample_training_data_balanced(X_train, Y_train):
+    pos_indices = []
+    neg_indices = []
+    for i in range(len(Y_train)):
+        if Y_train[i] == 1:
+            pos_indices.append(i)
+        else:
+            neg_indices.append(i)
+
+    num_samples_needed_per_class = min(len(pos_indices), len(neg_indices))
+
+    new_X_train, new_Y_train = [], []
+    for i in pos_indices[:num_samples_needed_per_class]:
+        new_X_train.append(X_train[i])
+        new_Y_train.append(Y_train[i])
+    for i in neg_indices[:num_samples_needed_per_class]:
+        new_X_train.append(X_train[i])
+        new_Y_train.append(Y_train[i])
+
+    return new_X_train, new_Y_train
+
 def evaluate(X, Y, test_size):
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, \
         test_size=test_size, random_state=42)
 
-    clf = KNeighborsRegressor(n_neighbors=N_NEIGHBORS)
+    clf = KNeighborsRegressor(n_neighbors=N_NEIGHBORS, weights='distance')
 
+    print('n neighbors:', N_NEIGHBORS)
     print('training dataset size:', len(X_train))
 
     start = time.time()
+
+    #X_train, Y_train = resample_training_data_balanced(X_train, Y_train)
 
     clf.fit(X_train, Y_train)
     Y_confidence_score = clf.predict(X_test)
