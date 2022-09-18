@@ -124,8 +124,13 @@ def evaluate(X, Y, test_size):
 
     # get dummy results
     dummy = DummyClassifier(strategy="most_frequent")
+    start = time.time()
     dummy.fit(X_train, Y_train)
-    print('\ndummy results:', round(accuracy_score(y_true=Y_test, y_pred=dummy.predict(X_test)), 3))
+    dummy_scores = dummy.predict(X_test)
+    end = time.time()
+    elapsed = round(end - start, 3)
+    print('\ntime elapsed with dummy', len(X_train), 'points and testing on', len(X_test), 'points:', elapsed, 'seconds')
+    print('dummy results:', round(accuracy_score(y_true=Y_test, y_pred=dummy.predict(X_test)), 3))
 
     # get accuracy
     plot_training_data(X_train, Y_train)
