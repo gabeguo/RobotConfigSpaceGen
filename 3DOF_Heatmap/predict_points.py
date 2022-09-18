@@ -74,6 +74,7 @@ def plot_results(X, Y_actual, Y_confidence, Y_pred):
     print('f1 excluding uncertain points:', round(f1_score(y_true=certain_y_true, y_pred=certain_y_pred), 3))
     # Count number of uncertain points
     print('\nproportion of points that model is uncertain about:', round(1 - len(certain_indices) / len(Y_actual), 3))
+    print('number of certain points:', len(certain_indices))
     print()
 
     return
