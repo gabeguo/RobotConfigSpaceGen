@@ -73,7 +73,7 @@ def plot_results(X, Y_actual, Y_confidence, Y_pred):
     print('recall excluding uncertain points:', round(recall_score(y_true=certain_y_true, y_pred=certain_y_pred), 3))
     print('f1 excluding uncertain points:', round(f1_score(y_true=certain_y_true, y_pred=certain_y_pred), 3))
     # Count number of uncertain points
-    print('proportion of points that model is uncertain about:', round(1 - len(certain_indices) / len(Y_actual), 3))
+    print('\nproportion of points that model is uncertain about:', round(1 - len(certain_indices) / len(Y_actual), 3))
     print()
 
     return
@@ -134,7 +134,7 @@ def evaluate(X, Y, test_size):
 def main():
     X, Y = read_data()
 
-    evaluate(X, Y, test_size=0.5)
+    evaluate(X, Y, test_size=0.8)
 
     return
 
