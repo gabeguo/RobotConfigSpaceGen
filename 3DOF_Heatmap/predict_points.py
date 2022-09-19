@@ -9,9 +9,8 @@ from sklearn.dummy import DummyClassifier
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
-
+import xgboost as xgb
 import time
-
 import math
 
 # CONSTANTS
@@ -21,8 +20,8 @@ TP = 1
 FN = 2
 FP = 3
 
-N_NEIGHBORS = 5
 UNCERTAIN = -1
+MARGIN = 0.01
 
 # METHODS
 
@@ -42,8 +41,8 @@ def rad2deg(X):
     return [[the_theta / np.pi * 180 for the_theta in x] for x in X]
 
 def plot_results(X, Y_actual, Y_confidence, Y_pred):
-    Y_pred_with_uncertain = [1 if math.isclose(y, 1) \
-                    else 0 if math.isclose(y, 0) \
+    Y_pred_with_uncertain = [1 if y > 1 - MARGIN \
+                    else 0 if y < MARGIN \
                     else UNCERTAIN \
                     for y in Y_confidence]
 
@@ -54,14 +53,12 @@ def plot_results(X, Y_actual, Y_confidence, Y_pred):
     plt.title('confusion matrix for configuration space prediction of 3DOF arm')
     plt.show()
 
-    print('testing dataset size:', len(X))
-
     # traditional accuracy, including uncertain points
     print()
     print('accuracy with all points:', round(accuracy_score(y_true=Y_actual, y_pred=Y_pred), 3))
-    print('precision excluding uncertain points:', round(precision_score(y_true=Y_actual, y_pred=Y_pred), 3))
-    print('recall excluding uncertain points:', round(recall_score(y_true=Y_actual, y_pred=Y_pred), 3))
-    print('f1 excluding uncertain points:', round(f1_score(y_true=Y_actual, y_pred=Y_pred), 3))
+    print('precision with all points:', round(precision_score(y_true=Y_actual, y_pred=Y_pred), 3))
+    print('recall with all points:', round(recall_score(y_true=Y_actual, y_pred=Y_pred), 3))
+    print('f1 with all points:', round(f1_score(y_true=Y_actual, y_pred=Y_pred), 3))
 
     # accuracy, EXCLUDING uncertain points (only have points we are confident in)
     certain_indices = [i for i in range(len(Y_pred_with_uncertain)) if Y_pred_with_uncertain[i] != UNCERTAIN]
@@ -105,10 +102,16 @@ def evaluate(X, Y, test_size):
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, \
         test_size=test_size, random_state=42)
 
-    clf = KNeighborsRegressor(n_neighbors=N_NEIGHBORS, weights='distance')
-
-    print('n neighbors:', N_NEIGHBORS)
     print('training dataset size:', len(X_train))
+    print('testing dataset size:', len(X_test))
+
+    clf = xgb.XGBRegressor(random_state=1, \
+        booster='gbtree', \
+        tree_method='hist', \
+        eta=0.5, \
+        max_depth=20, \
+        objective='reg:logistic')
+    #clf = KNeighborsRegressor(n_neighbors=5)
 
     start = time.time()
 
