@@ -20,7 +20,7 @@ def load_environment(client_id):
 
     arm0_id = pyb.loadURDF(
         "kuka_iiwa/model.urdf",
-        basePosition=[-0.25, -0.25, 0],
+        basePosition=[0, -0.25, 0],
         baseOrientation=pyb.getQuaternionFromEuler([0, 0, 0]),
         useFixedBase=True,
         physicsClientId=client_id,
@@ -29,7 +29,7 @@ def load_environment(client_id):
 
     arm1_id = pyb.loadURDF(
         "kuka_iiwa/model.urdf",
-        basePosition=[0.25, 0.25, 0],
+        basePosition=[0, 0.25, 0],
         baseOrientation=pyb.getQuaternionFromEuler([0, 0, 0]),
         useFixedBase=True,
         physicsClientId=client_id,
@@ -66,8 +66,10 @@ def main():
     # define bodies (and links) to use for shortest distance computations and
     # collision checking
 
-    robot0links = [NamedCollisionObject("robot0", "lbr_iiwa_link_{}".format(i)) for i in range(1,7+1)]
-    robot1links = [NamedCollisionObject("robot1", "lbr_iiwa_link_{}".format(i)) for i in range(1,7+1)]
+    robot0links = [NamedCollisionObject("robot0", "lbr_iiwa_link_{}".format(i)) for i in range(1,7+1)] + \
+                    [NamedCollisionObject("robot0", None)]
+    robot1links = [NamedCollisionObject("robot1", "lbr_iiwa_link_{}".format(i)) for i in range(1,7+1)] + \
+                    [NamedCollisionObject("robot1", None)]
 
     collision_objects = robot0links + robot1links
 

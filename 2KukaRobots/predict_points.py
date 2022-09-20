@@ -10,10 +10,9 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import xgboost as xgb
-
 import time
-
 import math
+from sklearn.utils import class_weight
 
 # CONSTANTS
 
@@ -104,17 +103,40 @@ def resample_training_data_balanced(X_train, Y_train):
 
     return new_X_train, new_Y_train
 
+def visualize_loss_curve(X_train, Y_train, X_test, Y_test, clf_xgb):
+    # define dataset
+    evalset = [(X_train, Y_train), (X_test,Y_test)]
+    # fit the model
+    clf_xgb.fit(X_train, Y_train, eval_metric='logloss', eval_set=evalset)
+    # evaluate performance
+    yhat = clf_xgb.predict(X_test)
+    score = accuracy_score(Y_test, yhat)
+    #print('Accuracy: %.3f' % score)
+    # retrieve performance metrics
+    results = clf_xgb.evals_result()
+    # plot learning curves
+    plt.plot(results['validation_0']['logloss'], label='train')
+    plt.plot(results['validation_1']['logloss'], label='test')
+    # show the legend
+    plt.legend()
+    # show the plot
+    plt.show()
+    return
+
 def evaluate(X, Y, test_size):
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, \
         test_size=test_size, random_state=42)
 
     clf_xgb = xgb.XGBRegressor(booster='gbtree', \
+        n_estimators=100, \
         tree_method='hist', \
         eta=0.5, \
         max_depth=25, \
-        objective="reg:logistic", \
+        objective="binary:logistic", \
         random_state=1)
     clf_knn = KNeighborsRegressor(n_neighbors=5, weights='distance')
+
+    #visualize_loss_curve(X_train, Y_train, X_test, Y_test, clf_xgb)
 
     clfs = {'XGBoost': clf_xgb}#, 'KNN': clf_knn}
 
@@ -153,7 +175,7 @@ def evaluate(X, Y, test_size):
 def main():
     X, Y = read_data()
 
-    evaluate(X, Y, test_size=0.7)
+    evaluate(X, Y, test_size=0.75)
 
     return
 
