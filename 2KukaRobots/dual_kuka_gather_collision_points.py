@@ -20,7 +20,7 @@ def load_environment(client_id):
 
     arm0_id = pyb.loadURDF(
         "kuka_iiwa/model.urdf",
-        basePosition=[0, 0, 0],
+        basePosition=[-0.25, -0.25, 0],
         baseOrientation=pyb.getQuaternionFromEuler([0, 0, 0]),
         useFixedBase=True,
         physicsClientId=client_id,
@@ -29,7 +29,7 @@ def load_environment(client_id):
 
     arm1_id = pyb.loadURDF(
         "kuka_iiwa/model.urdf",
-        basePosition=[0, 1, 0],
+        basePosition=[0.25, 0.25, 0],
         baseOrientation=pyb.getQuaternionFromEuler([0, 0, 0]),
         useFixedBase=True,
         physicsClientId=client_id,
@@ -76,6 +76,8 @@ def main():
         for link1 in robot1links]# + \
         #list(combinations(robot0links, 2)) + list(combinations(robot1links, 2)) # need self-touching
 
+    #print(collision_pairs)
+
     col_detector = CollisionDetector(
         sim_id,
         collision_bodies,
@@ -89,7 +91,8 @@ def main():
     _collision_data = []
 
     NUM_ITERATIONS = 100000
-    MAX_JOINT_ANGLE = np.pi * 15/16
+    MAX_JOINT_ANGLE = [theta * np.pi / 180 for theta in [170, 120, 170, 120, 170, 120, 175]]
+    # joint limits: https://www.researchgate.net/figure/Joint-limits-of-KUKA-LBR-iiwa-14-R820-45_tbl1_339394448
 
     # generate angles (since it is biased to generate them while also detecting if they collide)
     start = time.time()
@@ -100,8 +103,8 @@ def main():
         q0 = []
         q1 = []
         for j in range(7):
-            q0.append(MAX_JOINT_ANGLE * 2 * np.random.random() - MAX_JOINT_ANGLE)
-            q1.append(MAX_JOINT_ANGLE * 2 * np.random.random() - MAX_JOINT_ANGLE)
+            q0.append(MAX_JOINT_ANGLE[j] * 2 * np.random.random() - MAX_JOINT_ANGLE[j])
+            q1.append(MAX_JOINT_ANGLE[j] * 2 * np.random.random() - MAX_JOINT_ANGLE[j])
         Q0.append(q0)
         Q1.append(q1)
 
@@ -134,8 +137,8 @@ def main():
     gui_collision_bodies = load_environment(gui_id)
     gui_col_detector = CollisionDetector(gui_id, gui_collision_bodies, collision_pairs)
     for i in range(10):
-        q0 = [MAX_JOINT_ANGLE * 2 * np.random.random() - MAX_JOINT_ANGLE for j in range(7)]
-        q1 = [MAX_JOINT_ANGLE * 2 * np.random.random() - MAX_JOINT_ANGLE for j in range(7)]
+        q0 = [MAX_JOINT_ANGLE[j] * 2 * np.random.random() - MAX_JOINT_ANGLE[j] for j in range(7)]
+        q1 = [MAX_JOINT_ANGLE[j] * 2 * np.random.random() - MAX_JOINT_ANGLE[j] for j in range(7)]
         gui_col_detector.compute_distances_multi_robot((q0, q1), max_distance=0)
         input()
         pyb.stepSimulation(physicsClientId=gui_id)
