@@ -108,37 +108,44 @@ def evaluate(X, Y, test_size):
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, \
         test_size=test_size, random_state=42)
 
-    clf = xgb.XGBRegressor(booster='gbtree', \
+    clf_xgb = xgb.XGBRegressor(booster='gbtree', \
         tree_method='hist', \
         eta=0.5, \
         max_depth=20, \
         objective="binary:logistic", \
         random_state=1)
+    clf_knn = KNeighborsRegressor(n_neighbors=5, weights='distance')
+
+    clfs = {'XGBoost': clf_xgb, 'KNN': clf_knn}
 
     print('training dataset size:', len(X_train))
     print('testing dataset size:', len(X_test))
 
-    start = time.time()
+    for clf_name in clfs:
+        print('\nClassifier:', clf_name)
+        clf = clfs[clf_name]
 
-    #X_train, Y_train = resample_training_data_balanced(X_train, Y_train)
+        start = time.time()
 
-    clf.fit(X_train, Y_train)
-    Y_confidence_score = clf.predict(X_test)
-    Y_pred = [int(y + 0.5) for y in Y_confidence_score]
+        #X_train, Y_train = resample_training_data_balanced(X_train, Y_train)
 
-    end = time.time()
-    elapsed = round(end - start, 3)
-    print('time elapsed in fitting on', len(X_train), 'points and testing on', len(X_test), 'points:', elapsed, 'seconds')
-    print()
+        clf.fit(X_train, Y_train)
+        Y_confidence_score = clf.predict(X_test)
+        Y_pred = [int(y + 0.5) for y in Y_confidence_score]
 
-    # get dummy results
-    dummy = DummyClassifier(strategy="most_frequent")
-    dummy.fit(X_train, Y_train)
-    print('dummy acc:', round(accuracy_score(y_true=Y_test, y_pred=dummy.predict(X_test)), 3))
-    print('dummy f1:', round(f1_score(y_true=Y_test, y_pred=dummy.predict(X_test)), 3))
+        end = time.time()
+        elapsed = round(end - start, 3)
+        print('time elapsed in fitting on', len(X_train), 'points and testing on', len(X_test), 'points:', elapsed, 'seconds')
+        print()
 
-    # get accuracy
-    plot_results(X=X_test, Y_actual=Y_test, Y_confidence=Y_confidence_score, Y_pred=Y_pred)
+        # get dummy results
+        dummy = DummyClassifier(strategy="most_frequent")
+        dummy.fit(X_train, Y_train)
+        print('dummy acc:', round(accuracy_score(y_true=Y_test, y_pred=dummy.predict(X_test)), 3))
+        print('dummy f1:', round(f1_score(y_true=Y_test, y_pred=dummy.predict(X_test)), 3))
+
+        # get accuracy
+        plot_results(X=X_test, Y_actual=Y_test, Y_confidence=Y_confidence_score, Y_pred=Y_pred)
 
     return
 
