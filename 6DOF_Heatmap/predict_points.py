@@ -121,8 +121,16 @@ def evaluate(X, Y, test_size):
     print('training dataset size:', len(X_train))
     print('testing dataset size:', len(X_test))
 
+    # get dummy results
+    dummy = DummyClassifier(strategy="most_frequent")
+    dummy.fit(X_train, Y_train)
+    print()
+    print('dummy acc:', round(accuracy_score(y_true=Y_test, y_pred=dummy.predict(X_test)), 3))
+    print('dummy f1:', round(f1_score(y_true=Y_test, y_pred=dummy.predict(X_test)), 3))
+    print()
+
     for clf_name in clfs:
-        print('\nClassifier:', clf_name)
+        print('\n***\nClassifier:', clf_name, '\n***')
         clf = clfs[clf_name]
 
         start = time.time()
@@ -136,13 +144,6 @@ def evaluate(X, Y, test_size):
         end = time.time()
         elapsed = round(end - start, 3)
         print('time elapsed in fitting on', len(X_train), 'points and testing on', len(X_test), 'points:', elapsed, 'seconds')
-        print()
-
-        # get dummy results
-        dummy = DummyClassifier(strategy="most_frequent")
-        dummy.fit(X_train, Y_train)
-        print('dummy acc:', round(accuracy_score(y_true=Y_test, y_pred=dummy.predict(X_test)), 3))
-        print('dummy f1:', round(f1_score(y_true=Y_test, y_pred=dummy.predict(X_test)), 3))
 
         # get accuracy
         plot_results(X=X_test, Y_actual=Y_test, Y_confidence=Y_confidence_score, Y_pred=Y_pred)
