@@ -53,7 +53,7 @@ def plot_results(X, Y_actual, Y_confidence, Y_pred):
     cm = confusion_matrix(Y_actual, Y_pred)
     disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['free space', 'collision'])
     disp.plot()
-    plt.title('confusion matrix for configuration space prediction of 3DOF arm')
+    plt.title('confusion matrix for configuration space prediction of 7DOF arm')
     plt.show()
 
     # traditional accuracy, including uncertain points
@@ -153,7 +153,7 @@ def evaluate(X, Y, test_size):
 def main():
     X, Y = read_data()
 
-    evaluate(X, Y, test_size=0.7)
+    evaluate(X, Y, test_size=0.9)
 
     return
 
