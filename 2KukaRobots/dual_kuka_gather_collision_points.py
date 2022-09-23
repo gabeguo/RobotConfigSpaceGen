@@ -138,7 +138,8 @@ def main(NUM_ITERATIONS = 10000, robot_positions=[[0, -0.25, 0], [0, 0.25, 0]], 
     # GUI dummy demo of simulation starting point; does not move
     gui_id = pyb.connect(pyb.GUI)
     gui_collision_bodies = load_environment(gui_id, robot_positions, robot_orientations)
-    pyb.resetDebugVisualizerCamera( cameraDistance=10, cameraYaw=0, cameraPitch=-60, cameraTargetPosition=[0, 0, 0])
+    pyb.resetDebugVisualizerCamera( cameraDistance=10, cameraYaw=20, cameraPitch=-50, cameraTargetPosition=[0, 0, 0], \
+        physicsClientId=gui_id)
     gui_col_detector = CollisionDetector(gui_id, gui_collision_bodies, collision_pairs)
     for i in range(10):
         q0 = [MAX_JOINT_ANGLE[j] * 2 * np.random.random() - MAX_JOINT_ANGLE[j] for j in range(7)]
@@ -148,8 +149,8 @@ def main(NUM_ITERATIONS = 10000, robot_positions=[[0, -0.25, 0], [0, 0.25, 0]], 
         pyb.stepSimulation(physicsClientId=gui_id)
 
     # cleanup
-    pyb.resetSimulation(physicsClientId=gui_id)
-    pyb.resetSimulation(physicsClientId=sim_id)
+    #pyb.resetSimulation(physicsClientId=gui_id)
+    #pyb.resetSimulation(physicsClientId=sim_id)
     pyb.disconnect(physicsClientId=gui_id)
     pyb.disconnect(physicsClientId=sim_id)
 
