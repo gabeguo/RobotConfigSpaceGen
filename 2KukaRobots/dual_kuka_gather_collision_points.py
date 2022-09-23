@@ -13,15 +13,17 @@ import csv
 
 import time
 
-def load_environment(client_id):
+def load_environment(client_id, \
+        robot_positions=[[0, -0.25, 0], [0, 0.25, 0]], \
+        robot_orientations=[[0, 0, 0], [0, 0, 0]]):
     pyb.setAdditionalSearchPath(
         pybullet_data.getDataPath(), physicsClientId=client_id
     )
 
     arm0_id = pyb.loadURDF(
         "kuka_iiwa/model.urdf",
-        basePosition=[0, -0.25, 0],
-        baseOrientation=pyb.getQuaternionFromEuler([0, 0, 0]),
+        basePosition=robot_positions[0],
+        baseOrientation=pyb.getQuaternionFromEuler(robot_orientations[0]),
         useFixedBase=True,
         physicsClientId=client_id,
         globalScaling=2
@@ -29,8 +31,8 @@ def load_environment(client_id):
 
     arm1_id = pyb.loadURDF(
         "kuka_iiwa/model.urdf",
-        basePosition=[0, 0.25, 0],
-        baseOrientation=pyb.getQuaternionFromEuler([0, 0, 0]),
+        basePosition=robot_positions[1],
+        baseOrientation=pyb.getQuaternionFromEuler(robot_orientations[1]),
         useFixedBase=True,
         physicsClientId=client_id,
         globalScaling=2
@@ -51,12 +53,12 @@ def write_collision_data(fields, data):
         writer.writerows(data)
     return
 
-def main():
+def main(NUM_ITERATIONS = 10000, robot_positions=[[0, -0.25, 0], [0, 0.25, 0]], robot_orientations=[[0, 0, 0], [0, 0, 0]]):
 
     # main simulation server
     sim_id = pyb.connect(pyb.DIRECT)
 
-    collision_bodies = load_environment(sim_id)
+    collision_bodies = load_environment(sim_id, robot_positions, robot_orientations)
 
     for body in collision_bodies:
         #print(pyb.getCollisionShapeData(collision_bodies[body], -1, sim_id))
@@ -92,7 +94,6 @@ def main():
         ['collision']
     _collision_data = []
 
-    NUM_ITERATIONS = 100000
     MAX_JOINT_ANGLE = [theta * np.pi / 180 for theta in [170, 120, 170, 120, 170, 120, 175]]
     # joint limits: https://www.researchgate.net/figure/Joint-limits-of-KUKA-LBR-iiwa-14-R820-45_tbl1_339394448
 
@@ -136,7 +137,8 @@ def main():
 
     # GUI dummy demo of simulation starting point; does not move
     gui_id = pyb.connect(pyb.GUI)
-    gui_collision_bodies = load_environment(gui_id)
+    gui_collision_bodies = load_environment(gui_id, robot_positions, robot_orientations)
+    pyb.resetDebugVisualizerCamera( cameraDistance=10, cameraYaw=0, cameraPitch=-60, cameraTargetPosition=[0, 0, 0])
     gui_col_detector = CollisionDetector(gui_id, gui_collision_bodies, collision_pairs)
     for i in range(10):
         q0 = [MAX_JOINT_ANGLE[j] * 2 * np.random.random() - MAX_JOINT_ANGLE[j] for j in range(7)]
@@ -145,6 +147,11 @@ def main():
         input()
         pyb.stepSimulation(physicsClientId=gui_id)
 
+    # cleanup
+    pyb.resetSimulation(physicsClientId=gui_id)
+    pyb.resetSimulation(physicsClientId=sim_id)
+    pyb.disconnect(physicsClientId=gui_id)
+    pyb.disconnect(physicsClientId=sim_id)
 
     return
 
