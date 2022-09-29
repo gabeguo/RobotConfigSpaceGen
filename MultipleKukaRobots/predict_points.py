@@ -4,7 +4,7 @@ from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_score
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, \
-    accuracy_score, precision_score, recall_score, f1_score
+    accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 from sklearn.dummy import DummyClassifier
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -61,6 +61,7 @@ def plot_results(X, Y_actual, Y_confidence, Y_pred):
     print('precision with all points:', round(precision_score(y_true=Y_actual, y_pred=Y_pred), 3))
     print('recall with all points:', round(recall_score(y_true=Y_actual, y_pred=Y_pred), 3))
     print('f1 with all points:', round(f1_score(y_true=Y_actual, y_pred=Y_pred), 3))
+    print('roc_auc with all points:', round(roc_auc_score(y_true=Y_actual, y_score=Y_pred), 3))
 
     # accuracy, EXCLUDING uncertain points (only have points we are confident in)
     certain_indices = [i for i in range(len(Y_pred_with_uncertain)) if Y_pred_with_uncertain[i] != UNCERTAIN]
@@ -72,6 +73,7 @@ def plot_results(X, Y_actual, Y_confidence, Y_pred):
     print('precision excluding uncertain points:', round(precision_score(y_true=certain_y_true, y_pred=certain_y_pred), 3))
     print('recall excluding uncertain points:', round(recall_score(y_true=certain_y_true, y_pred=certain_y_pred), 3))
     print('f1 excluding uncertain points:', round(f1_score(y_true=certain_y_true, y_pred=certain_y_pred), 3))
+    print('roc_auc excluding uncertain points:', round(roc_auc_score(y_true=certain_y_true, y_score=certain_y_pred), 3))
     # Count number of uncertain points
     print('\nproportion of points that model is uncertain about:', round(1 - len(certain_indices) / len(Y_actual), 3))
     print('number of certain points:', len(certain_indices))
@@ -128,7 +130,7 @@ def evaluate(X, Y, test_size):
         test_size=test_size, random_state=42)
 
     clf_xgb = xgb.XGBRegressor(booster='gbtree', \
-        n_estimators=1000, \
+        n_estimators=100, \
         tree_method='hist', \
         eta=0.1, \
         max_depth=10, \
@@ -159,6 +161,7 @@ def evaluate(X, Y, test_size):
     print('dummy precision:', round(precision_score(y_true=Y_test, y_pred=dummy.predict(X_test)), 3))
     print('dummy recall:', round(recall_score(y_true=Y_test, y_pred=dummy.predict(X_test)), 3))
     print('dummy f1:', round(f1_score(y_true=Y_test, y_pred=dummy.predict(X_test)), 3))
+    print('dummy roc_auc:', round(roc_auc_score(y_true=Y_test, y_score=dummy.predict(X_test)), 3))
     print()
 
     for clf_name in clfs:
