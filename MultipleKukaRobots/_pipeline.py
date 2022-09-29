@@ -2,10 +2,10 @@ import multiple_kuka_gather_collision_points
 import predict_points
 import numpy as np
 
-robot_positions = [[0, -0.25, 0], [0, 0.25, 0], [-0.25, 0, 0], [0.25, 0, 0]]
+robot_positions = [[0, -0.6, 0], [0, 0.6, 0], [-0.6, 0, 0], [0.6, 0, 0]]
 robot_orientations = [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]]
 
-for num_robots in range(2, len(robot_positions)):
+for num_robots in range(2, len(robot_positions) + 1):
     curr_pos = robot_positions[:num_robots]
     curr_ori = robot_orientations[:num_robots]
 
