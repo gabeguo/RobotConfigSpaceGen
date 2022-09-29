@@ -94,11 +94,11 @@ def main(NUM_ITERATIONS = 10000, NUM_ROBOTS = 4, \
     # define bodies (and links) to use for shortest distance computations and
     # collision checking
 
-    obstacles = []#[NamedCollisionObject("cube{}".format(i)) for i in range(1,5+1)]
-    robotlinks = [NamedCollisionObject("robot{}".format(i), "lbr_iiwa_link_{}".format(j)) \
-                    for i in range(NUM_ROBOTS) \
+    obstacles = [] #[NamedCollisionObject("cube{}".format(i)) for i in range(1,5+1)]
+    robotlinks = [\
+        [NamedCollisionObject("robot{}".format(i), "lbr_iiwa_link_{}".format(j)) \
                     for j in range(1, 7+1)] + \
-                    [NamedCollisionObject("robot{}".format(i), None) \
+        [NamedCollisionObject("robot{}".format(i), None)] \
                     for i in range(NUM_ROBOTS)]
 
     collision_objects = [the_link for the_robotlinks in robotlinks for the_link in the_robotlinks] \
@@ -136,8 +136,9 @@ def main(NUM_ITERATIONS = 10000, NUM_ROBOTS = 4, \
     # generate angles (since it is biased to generate them while also detecting if they collide)
     start = time.time()
 
-    Q_trial_robot = [list() for i in range(NUM_ROBOTS)] # Q_trial_robot[i][j] = configuration of robot j on trial i
+    Q_trial_robot = [] # Q_trial_robot[i][j] = configuration of robot j on trial i
     for i in range(0, NUM_ITERATIONS):
+        Q_trial_robot.append(list())
         for j in range(NUM_ROBOTS):
             Q_trial_robot[i].append(list())
             for dof in range(7):
@@ -169,7 +170,7 @@ def main(NUM_ITERATIONS = 10000, NUM_ROBOTS = 4, \
 
     # GUI dummy demo of simulation starting point; does not move
     gui_id = pyb.connect(pyb.GUI)
-    gui_collision_bodies = load_environment(gui_id, robot_positions, robot_orientations)
+    gui_collision_bodies = load_environment(gui_id, NUM_ROBOTS, robot_positions, robot_orientations)
     pyb.resetDebugVisualizerCamera( cameraDistance=5, cameraYaw=10, cameraPitch=-40, cameraTargetPosition=[0, 0, 0], \
         physicsClientId=gui_id)
     gui_col_detector = CollisionDetector(gui_id, gui_collision_bodies, collision_pairs)
