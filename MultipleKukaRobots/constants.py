@@ -9,7 +9,16 @@ TEST_TIME = 'test_time'
 TRAIN_SIZE = 'train_size'
 TEST_SIZE = 'test_size'
 
-TIME_COST = 'simulation_time'
+SIMULATION_TIME = TIME_COST = 'simulation_time'
 SAMPLE_SIZE = 'num_points'
 
 PERCENT_COLLISION = 'collision_ratio'
+
+DOF_PER_ROBOT = 7
+
+SIMULATION = 'PyBullet Simulation'
+
+XGBOOST = 'XGBoost'
+KNN = 'KNN'
+DL = 'DL'
+DUMMY = 'Dummy'
