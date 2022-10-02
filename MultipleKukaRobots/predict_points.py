@@ -15,6 +15,7 @@ import math
 from sklearn.utils import class_weight
 
 from deep_learning import *
+from constants import *
 
 # CONSTANTS
 
@@ -26,17 +27,6 @@ FP = 3
 N_NEIGHBORS = 5
 UNCERTAIN = -1
 MARGIN = 0.05
-
-ACCURACY = 'accuracy'
-PRECISION = 'precision'
-RECALL = 'recall'
-F1 = 'f1'
-ROC_AUC = 'roc_auc'
-
-TRAIN_TIME = 'train_time'
-TEST_TIME = 'test_time'
-TRAIN_SIZE = 'train_size'
-TEST_SIZE = 'test_size'
 
 # METHODS
 
@@ -104,9 +94,10 @@ def evaluate(X, Y, test_size):
 
     num_collision = len([i for i in Y if i == 1])
     num_free = len(Y) - num_collision
-    print('% of points that are collision: {}'.format(num_collision / len(Y)))
+    collision_ratio = num_collision / len(Y)
+    print('% of points that are collision: {}'.format(collision_ratio))
 
-    all_clf_results = {}
+    all_clf_results = {PERCENT_COLLISION : round(collision_ratio, 3)}
 
     for clf_name in clfs:
         print('\n***\nClassifier:', clf_name, '\n***')

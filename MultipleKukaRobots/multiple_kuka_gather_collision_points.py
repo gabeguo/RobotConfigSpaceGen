@@ -10,12 +10,8 @@ from collision_detection import NamedCollisionObject, CollisionDetector
 from itertools import combinations
 
 import csv
-
 import time
-
-# constants
-TIME_COST = 'simulation_time'
-SAMPLE_SIZE = 'num_points'
+from constants import *
 
 def load_environment(client_id, NUM_ROBOTS, robot_positions, robot_orientations):
     pyb.setAdditionalSearchPath(
