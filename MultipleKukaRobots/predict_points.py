@@ -27,6 +27,17 @@ N_NEIGHBORS = 5
 UNCERTAIN = -1
 MARGIN = 0.05
 
+ACCURACY = 'accuracy'
+PRECISION = 'precision'
+RECALL = 'recall'
+F1 = 'f1'
+ROC_AUC = 'roc_auc'
+
+TRAIN_TIME = 'train_time'
+TEST_TIME = 'test_time'
+TRAIN_SIZE = 'train_size'
+TEST_SIZE = 'test_size'
+
 # METHODS
 
 def read_data():
@@ -44,12 +55,7 @@ def read_data():
 def rad2deg(X):
     return [[the_theta / np.pi * 180 for the_theta in x] for x in X]
 
-def plot_results(X, Y_actual, Y_confidence, Y_pred):
-    Y_pred_with_uncertain = [1 if y > 1 - MARGIN \
-                    else 0 if y < MARGIN \
-                    else UNCERTAIN \
-                    for y in Y_confidence]
-
+def plot_results(X, Y_actual, Y_pred):
     # first show confusion matrix
     # cm = confusion_matrix(Y_actual, Y_pred)
     # disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['free space', 'collision'])
@@ -59,32 +65,37 @@ def plot_results(X, Y_actual, Y_confidence, Y_pred):
 
     # traditional accuracy, including uncertain points
     print()
-    print('accuracy with all points:', round(accuracy_score(y_true=Y_actual, y_pred=Y_pred), 3))
-    print('precision with all points:', round(precision_score(y_true=Y_actual, y_pred=Y_pred), 3))
-    print('recall with all points:', round(recall_score(y_true=Y_actual, y_pred=Y_pred), 3))
-    print('f1 with all points:', round(f1_score(y_true=Y_actual, y_pred=Y_pred), 3))
-    print('roc_auc with all points:', round(roc_auc_score(y_true=Y_actual, y_score=Y_pred), 3))
+    accuracy = accuracy_score(y_true=Y_actual, y_pred=Y_pred)
+    precision = precision_score(y_true=Y_actual, y_pred=Y_pred)
+    recall = recall_score(y_true=Y_actual, y_pred=Y_pred)
+    f1 = f1_score(y_true=Y_actual, y_pred=Y_pred)
+    roc_auc = roc_auc_score(y_true=Y_actual, y_score=Y_pred)
+    print('accuracy with all points:', round(accuracy, 3))
+    print('precision with all points:', round(precision, 3))
+    print('recall with all points:', round(recall, 3))
+    print('f1 with all points:', round(f1, 3))
+    print('roc_auc with all points:', round(roc_auc, 3))
 
-    print()
-
-    return
+    return {ACCURACY: round(accuracy, 3), \
+            PRECISION: round(precision, 3), \
+            RECALL: round(recall, 3), \
+            F1: round(f1, 3), \
+            ROC_AUC: round(roc_auc, 3)}
 
 def evaluate(X, Y, test_size):
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, \
         test_size=test_size, random_state=42)
 
-    clf_xgb = xgb.XGBRegressor(booster='gbtree', \
+    clf_xgb = xgb.XGBClassifier(booster='gbtree', \
         n_estimators=100, \
         tree_method='hist', \
         eta=0.1, \
         max_depth=10, \
         objective="binary:logistic", \
         random_state=1)
-    clf_knn = KNeighborsRegressor(n_neighbors=5, weights='distance')
+    clf_knn = KNeighborsClassifier(n_neighbors=5, weights='distance')
     clf_dummy = DummyClassifier(strategy="most_frequent")
     clf_nn = MyNN()
-
-    #visualize_loss_curve(X_train, Y_train, X_test, Y_test, clf_xgb)
 
     clfs = {'XGBoost': clf_xgb, 'KNN': clf_knn, 'Dummy': clf_dummy, 'DL': MyNN()}
 
@@ -95,34 +106,50 @@ def evaluate(X, Y, test_size):
     num_free = len(Y) - num_collision
     print('% of points that are collision: {}'.format(num_collision / len(Y)))
 
+    all_clf_results = {}
+
     for clf_name in clfs:
         print('\n***\nClassifier:', clf_name, '\n***')
         clf = clfs[clf_name]
 
+        ## START TRAIN ##
         start = time.time()
-
+        # START ACTION
         if clf_name == 'DL':
             clf.fit(X_train, Y_train, DOF = len(X_train[0]))
         else:
             clf.fit(X_train, Y_train)
-        Y_confidence_score = clf.predict(X_test)
-        Y_pred = [int(y + 0.5) for y in Y_confidence_score]
-
+        # END ACTION
         end = time.time()
-        elapsed = round(end - start, 3)
-        print('time elapsed in fitting on', len(X_train), 'points and testing on', len(X_test), 'points:', elapsed, 'seconds')
+        elapsed_train = round(end - start, 3)
+        print('train time (s) on {} points: {}'.format(len(X_train), elapsed_train))
+        ## END TRAIN ##
 
-        # get accuracy
-        plot_results(X=X_test, Y_actual=Y_test, Y_confidence=Y_confidence_score, Y_pred=Y_pred)
+        ## START TEST ##
+        start = time.time()
+        # START ACTION
+        Y_pred = clf.predict(X_test)
+        # END ACTION
+        end = time.time()
+        elapsed_test = round(end - start, 3)
+        print('test time (s) on {} points: {}'.format(len(X_test), elapsed_test))
+        ## END TEST ##
 
-    return
+        time_results = {TRAIN_TIME : elapsed_train, TEST_TIME : elapsed_test, TRAIN_SIZE : len(X_train), TEST_SIZE : len(X_test)}
+        correctness_results = plot_results(X=X_test, Y_actual=Y_test, Y_pred=Y_pred)
+
+        full_individual_results = {**time_results, **correctness_results}
+
+        all_clf_results[clf_name] = full_individual_results
+
+    return all_clf_results
 
 def main():
     X, Y = read_data()
 
-    evaluate(X, Y, test_size=0.8)
+    res = evaluate(X, Y, test_size=0.8)
 
-    return
+    return res
 
 if __name__ == "__main__":
     main()

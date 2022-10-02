@@ -13,6 +13,10 @@ import csv
 
 import time
 
+# constants
+TIME_COST = 'simulation_time'
+SAMPLE_SIZE = 'num_points'
+
 def load_environment(client_id, NUM_ROBOTS, robot_positions, robot_orientations):
     pyb.setAdditionalSearchPath(
         pybullet_data.getDataPath(), physicsClientId=client_id
@@ -166,6 +170,8 @@ def main(NUM_ITERATIONS = 10000, NUM_ROBOTS = 4, \
     print('time elapsed in checking', NUM_ITERATIONS, 'configurations for collision:', elapsed, 'seconds')
     # stop detecting collisions
 
+    results = {TIME_COST : elapsed, SAMPLE_SIZE : NUM_ITERATIONS}
+
     write_collision_data(COLLISION_DATA_LABELS, _collision_data)
 
     # GUI dummy demo of simulation starting point; does not move
@@ -185,7 +191,7 @@ def main(NUM_ITERATIONS = 10000, NUM_ROBOTS = 4, \
     # pyb.disconnect(physicsClientId=gui_id)
     pyb.disconnect(physicsClientId=sim_id)
 
-    return
+    return results
 
 if __name__ == "__main__":
     main()

@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class MyNN():
-    def fit(self, X_train, Y_train, learning_rate=0.01, DOF=35, BATCH_SIZE=5, EPOCHS=20):
+    def fit(self, X_train, Y_train, learning_rate=0.01, DOF=35, BATCH_SIZE=5, EPOCHS=30):
         self.DOF = DOF
         for data_point in X_train:
             while len(data_point) < self.DOF:
