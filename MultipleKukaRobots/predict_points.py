@@ -14,6 +14,8 @@ import time
 import math
 from sklearn.utils import class_weight
 
+from deep_learning import *
+
 # CONSTANTS
 
 TN = 0
@@ -49,11 +51,11 @@ def plot_results(X, Y_actual, Y_confidence, Y_pred):
                     for y in Y_confidence]
 
     # first show confusion matrix
-    cm = confusion_matrix(Y_actual, Y_pred)
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['free space', 'collision'])
-    disp.plot()
-    plt.title('confusion matrix for configuration space prediction of 14DOF arm')
-    plt.show()
+    # cm = confusion_matrix(Y_actual, Y_pred)
+    # disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['free space', 'collision'])
+    # disp.plot()
+    # plt.title('confusion matrix for configuration space prediction of 14DOF arm')
+    # plt.show()
 
     # traditional accuracy, including uncertain points
     print()
@@ -63,66 +65,8 @@ def plot_results(X, Y_actual, Y_confidence, Y_pred):
     print('f1 with all points:', round(f1_score(y_true=Y_actual, y_pred=Y_pred), 3))
     print('roc_auc with all points:', round(roc_auc_score(y_true=Y_actual, y_score=Y_pred), 3))
 
-    # accuracy, EXCLUDING uncertain points (only have points we are confident in)
-    certain_indices = [i for i in range(len(Y_pred_with_uncertain)) if Y_pred_with_uncertain[i] != UNCERTAIN]
-    certain_y_pred = [Y_pred[i] for i in certain_indices]
-    certain_y_true = [Y_actual[i] for i in certain_indices]
     print()
 
-    print('accuracy excluding uncertain points:', round(accuracy_score(y_true=certain_y_true, y_pred=certain_y_pred), 3))
-    print('precision excluding uncertain points:', round(precision_score(y_true=certain_y_true, y_pred=certain_y_pred), 3))
-    print('recall excluding uncertain points:', round(recall_score(y_true=certain_y_true, y_pred=certain_y_pred), 3))
-    print('f1 excluding uncertain points:', round(f1_score(y_true=certain_y_true, y_pred=certain_y_pred), 3))
-    print('roc_auc excluding uncertain points:', round(roc_auc_score(y_true=certain_y_true, y_score=certain_y_pred), 3))
-    # Count number of uncertain points
-    print('\nproportion of points that model is uncertain about:', round(1 - len(certain_indices) / len(Y_actual), 3))
-    print('number of certain points:', len(certain_indices))
-    print()
-
-    print()
-
-    return
-
-# returns training dataset with same numbers of positive and negative labels
-def resample_training_data_balanced(X_train, Y_train):
-    pos_indices = []
-    neg_indices = []
-    for i in range(len(Y_train)):
-        if Y_train[i] == 1:
-            pos_indices.append(i)
-        else:
-            neg_indices.append(i)
-
-    num_samples_needed_per_class = min(len(pos_indices), len(neg_indices))
-
-    new_X_train, new_Y_train = [], []
-    for i in pos_indices[:num_samples_needed_per_class]:
-        new_X_train.append(X_train[i])
-        new_Y_train.append(Y_train[i])
-    for i in neg_indices[:num_samples_needed_per_class]:
-        new_X_train.append(X_train[i])
-        new_Y_train.append(Y_train[i])
-
-    return new_X_train, new_Y_train
-
-def visualize_loss_curve(X_train, Y_train, X_test, Y_test, clf_xgb):
-    # define dataset
-    evalset = [(X_train, Y_train), (X_test,Y_test)]
-    # fit the model
-    clf_xgb.fit(X_train, Y_train, eval_metric='logloss', eval_set=evalset)
-    # evaluate performance
-    yhat = clf_xgb.predict(X_test)
-    score = accuracy_score(Y_test, yhat)
-    #print('Accuracy: %.3f' % score)
-    # retrieve performance metrics
-    results = clf_xgb.evals_result()
-    # plot learning curves
-    plt.plot(results['validation_0']['logloss'], label='train')
-    plt.plot(results['validation_1']['logloss'], label='test')
-    # show the legend
-    plt.legend()
-    # show the plot
-    plt.show()
     return
 
 def evaluate(X, Y, test_size):
@@ -137,32 +81,19 @@ def evaluate(X, Y, test_size):
         objective="binary:logistic", \
         random_state=1)
     clf_knn = KNeighborsRegressor(n_neighbors=5, weights='distance')
+    clf_dummy = DummyClassifier(strategy="most_frequent")
+    clf_nn = MyNN()
 
     #visualize_loss_curve(X_train, Y_train, X_test, Y_test, clf_xgb)
 
-    clfs = {'XGBoost': clf_xgb}#, 'KNN': clf_knn}
+    clfs = {'XGBoost': clf_xgb, 'KNN': clf_knn, 'Dummy': clf_dummy, 'DL': MyNN()}
 
     print('training dataset size:', len(X_train))
     print('testing dataset size:', len(X_test))
 
-    print('\n***\nDummy:\n***')
-
-    # get dummy results
-    start = time.time()
-    dummy = DummyClassifier(strategy="most_frequent")
-    dummy.fit(X_train, Y_train)
-    dummy.predict(X_test)
-    end = time.time()
-    elapsed = round(end - start, 3)
-    print('time elapsed in fitting on', len(X_train), 'points and testing on', len(X_test), 'points:', elapsed, 'seconds')
-
-    print()
-    print('dummy acc:', round(accuracy_score(y_true=Y_test, y_pred=dummy.predict(X_test)), 3))
-    print('dummy precision:', round(precision_score(y_true=Y_test, y_pred=dummy.predict(X_test)), 3))
-    print('dummy recall:', round(recall_score(y_true=Y_test, y_pred=dummy.predict(X_test)), 3))
-    print('dummy f1:', round(f1_score(y_true=Y_test, y_pred=dummy.predict(X_test)), 3))
-    print('dummy roc_auc:', round(roc_auc_score(y_true=Y_test, y_score=dummy.predict(X_test)), 3))
-    print()
+    num_collision = len([i for i in Y if i == 1])
+    num_free = len(Y) - num_collision
+    print('% of points that are collision: {}'.format(num_collision / len(Y)))
 
     for clf_name in clfs:
         print('\n***\nClassifier:', clf_name, '\n***')
@@ -170,9 +101,10 @@ def evaluate(X, Y, test_size):
 
         start = time.time()
 
-        #X_train, Y_train = resample_training_data_balanced(X_train, Y_train)
-
-        clf.fit(X_train, Y_train)
+        if clf_name == 'DL':
+            clf.fit(X_train, Y_train, DOF = len(X_train[0]))
+        else:
+            clf.fit(X_train, Y_train)
         Y_confidence_score = clf.predict(X_test)
         Y_pred = [int(y + 0.5) for y in Y_confidence_score]
 
