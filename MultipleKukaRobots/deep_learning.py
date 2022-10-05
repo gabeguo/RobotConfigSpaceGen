@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class MyNN():
-    def fit(self, X_train, Y_train, learning_rate=0.01, DOF=35, BATCH_SIZE=5, EPOCHS=30):
+    def fit(self, X_train, Y_train, learning_rate=0.01, DOF=35, BATCH_SIZE=64, EPOCHS=30):
         self.DOF = DOF
         for data_point in X_train:
             while len(data_point) < self.DOF:
@@ -32,8 +32,9 @@ class MyNN():
             total_loss = 0
             # train
             for t in range(0, len(Y_train), BATCH_SIZE):
-                x = torch.tensor(X_train[t:t+BATCH_SIZE], device=self.device, dtype=torch.float32)
-                y = torch.tensor([Y_train[t:t+BATCH_SIZE]], device=self.device, dtype=torch.float32).reshape((BATCH_SIZE, 1))
+                curr_batch_size = min(BATCH_SIZE, len(Y_train) - t)
+                x = torch.tensor(X_train[t:t+curr_batch_size], device=self.device, dtype=torch.float32)
+                y = torch.tensor([Y_train[t:t+curr_batch_size]], device=self.device, dtype=torch.float32).reshape((curr_batch_size, 1))
 
                 y_pred = model(x)
                 loss = criterion(y_pred, y)
