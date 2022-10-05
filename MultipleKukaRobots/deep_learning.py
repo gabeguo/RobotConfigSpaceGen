@@ -10,6 +10,8 @@ class MyNN():
         for data_point in X_train:
             while len(data_point) < self.DOF:
                 data_point.append(0)
+        
+        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
         model = nn.Sequential(
               nn.Linear(self.DOF, 100),
@@ -21,7 +23,7 @@ class MyNN():
               nn.Linear(200, 250),
               nn.Tanh(),
               nn.Linear(250, 1)
-            )
+            ).to(self.device)
 
         criterion = nn.MSELoss()
         optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.05)
@@ -30,8 +32,8 @@ class MyNN():
             total_loss = 0
             # train
             for t in range(0, len(Y_train), BATCH_SIZE):
-                x = torch.FloatTensor(X_train[t:t+BATCH_SIZE])
-                y = torch.FloatTensor([Y_train[t:t+BATCH_SIZE]]).reshape((BATCH_SIZE, 1))
+                x = torch.tensor(X_train[t:t+BATCH_SIZE], device=self.device, dtype=torch.float32)
+                y = torch.tensor([Y_train[t:t+BATCH_SIZE]], device=self.device, dtype=torch.float32).reshape((BATCH_SIZE, 1))
 
                 y_pred = model(x)
                 loss = criterion(y_pred, y)
@@ -48,4 +50,5 @@ class MyNN():
         for data_point in X_test:
             while len(data_point) < self.DOF:
                 data_point.append(0)
-        return [1 if y[0] >= 0.5 else 0 for y in self.model(torch.FloatTensor(X_test)).tolist()]
+        return [1 if y[0] >= 0.5 else 0 for y in self.model(torch.tensor(X_test, device=self.device, dtype=torch.float32)).tolist()]
+    
