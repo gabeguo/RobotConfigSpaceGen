@@ -84,7 +84,7 @@ def plot_pareto(results, num_robots=3):
     dof = num_robots * DOF_PER_ROBOT
     plt.title('Pareto Chart\nDOF = {}, |Train| = {}, |Test| = {}, % Collision = {}'.format(\
         dof, curr_experiment[XGBOOST][TRAIN_SIZE], curr_experiment[XGBOOST][TEST_SIZE], \
-        100 * curr_experiment[PERCENT_COLLISION]))
+        round(100 * curr_experiment[PERCENT_COLLISION], 1)))
 
     plt.scatter(x=[1-1], y=[curr_experiment[SIMULATION_TIME]], label='PyBullet Simulation')
     train_data_gather_time = curr_experiment[SIMULATION_TIME] \
