@@ -66,7 +66,7 @@ def plot_accuracy(results):
     return
 
 def plot_inference_time(results):
-    plot_results(results, TEST_TIME, SCALE_METRIC=TEST_SIZE, SCALE_FACTOR=1e3, \
+    plot_results(results, TEST_TIME, SCALE_METRIC=TEST_SIZE, SCALE_FACTOR=MS_PER_SEC, \
         ALT_METRIC_NAME='time (ms) per inference', INCLUDE_SIMULATION_TIME=True)
     return
 
@@ -75,9 +75,12 @@ def plot_train_time(results):
         SIMULATION_VALUE=0)
     return
 
-def plot_pareto(results, num_robots=3):
+def plot_pareto(results, num_robots=3, show_total_time=True):
     plt.xlabel('Error = 1 - ROC_AUC')
-    plt.ylabel('Total Time Cost (s) = \nTrain + Test + Simulation')
+    if show_total_time:
+        plt.ylabel('Total Time Cost (s) = \nTrain + Test + Simulation')
+    else:
+        plt.ylabel('Time per Inference (ms)')
     plt.grid()
 
     curr_experiment = results[str(num_robots)]
@@ -90,11 +93,16 @@ def plot_pareto(results, num_robots=3):
     train_data_gather_time = curr_experiment[SIMULATION_TIME] \
         * (curr_experiment[XGBOOST][TRAIN_SIZE] / (curr_experiment[SAMPLE_SIZE]))
     for clf in [XGBOOST, KNN, DUMMY, DL]:
-        total_time = curr_experiment[clf][TRAIN_TIME] + \
-            curr_experiment[clf][TEST_TIME] + \
-            train_data_gather_time
+        if show_total_time:
+            total_time = curr_experiment[clf][TRAIN_TIME] + \
+                curr_experiment[clf][TEST_TIME] + \
+                train_data_gather_time
+            y_val = show_total_time
+        else:
+            time_per_inference = MS_PER_SEC * curr_experiment[clf][TEST_TIME] / curr_experiment[clf][TEST_SIZE]
+            y_val = time_per_inference
         plt.scatter(x=[1 - curr_experiment[clf][ROC_AUC]], \
-            y=[total_time], \
+            y=[y_val], \
             label=clf)
 
     plt.legend()
@@ -111,5 +119,6 @@ if __name__ == "__main__":
     plot_accuracy(results)
     plot_inference_time(results)
     plot_train_time(results)
-    for i in range(2, 4+1):
-        plot_pareto(results, num_robots=i)
+    for i in range(2, 8+1):
+        plot_pareto(results, num_robots=i, show_total_time=True)
+        plot_pareto(results, num_robots=i, show_total_time=False)
