@@ -50,7 +50,10 @@ def plot_results(results, METRIC, \
     plt.xticks(dofs)
     plt.legend()
     plt.grid()
-    plt.title('DOF vs {}'.format(ALT_METRIC_NAME))
+    title='DOF vs {}'.format(ALT_METRIC_NAME)
+    plt.title(title)
+
+    plt.savefig('{}/{}.pdf'.format(GRAPH_FOLDER_NAME, title))
     plt.show()
 
     return
@@ -101,11 +104,13 @@ def plot_pareto(results, num_robots=3, show_total_time=True):
         else:
             time_per_inference = MS_PER_SEC * curr_experiment[clf][TEST_TIME] / curr_experiment[clf][TEST_SIZE]
             y_val = time_per_inference
+            #print(clf, dof, y_val)
         plt.scatter(x=[1 - curr_experiment[clf][ROC_AUC]], \
             y=[y_val], \
             label=clf)
 
     plt.legend()
+    plt.savefig('{}/Pareto_{}DOF_{}.pdf'.format(GRAPH_FOLDER_NAME, dof, 'totalTime' if show_total_time else 'inferenceTime'))
     plt.show()
 
     return
@@ -119,6 +124,6 @@ if __name__ == "__main__":
     plot_accuracy(results)
     plot_inference_time(results)
     plot_train_time(results)
-    for i in range(2, 8+1):
+    for i in range(2, max([int(x) for x in results.keys()]) + 1):
         plot_pareto(results, num_robots=i, show_total_time=True)
         plot_pareto(results, num_robots=i, show_total_time=False)
