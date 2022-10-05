@@ -27,7 +27,7 @@ def load_environment(client_id, NUM_ROBOTS, robot_positions, robot_orientations)
             baseOrientation=pyb.getQuaternionFromEuler(robot_orientations[i]),
             useFixedBase=True,
             physicsClientId=client_id,
-            globalScaling=2
+            globalScaling=1
         )
 
     # cube1_id = pyb.loadURDF(
@@ -170,7 +170,8 @@ def main(NUM_ITERATIONS = 10000, NUM_ROBOTS = 4, \
 
     write_collision_data(COLLISION_DATA_LABELS, _collision_data)
 
-    # GUI dummy demo of simulation starting point; does not move
+    ## GUI dummy demo of simulation starting point; does not move
+
     # gui_id = pyb.connect(pyb.GUI)
     # gui_collision_bodies = load_environment(gui_id, NUM_ROBOTS, robot_positions, robot_orientations)
     # pyb.resetDebugVisualizerCamera( cameraDistance=5, cameraYaw=10, cameraPitch=-40, cameraTargetPosition=[0, 0, 0], \
@@ -183,7 +184,8 @@ def main(NUM_ITERATIONS = 10000, NUM_ROBOTS = 4, \
     #     input()
     #     pyb.stepSimulation(physicsClientId=gui_id)
 
-    # cleanup
+    ## cleanup
+    
     # pyb.disconnect(physicsClientId=gui_id)
     pyb.disconnect(physicsClientId=sim_id)
 

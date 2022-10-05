@@ -83,11 +83,11 @@ def evaluate(X, Y, test_size):
         max_depth=10, \
         objective="binary:logistic", \
         random_state=1)
-    clf_knn = KNeighborsClassifier(n_neighbors=5, weights='distance')
+    clf_knn = KNeighborsClassifier(n_neighbors=5, weights='distance', algorithm='brute')
     clf_dummy = DummyClassifier(strategy="most_frequent")
     clf_nn = MyNN()
 
-    clfs = {'XGBoost': clf_xgb, 'KNN': clf_knn, 'Dummy': clf_dummy, 'DL': MyNN()}
+    clfs = {XGBOOST: clf_xgb, KNN: clf_knn, DUMMY: clf_dummy, DL: MyNN()}
 
     print('training dataset size:', len(X_train))
     print('testing dataset size:', len(X_test))
