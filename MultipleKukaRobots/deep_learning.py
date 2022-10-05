@@ -5,12 +5,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class MyNN():
-    def fit(self, X_train, Y_train, learning_rate=0.01, DOF=35, BATCH_SIZE=64, EPOCHS=30):
+    def fit(self, X_train, Y_train, learning_rate=0.01, DOF=35, BATCH_SIZE=5, EPOCHS=30):
         self.DOF = DOF
         for data_point in X_train:
             while len(data_point) < self.DOF:
                 data_point.append(0)
-        
+
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
         model = nn.Sequential(
@@ -52,4 +52,3 @@ class MyNN():
             while len(data_point) < self.DOF:
                 data_point.append(0)
         return [1 if y[0] >= 0.5 else 0 for y in self.model(torch.tensor(X_test, device=self.device, dtype=torch.float32)).tolist()]
-    
