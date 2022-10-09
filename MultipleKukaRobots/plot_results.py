@@ -100,7 +100,7 @@ def plot_pareto(results, num_robots=3, show_total_time=True):
             total_time = curr_experiment[clf][TRAIN_TIME] + \
                 curr_experiment[clf][TEST_TIME] + \
                 train_data_gather_time
-            y_val = show_total_time
+            y_val = total_time
         else:
             time_per_inference = MS_PER_SEC * curr_experiment[clf][TEST_TIME] / curr_experiment[clf][TEST_SIZE]
             y_val = time_per_inference
