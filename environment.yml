@@ -1,7 +1,7 @@
 name: gabe_env
 dependencies:
   - pip:
-    - python=3.10.7
+    - python==3.10.7
     - scikit-learn==1.1.2
     - numpy==1.23.2
     - matplotlib==3.5.3
