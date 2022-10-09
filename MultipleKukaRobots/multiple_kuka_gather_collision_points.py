@@ -13,6 +13,8 @@ import csv
 import time
 from constants import *
 
+from PIL import Image
+
 def load_environment(client_id, NUM_ROBOTS, robot_positions, robot_orientations):
     pyb.setAdditionalSearchPath(
         pybullet_data.getDataPath(), physicsClientId=client_id
@@ -184,8 +186,29 @@ def main(NUM_ITERATIONS = 10000, NUM_ROBOTS = 4, \
     #     input()
     #     pyb.stepSimulation(physicsClientId=gui_id)
 
+    # https://towardsdatascience.com/simulate-images-for-ml-in-pybullet-the-quick-easy-way-859035b2c9dd
+
+    # viewMatrix = pyb.computeViewMatrix(
+    #     cameraEyePosition=[0, 0, 3],
+    #     cameraTargetPosition=[0, 0, 0],
+    #     cameraUpVector=[0.5, 0.5, 0])
+    # projectionMatrix = pyb.computeProjectionMatrixFOV(
+    #     fov=45.0,
+    #     aspect=1.0,
+    #     nearVal=0.1,
+    #     farVal=3.1)
+    # width, height, rgbImg, depthImg, segImg = pyb.getCameraImage(
+    #     width=224,
+    #     height=224,
+    #     viewMatrix=viewMatrix,
+    #     projectionMatrix=projectionMatrix)
+    #
+    # print(type(rgbImg))
+    # im = Image.fromarray(rgbImg)
+    # im.save("graphs/{}_DOF_arms.png".format(7 * len(collision_bodies)))
+
     ## cleanup
-    
+
     # pyb.disconnect(physicsClientId=gui_id)
     pyb.disconnect(physicsClientId=sim_id)
 
