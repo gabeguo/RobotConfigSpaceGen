@@ -10,6 +10,8 @@ def plot_results(results, METRIC, \
     ALT_METRIC_NAME=None, INCLUDE_SIMULATION_TIME=False, \
     SIMULATION_VALUE=None):
 
+    plt.rcParams.update({'font.size': 12.5})
+
     if ALT_METRIC_NAME is None:
         ALT_METRIC_NAME = METRIC
 
@@ -23,12 +25,17 @@ def plot_results(results, METRIC, \
         dofs.append(dof)
         curr_experiment = results[num_robots]
 
-        # only when analyzing test time #
+        # only when analyzing test time or total time #
         if INCLUDE_SIMULATION_TIME:
-            y_by_clf[SIMULATION].append(SCALE_FACTOR * curr_experiment[SIMULATION_TIME] / curr_experiment[SAMPLE_SIZE])
+            if METRIC == TEST_TIME:
+                y_by_clf[SIMULATION].append(SCALE_FACTOR * curr_experiment[SIMULATION_TIME] / curr_experiment[SAMPLE_SIZE])
+            elif METRIC == TOTAL_TIME:
+                y_by_clf[SIMULATION].append(SCALE_FACTOR * curr_experiment[SIMULATION_TIME])
+            else:
+                raise ValueError('only include simulation time for testing or total time')
         else:
             y_by_clf[SIMULATION].append(SCALE_FACTOR * SIMULATION_VALUE)
-        # only when analyzing test time #
+        # only when analyzing test time or total time #
 
         for clf_name in curr_experiment:
             if type(curr_experiment[clf_name]) is not dict:
@@ -36,6 +43,15 @@ def plot_results(results, METRIC, \
             if clf_name not in y_by_clf:
                 y_by_clf[clf_name] = list()
             curr_clf = curr_experiment[clf_name]
+            # special case for total time, as it's not stored in results, so we need to calculate it
+            if METRIC == TOTAL_TIME:
+                train_data_gather_time = curr_experiment[SIMULATION_TIME] \
+                    * (curr_experiment[XGBOOST][TRAIN_SIZE] / (curr_experiment[SAMPLE_SIZE]))
+                total_time = curr_experiment[clf_name][TRAIN_TIME] + \
+                    curr_experiment[clf_name][TEST_TIME] + \
+                    train_data_gather_time
+                y_by_clf[clf_name].append(total_time)
+                continue
             if SCALE_METRIC is None:
                 y_by_clf[clf_name].append(SCALE_FACTOR * curr_clf[METRIC])
             else:
@@ -44,6 +60,11 @@ def plot_results(results, METRIC, \
     styles = [':', '-', '--', '.-', '^-']
     for clf_name in y_by_clf:
         plt.plot(dofs, y_by_clf[clf_name], styles.pop(0), alpha=0.7, label=clf_name)
+        """
+        # from https://www.tutorialspoint.com/showing-points-coordinates-in-a-plot-in-python-using-matplotlib
+        for i, j in zip(dofs, y_by_clf[clf_name]):
+            plt.text(i, j, '({}, {})'.format(i, round(j, 3)))
+        """
 
     plt.xlabel('DOF')
     plt.ylabel(ALT_METRIC_NAME)
@@ -76,6 +97,11 @@ def plot_inference_time(results):
 def plot_train_time(results):
     plot_results(results, TRAIN_TIME, ALT_METRIC_NAME='Train Time (s)', \
         SIMULATION_VALUE=0)
+    return
+
+def plot_total_time(results):
+    plot_results(results, TOTAL_TIME, ALT_METRIC_NAME='Total Time (s)', \
+        INCLUDE_SIMULATION_TIME=True)
     return
 
 def plot_pareto(results, num_robots=3, show_total_time=True):
@@ -126,6 +152,7 @@ if __name__ == "__main__":
     plot_accuracy(results)
     plot_inference_time(results)
     plot_train_time(results)
+    plot_total_time(results)
     for i in range(2, max([int(x) for x in results.keys()]) + 1):
         plot_pareto(results, num_robots=i, show_total_time=True)
         plot_pareto(results, num_robots=i, show_total_time=False)
