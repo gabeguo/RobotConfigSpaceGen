@@ -96,6 +96,8 @@ def plot_pareto(results, num_robots=3, show_total_time=True):
     train_data_gather_time = curr_experiment[SIMULATION_TIME] \
         * (curr_experiment[XGBOOST][TRAIN_SIZE] / (curr_experiment[SAMPLE_SIZE]))
     for clf in [XGBOOST, KNN, DUMMY, DL]:
+        if clf not in curr_experiment:
+            continue
         if show_total_time:
             total_time = curr_experiment[clf][TRAIN_TIME] + \
                 curr_experiment[clf][TEST_TIME] + \
