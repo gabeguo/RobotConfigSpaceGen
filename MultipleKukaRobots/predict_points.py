@@ -135,7 +135,7 @@ def evaluate(X, Y, test_size):
 
         all_clf_results[clf_name] = full_individual_results
 
-    all_clf_results[DOF] = len(X_test[0])
+    all_clf_results[DOF_KEY] = len(X_test[0])
 
     return all_clf_results
 

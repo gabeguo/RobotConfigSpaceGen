@@ -15,6 +15,7 @@ SAMPLE_SIZE = 'num_points'
 
 PERCENT_COLLISION = 'collision_ratio'
 
+DOF_KEY = 'DOF'
 DOF_PER_ROBOT = 7
 
 SIMULATION = 'PyBullet Simulation'
