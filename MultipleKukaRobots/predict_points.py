@@ -87,7 +87,8 @@ def evaluate(X, Y, test_size):
     clf_dummy = DummyClassifier(strategy="most_frequent")
     clf_nn = MyNN()
 
-    clfs = {XGBOOST: clf_xgb, KNN: clf_knn, DUMMY: clf_dummy, DL: MyNN()}
+    # clfs = {XGBOOST: clf_xgb, KNN: clf_knn, DUMMY: clf_dummy, DL: clf_nn()}
+    clfs = {XGBOOST: clf_xgb, DUMMY: clf_dummy}
 
     print('training dataset size:', len(X_train))
     print('testing dataset size:', len(X_test))
@@ -135,10 +136,10 @@ def evaluate(X, Y, test_size):
 
     return all_clf_results
 
-def main():
+def main(test_size=0.8):
     X, Y = read_data()
 
-    res = evaluate(X, Y, test_size=0.8)
+    res = evaluate(X, Y, test_size=test_size)
 
     return res
 
