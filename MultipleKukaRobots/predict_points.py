@@ -92,6 +92,7 @@ def evaluate(X, Y, test_size):
 
     print('training dataset size:', len(X_train))
     print('testing dataset size:', len(X_test))
+    print('# DOF:', len(X_test[0]))
 
     num_collision = len([i for i in Y if i == 1])
     num_free = len(Y) - num_collision
