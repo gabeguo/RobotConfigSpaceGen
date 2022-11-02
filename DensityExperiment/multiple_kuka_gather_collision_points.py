@@ -42,13 +42,14 @@ def load_environment(client_id, NUM_OBSTACLES, obstacle_positions, obstacle_orie
         for i in range(len(obstacle_positions))
     ]
 
-    # store body indices in a dict with more convenient key names
+    # add robot
     bodies = {
         "robot{}".format(0) : arm_id
-    } + \
-    {
-        "obstacle{}".format(i): obstacle_ids[i] for i in range(NUM_OBSTACLES)
     }
+    # also add obstacles
+    bodies.update({
+        "obstacle{}".format(i): obstacle_ids[i] for i in range(NUM_OBSTACLES)
+    })
     return bodies
 
 def write_collision_data(fields, data):
