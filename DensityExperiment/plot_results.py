@@ -70,13 +70,13 @@ def plot_results(results, METRIC, \
             plt.text(i, j, '({}, {})'.format(i, round(j, 3)))
         """
 
-    plt.xlabel('Proportion of space that is collision')
+    plt.xlabel('Collision density')
     plt.ylabel(ALT_METRIC_NAME)
     plt.xticks([i / 10 for i in range(0, 10+1)])
     #plt.xticks(collision_percentages)
     plt.legend()
     plt.grid()
-    title='Collision proportion vs {}'.format(ALT_METRIC_NAME)
+    title='Collision density vs {}'.format(ALT_METRIC_NAME)
     plt.title(title)
 
     plt.savefig('{}/{}.pdf'.format(GRAPH_FOLDER_NAME, title))
