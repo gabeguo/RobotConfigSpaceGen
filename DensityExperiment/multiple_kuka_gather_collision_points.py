@@ -44,7 +44,7 @@ def load_environment(client_id, NUM_OBSTACLES, obstacle_positions, obstacle_orie
 
     # store body indices in a dict with more convenient key names
     bodies = {
-        "robot{}".format(i) : arm_id[i] for i in range(1)
+        "robot{}".format(0) : arm_id
     } + \
     {
         "obstacle{}".format(i): obstacle_ids[i] for i in range(NUM_OBSTACLES)
