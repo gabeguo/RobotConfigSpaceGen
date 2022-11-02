@@ -4,7 +4,7 @@ import numpy as np
 import json
 import random
 
-radius = 0.5
+radius = 0.65
 
 MAX_NUM_OBSTACLES = 6
 

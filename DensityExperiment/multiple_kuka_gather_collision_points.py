@@ -37,7 +37,7 @@ def load_environment(client_id, NUM_OBSTACLES, obstacle_positions, obstacle_orie
         pyb.loadURDF(
             "cube.urdf", obstacle_positions[i], \
             baseOrientation=pyb.getQuaternionFromEuler(obstacle_orientations[i]), \
-            useFixedBase=True, globalScaling=0.5, physicsClientId=client_id
+            useFixedBase=True, globalScaling=0.3, physicsClientId=client_id
         ) \
         for i in range(len(obstacle_positions))
     ]
@@ -112,20 +112,20 @@ def main(NUM_ITERATIONS = 10000, NUM_OBSTACLES = 4, \
     for i in range(0, NUM_ITERATIONS):
         Q_trial.append(list())
         for dof in range(7):
-            Q_trial_robot[i].append(MAX_JOINT_ANGLE[dof] * 2 * np.random.random() - MAX_JOINT_ANGLE[dof])
+            Q_trial[i].append(MAX_JOINT_ANGLE[dof] * 2 * np.random.random() - MAX_JOINT_ANGLE[dof])
 
     end = time.time()
     elapsed = round(end - start, 3)
     print('time elapsed in generating', NUM_ITERATIONS, 'configurations:', elapsed, 'seconds')
 
-    Q = [[theta for theta in trial] for trial in Q_trial_robot]
+    Q = [[theta for theta in trial] for trial in Q_trial]
 
     # start detecting collisions
     start = time.time()
 
     for i in range(0, NUM_ITERATIONS):
         # compute shortest distances for a configuration
-        distances = col_detector.compute_distances(Q_trial_robot[i], max_distance=0)
+        distances = col_detector.compute_distances(Q_trial[i], max_distance=0)
         in_col = (distances < 0).any()
 
         Q[i].append(int(in_col))
@@ -142,16 +142,16 @@ def main(NUM_ITERATIONS = 10000, NUM_OBSTACLES = 4, \
 
     ## GUI dummy demo of simulation starting point; does not move
 
-    gui_id = pyb.connect(pyb.GUI)
-    gui_collision_bodies = load_environment(gui_id, NUM_OBSTACLES, obstacle_positions, obstacle_orientations)
-    pyb.resetDebugVisualizerCamera( cameraDistance=5, cameraYaw=10, cameraPitch=-40, cameraTargetPosition=[0, 0, 0], \
-        physicsClientId=gui_id)
-    gui_col_detector = CollisionDetector(gui_id, gui_collision_bodies, collision_pairs)
-    for i in range(10):
-        q_curr = [MAX_JOINT_ANGLE[j] * 2 * np.random.random() - MAX_JOINT_ANGLE[j] for j in range(7)]
-        gui_col_detector.compute_distances(q_curr, max_distance=0)
-        input()
-        pyb.stepSimulation(physicsClientId=gui_id)
+    # gui_id = pyb.connect(pyb.GUI)
+    # gui_collision_bodies = load_environment(gui_id, NUM_OBSTACLES, obstacle_positions, obstacle_orientations)
+    # pyb.resetDebugVisualizerCamera( cameraDistance=5, cameraYaw=10, cameraPitch=-40, cameraTargetPosition=[0, 0, 0], \
+    #     physicsClientId=gui_id)
+    # gui_col_detector = CollisionDetector(gui_id, gui_collision_bodies, collision_pairs)
+    # for i in range(10):
+    #     q_curr = [MAX_JOINT_ANGLE[j] * 2 * np.random.random() - MAX_JOINT_ANGLE[j] for j in range(7)]
+    #     gui_col_detector.compute_distances(q_curr, max_distance=0)
+    #     input()
+    #     pyb.stepSimulation(physicsClientId=gui_id)
 
     # https://towardsdatascience.com/simulate-images-for-ml-in-pybullet-the-quick-easy-way-859035b2c9dd
 
