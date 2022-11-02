@@ -16,14 +16,18 @@ def plot_results(results, METRIC, \
         ALT_METRIC_NAME = METRIC
 
     y_by_clf = dict()
-    dofs = list()
+    nums_obstacles = list()
+    collision_percentages = list()
 
     y_by_clf[SIMULATION] = list()
 
-    for num_robots in results:
-        dof = int(num_robots) * DOF_PER_ROBOT
-        dofs.append(dof)
-        curr_experiment = results[num_robots]
+    for num_obstacles in results:
+        nums_obstacles.append(num_obstacles)
+
+        curr_experiment = results[num_obstacles]
+
+        collision_percent = curr_experiment[PERCENT_COLLISION]
+        collision_percentages.append(collision_percent)
 
         # only when analyzing test time or total time #
         if INCLUDE_SIMULATION_TIME:
@@ -59,19 +63,20 @@ def plot_results(results, METRIC, \
 
     styles = [':', '-', '--', '.-', '^-']
     for clf_name in y_by_clf:
-        plt.plot(dofs, y_by_clf[clf_name], styles.pop(0), alpha=0.7, label=clf_name)
+        plt.plot(collision_percentages, y_by_clf[clf_name], styles.pop(0), marker='o', alpha=0.7, label=clf_name)
         """
         # from https://www.tutorialspoint.com/showing-points-coordinates-in-a-plot-in-python-using-matplotlib
         for i, j in zip(dofs, y_by_clf[clf_name]):
             plt.text(i, j, '({}, {})'.format(i, round(j, 3)))
         """
 
-    plt.xlabel('DOF')
+    plt.xlabel('Proportion of space that is collision')
     plt.ylabel(ALT_METRIC_NAME)
-    plt.xticks(dofs)
+    plt.xticks([i / 10 for i in range(0, 10+1)])
+    #plt.xticks(collision_percentages)
     plt.legend()
     plt.grid()
-    title='DOF vs {}'.format(ALT_METRIC_NAME)
+    title='Collision proportion vs {}'.format(ALT_METRIC_NAME)
     plt.title(title)
 
     plt.savefig('{}/{}.pdf'.format(GRAPH_FOLDER_NAME, title))
@@ -104,46 +109,6 @@ def plot_total_time(results):
         INCLUDE_SIMULATION_TIME=True)
     return
 
-def plot_pareto(results, num_robots=3, show_total_time=True):
-    plt.xlabel('Error = 1 - ROC_AUC')
-    if show_total_time:
-        plt.ylabel('Total Time Cost (s) = \nTrain + Test + Simulation')
-    else:
-        plt.ylabel('Time per Inference (ms)')
-    plt.grid()
-
-    curr_experiment = results[str(num_robots)]
-    dof = num_robots * DOF_PER_ROBOT
-    plt.title('Pareto Chart\nDOF = {}, |Train| = {}, |Test| = {}, % Collision = {}'.format(\
-        dof, curr_experiment[XGBOOST][TRAIN_SIZE], curr_experiment[XGBOOST][TEST_SIZE], \
-        round(100 * curr_experiment[PERCENT_COLLISION], 1)))
-
-    plt.scatter(x=[1-1], y=[curr_experiment[SIMULATION_TIME]], label='PyBullet Simulation')
-    train_data_gather_time = curr_experiment[SIMULATION_TIME] \
-        * (curr_experiment[XGBOOST][TRAIN_SIZE] / (curr_experiment[SAMPLE_SIZE]))
-    for clf in [XGBOOST, KNN, DUMMY, DL]:
-        if clf not in curr_experiment:
-            continue
-        if show_total_time:
-            total_time = curr_experiment[clf][TRAIN_TIME] + \
-                curr_experiment[clf][TEST_TIME] + \
-                train_data_gather_time
-            y_val = total_time
-        else:
-            time_per_inference = MS_PER_SEC * curr_experiment[clf][TEST_TIME] / curr_experiment[clf][TEST_SIZE]
-            y_val = time_per_inference
-            #print(clf, dof, y_val)
-        plt.scatter(x=[1 - curr_experiment[clf][ROC_AUC]], \
-            y=[y_val], \
-            label=clf)
-
-    plt.legend()
-    plt.savefig('{}/Pareto_{}DOF_{}.pdf'.format(GRAPH_FOLDER_NAME, dof, 'totalTime' if show_total_time else 'inferenceTime'))
-    plt.show()
-
-    return
-
-
 if __name__ == "__main__":
     with open(RESULTS_FNAME) as fin:
         results = json.load(fin)
@@ -151,8 +116,5 @@ if __name__ == "__main__":
     plot_roc_auc(results)
     plot_accuracy(results)
     plot_inference_time(results)
-    plot_train_time(results)
+    # plot_train_time(results)
     plot_total_time(results)
-    for i in range(2, max([int(x) for x in results.keys()]) + 1):
-        plot_pareto(results, num_robots=i, show_total_time=True)
-        plot_pareto(results, num_robots=i, show_total_time=False)
