@@ -141,17 +141,16 @@ def main(NUM_ITERATIONS = 10000, NUM_OBSTACLES = 4, \
 
     ## GUI dummy demo of simulation starting point; does not move
 
-    # gui_id = pyb.connect(pyb.GUI)
-    # gui_collision_bodies = load_environment(gui_id, NUM_ROBOTS, robot_positions, robot_orientations)
-    # pyb.resetDebugVisualizerCamera( cameraDistance=5, cameraYaw=10, cameraPitch=-40, cameraTargetPosition=[0, 0, 0], \
-    #     physicsClientId=gui_id)
-    # gui_col_detector = CollisionDetector(gui_id, gui_collision_bodies, collision_pairs)
-    # for i in range(10):
-    #     q_curr = [[MAX_JOINT_ANGLE[j] * 2 * np.random.random() - MAX_JOINT_ANGLE[j] for j in range(7)] \
-    #         for k in range(NUM_ROBOTS)]
-    #     gui_col_detector.compute_distances_multi_robot(q_curr, max_distance=0)
-    #     input()
-    #     pyb.stepSimulation(physicsClientId=gui_id)
+    gui_id = pyb.connect(pyb.GUI)
+    gui_collision_bodies = load_environment(gui_id, NUM_OBSTACLES, obstacle_positions, obstacle_orientations)
+    pyb.resetDebugVisualizerCamera( cameraDistance=5, cameraYaw=10, cameraPitch=-40, cameraTargetPosition=[0, 0, 0], \
+        physicsClientId=gui_id)
+    gui_col_detector = CollisionDetector(gui_id, gui_collision_bodies, collision_pairs)
+    for i in range(10):
+        q_curr = [MAX_JOINT_ANGLE[j] * 2 * np.random.random() - MAX_JOINT_ANGLE[j] for j in range(7)]
+        gui_col_detector.compute_distances(q_curr, max_distance=0)
+        input()
+        pyb.stepSimulation(physicsClientId=gui_id)
 
     # https://towardsdatascience.com/simulate-images-for-ml-in-pybullet-the-quick-easy-way-859035b2c9dd
 
