@@ -15,7 +15,7 @@ from constants import *
 
 from PIL import Image
 
-def load_environment(client_id, NUM_OBSTACLES, obstacle_positions, obstacle_orientations):
+def load_environment(client_id, NUM_OBSTACLES, obstacle_positions, obstacle_orientations, obstacle_scale):
     assert len(obstacle_positions) == len(obstacle_orientations)
 
     pyb.setAdditionalSearchPath(
@@ -37,7 +37,7 @@ def load_environment(client_id, NUM_OBSTACLES, obstacle_positions, obstacle_orie
         pyb.loadURDF(
             "cube.urdf", obstacle_positions[i], \
             baseOrientation=pyb.getQuaternionFromEuler(obstacle_orientations[i]), \
-            useFixedBase=True, globalScaling=0.3, physicsClientId=client_id
+            useFixedBase=True, globalScaling=obstacle_scale, physicsClientId=client_id
         ) \
         for i in range(len(obstacle_positions))
     ]
@@ -62,19 +62,20 @@ def write_collision_data(fields, data):
 
 def main(NUM_ITERATIONS = 10000, NUM_OBSTACLES = 4, \
     obstacle_positions=[[0, -0.25, 0], [0, 0.25, 0], [-0.25, 0], [0.25, 0, 0]], \
-    obstacle_orientations=[[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]]):
+    obstacle_orientations=[[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]], \
+    obstacle_scale=0.2):
 
     assert NUM_OBSTACLES == len(obstacle_positions) and len(obstacle_positions) == len(obstacle_orientations)
 
     # main simulation server
     sim_id = pyb.connect(pyb.DIRECT)
 
-    collision_bodies = load_environment(sim_id, NUM_OBSTACLES, obstacle_positions, obstacle_orientations)
+    collision_bodies = load_environment(sim_id, NUM_OBSTACLES, obstacle_positions, obstacle_orientations, obstacle_scale)
 
     for body in collision_bodies:
         #print(pyb.getCollisionShapeData(collision_bodies[body], -1, sim_id))
         is_mesh = pyb.getCollisionShapeData(collision_bodies[body], -1, sim_id)[0][2] == pyb.GEOM_MESH
-        print(body, 'is mesh:', is_mesh)
+        # print(body, 'is mesh:', is_mesh)
 
     # define bodies (and links) to use for shortest distance computations and
     # collision checking
