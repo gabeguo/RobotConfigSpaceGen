@@ -14,7 +14,6 @@ import time
 import math
 from sklearn.utils import class_weight
 
-from deep_learning import *
 from constants import *
 
 # CONSTANTS
@@ -83,11 +82,8 @@ def evaluate(X, Y, test_size):
         max_depth=10, \
         objective="binary:logistic", \
         random_state=1)
-    clf_knn = KNeighborsClassifier(n_neighbors=5, weights='distance', algorithm='brute')
     clf_dummy = DummyClassifier(strategy="most_frequent")
-    clf_nn = MyNN()
 
-    # clfs = {XGBOOST: clf_xgb, KNN: clf_knn, DUMMY: clf_dummy, DL: clf_nn()}
     clfs = {XGBOOST: clf_xgb, DUMMY: clf_dummy}
 
     print('training dataset size:', len(X_train))
