@@ -148,11 +148,11 @@ if __name__ == "__main__":
     with open(RESULTS_FNAME) as fin:
         results = json.load(fin)
         print(json.dumps(results, indent=4))
-    plot_roc_auc(results)
-    plot_accuracy(results)
-    plot_inference_time(results)
-    plot_train_time(results)
-    plot_total_time(results)
-    for i in range(2, max([int(x) for x in results.keys()]) + 1):
+    # plot_roc_auc(results)
+    # plot_accuracy(results)
+    # plot_inference_time(results)
+    # plot_train_time(results)
+    # plot_total_time(results)
+    for i in range(3, max([int(x) for x in results.keys()]) + 1):
         plot_pareto(results, num_robots=i, show_total_time=True)
         plot_pareto(results, num_robots=i, show_total_time=False)
