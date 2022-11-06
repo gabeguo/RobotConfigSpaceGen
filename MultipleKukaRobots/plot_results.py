@@ -8,7 +8,7 @@ RESULTS_FNAME = 'results.json'
 def plot_results(results, METRIC, \
     SCALE_METRIC=None, SCALE_FACTOR=1, \
     ALT_METRIC_NAME=None, INCLUDE_SIMULATION_TIME=False, \
-    SIMULATION_VALUE=None):
+    SIMULATION_VALUE=None, inverse=False):
 
     plt.rcParams.update({'font.size': 12.5})
 
@@ -35,8 +35,8 @@ def plot_results(results, METRIC, \
                 raise ValueError('only include simulation time for testing or total time')
         else:
             y_by_clf[SIMULATION].append(SCALE_FACTOR * SIMULATION_VALUE)
-        # only when analyzing test time or total time #
 
+        # go through results for every classifier
         for clf_name in curr_experiment:
             if type(curr_experiment[clf_name]) is not dict:
                 continue
@@ -57,9 +57,14 @@ def plot_results(results, METRIC, \
             else:
                 y_by_clf[clf_name].append(SCALE_FACTOR * curr_clf[METRIC] / curr_clf[SCALE_METRIC])
 
+    # actually do the plotting
     styles = [':', '-', '--', '.-', '^-']
     for clf_name in y_by_clf:
-        plt.plot(dofs, y_by_clf[clf_name], styles.pop(0), alpha=0.7, label=clf_name)
+        if inverse:
+            y_vals = [1 - y for y in y_by_clf[clf_name]]
+        else:
+            y_vals = [y for y in y_by_clf[clf_name]]
+        plt.plot(dofs, y_vals, styles.pop(0), alpha=0.7, marker='o', label=clf_name)
         """
         # from https://www.tutorialspoint.com/showing-points-coordinates-in-a-plot-in-python-using-matplotlib
         for i, j in zip(dofs, y_by_clf[clf_name]):
@@ -87,6 +92,16 @@ def plot_roc_auc(results):
 def plot_accuracy(results):
     plot_results(results, ACCURACY, ALT_METRIC_NAME='Accuracy', \
         SIMULATION_VALUE=1)
+    return
+
+def plot_roc_auc_error(results):
+    plot_results(results, ROC_AUC, ALT_METRIC_NAME='Error = 1 - ROC_AUC', \
+        SIMULATION_VALUE=1, inverse=True)
+    return
+
+def plot_accuracy_error(results):
+    plot_results(results, ACCURACY, ALT_METRIC_NAME='Error = 1 - Accuracy', \
+        SIMULATION_VALUE=1, inverse=True)
     return
 
 def plot_inference_time(results):
@@ -118,9 +133,16 @@ def plot_pareto(results, num_robots=3, show_total_time=True):
         dof, curr_experiment[XGBOOST][TRAIN_SIZE], curr_experiment[XGBOOST][TEST_SIZE], \
         round(100 * curr_experiment[PERCENT_COLLISION], 1)))
 
+    # storing all the data points for use in pareto front
+    x_y_pairs = list()
+
+    # add simulation
     plt.scatter(x=[1-1], y=[curr_experiment[SIMULATION_TIME]], label='PyBullet Simulation')
+    x_y_pairs.append((0, curr_experiment[SIMULATION_TIME]))
     train_data_gather_time = curr_experiment[SIMULATION_TIME] \
         * (curr_experiment[XGBOOST][TRAIN_SIZE] / (curr_experiment[SAMPLE_SIZE]))
+
+    # go through all the classifiers
     for clf in [XGBOOST, KNN, DUMMY, DL]:
         if clf not in curr_experiment:
             continue
@@ -133,9 +155,25 @@ def plot_pareto(results, num_robots=3, show_total_time=True):
             time_per_inference = MS_PER_SEC * curr_experiment[clf][TEST_TIME] / curr_experiment[clf][TEST_SIZE]
             y_val = time_per_inference
             #print(clf, dof, y_val)
-        plt.scatter(x=[1 - curr_experiment[clf][ROC_AUC]], \
-            y=[y_val], \
+        x = 1 - curr_experiment[clf][ROC_AUC]
+        y = y_val
+        plt.scatter(x=[x], \
+            y=[y], \
             label=clf)
+        x_y_pairs.append((x, y))
+
+    # draw pareto front
+    x_y_pairs.sort()
+    pareto_front = list()
+    for x, y in x_y_pairs:
+        viable = True
+        for x_, y_ in pareto_front:
+            if x >= x_ and y >= y_: # overshadowed
+                viable = False
+                break
+        if viable:
+            pareto_front.append((x, y))
+    plt.plot([pair[0] for pair in pareto_front], [pair[1] for pair in pareto_front], linestyle='--', color='k', alpha=0.7)
 
     plt.legend()
     plt.savefig('{}/Pareto_{}DOF_{}.pdf'.format(GRAPH_FOLDER_NAME, dof, 'totalTime' if show_total_time else 'inferenceTime'))
@@ -150,6 +188,8 @@ if __name__ == "__main__":
         print(json.dumps(results, indent=4))
     plot_roc_auc(results)
     plot_accuracy(results)
+    plot_roc_auc_error(results)
+    plot_accuracy_error(results)
     plot_inference_time(results)
     plot_train_time(results)
     plot_total_time(results)
