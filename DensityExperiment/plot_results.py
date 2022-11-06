@@ -8,7 +8,7 @@ RESULTS_FNAME = 'results.json'
 def plot_results(results, METRIC, \
     SCALE_METRIC=None, SCALE_FACTOR=1, \
     ALT_METRIC_NAME=None, INCLUDE_SIMULATION_TIME=False, \
-    SIMULATION_VALUE=None):
+    SIMULATION_VALUE=None, inverse=False):
 
     plt.rcParams.update({'font.size': 12.5})
 
@@ -63,7 +63,11 @@ def plot_results(results, METRIC, \
 
     styles = [':', '-', '--', '.-', '^-']
     for clf_name in y_by_clf:
-        plt.plot(collision_percentages, y_by_clf[clf_name], styles.pop(0), marker='o', alpha=0.7, label=clf_name)
+        if inverse:
+            y_vals = [1 - y for y in y_by_clf[clf_name]]
+        else:
+            y_vals = [y for y in y_by_clf[clf_name]]
+        plt.plot(collision_percentages, y_vals, styles.pop(0), alpha=0.7, marker='o', label=clf_name)
         """
         # from https://www.tutorialspoint.com/showing-points-coordinates-in-a-plot-in-python-using-matplotlib
         for i, j in zip(dofs, y_by_clf[clf_name]):
@@ -94,6 +98,16 @@ def plot_accuracy(results):
         SIMULATION_VALUE=1)
     return
 
+def plot_roc_auc_error(results):
+    plot_results(results, ROC_AUC, ALT_METRIC_NAME='Error = 1 - ROC_AUC', \
+        SIMULATION_VALUE=1, inverse=True)
+    return
+
+def plot_accuracy_error(results):
+    plot_results(results, ACCURACY, ALT_METRIC_NAME='Error = 1 - Accuracy', \
+        SIMULATION_VALUE=1, inverse=True)
+    return
+
 def plot_inference_time(results):
     plot_results(results, TEST_TIME, SCALE_METRIC=TEST_SIZE, SCALE_FACTOR=MS_PER_SEC, \
         ALT_METRIC_NAME='time (ms) per inference', INCLUDE_SIMULATION_TIME=True)
@@ -115,6 +129,8 @@ if __name__ == "__main__":
         print(json.dumps(results, indent=4))
     plot_roc_auc(results)
     plot_accuracy(results)
+    plot_roc_auc_error(results)
+    plot_accuracy_error(results)
     plot_inference_time(results)
     # plot_train_time(results)
     plot_total_time(results)
