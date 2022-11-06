@@ -118,10 +118,19 @@ def plot_pareto(results, num_robots=3, show_total_time=True):
         dof, curr_experiment[XGBOOST][TRAIN_SIZE], curr_experiment[XGBOOST][TEST_SIZE], \
         round(100 * curr_experiment[PERCENT_COLLISION], 1)))
 
-    plt.scatter(x=[1-1], y=[curr_experiment[SIMULATION_TIME]], label='PyBullet Simulation')
+    # storing all the data points for use in pareto front
+    x_y_pairs = list()
+
+    # add simulation
+    plt.scatter(x=[1-1], y=[curr_experiment[SIMULATION_TIME]], label='PyBullet Simulation', color='m')
+    x_y_pairs.append((0, curr_experiment[SIMULATION_TIME]))
+
+    # calculate time to gather train data
     train_data_gather_time = curr_experiment[SIMULATION_TIME] \
         * (curr_experiment[XGBOOST][TRAIN_SIZE] / (curr_experiment[SAMPLE_SIZE]))
-    for clf in [XGBOOST, KNN, DUMMY, DL]:
+
+    # go through all the classifiers
+    for clf, linestyle in zip([XGBOOST, KNN, DUMMY, DL], ['r-', 'g-', 'b-', 'y-']):
         if clf not in curr_experiment:
             continue
         if show_total_time:
@@ -132,10 +141,26 @@ def plot_pareto(results, num_robots=3, show_total_time=True):
         else:
             time_per_inference = MS_PER_SEC * curr_experiment[clf][TEST_TIME] / curr_experiment[clf][TEST_SIZE]
             y_val = time_per_inference
-            #print(clf, dof, y_val)
-        plt.scatter(x=[1 - curr_experiment[clf][ROC_AUC]], \
-            y=[y_val], \
-            label=clf)
+        # plot x and y val for this classifier
+        x = 1 - curr_experiment[clf][ROC_AUC]
+        y = y_val
+        plt.scatter(x=[x], \
+            y=[y], \
+            label=clf, color=linestyle[0])
+        x_y_pairs.append((x, y))
+
+    # draw pareto front
+    x_y_pairs.sort()
+    pareto_front = list()
+    for x, y in x_y_pairs:
+        viable = True
+        for x_, y_ in pareto_front:
+            if x >= x_ and y >= y_: # overshadowed
+                viable = False
+                break
+        if viable:
+            pareto_front.append((x, y))
+    plt.plot([pair[0] for pair in pareto_front], [pair[1] for pair in pareto_front], linestyle='--', color='k', alpha=0.7)
 
     plt.legend()
     plt.savefig('{}/Pareto_{}DOF_{}.pdf'.format(GRAPH_FOLDER_NAME, dof, 'totalTime' if show_total_time else 'inferenceTime'))
