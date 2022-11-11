@@ -24,6 +24,7 @@ XGBOOST = 'XGBoost'
 KNN = 'KNN'
 DL = 'DL'
 DUMMY = 'Majority Rule'
+SVM = 'SVM'
 
 MS_PER_SEC = 1000
 

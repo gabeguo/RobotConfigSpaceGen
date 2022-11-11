@@ -13,6 +13,7 @@ import xgboost as xgb
 import time
 import math
 from sklearn.utils import class_weight
+from sklearn.svm import SVC
 
 from deep_learning import *
 from constants import *
@@ -84,10 +85,11 @@ def evaluate(X, Y, test_size):
         objective="binary:logistic", \
         random_state=1)
     clf_knn = KNeighborsClassifier(n_neighbors=5, weights='distance', algorithm='brute')
+    clf_svm = SVC(C=1.0, kernel='rbf')
     clf_dummy = DummyClassifier(strategy="most_frequent")
     clf_nn = MyNN()
 
-    clfs = {XGBOOST: clf_xgb, KNN: clf_knn, DUMMY: clf_dummy, DL: clf_nn}
+    clfs = {XGBOOST: clf_xgb, KNN: clf_knn, SVM: clf_svm, DUMMY: clf_dummy, DL: clf_nn}
 
     print('training dataset size:', len(X_train))
     print('testing dataset size:', len(X_test))
