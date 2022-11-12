@@ -155,10 +155,6 @@ def main(test_size=0.8):
 
     res = evaluate(X, Y, test_size=test_size)
 
-    print(json.dumps(res, indent=4))
-    with open('results.json', 'w') as fout:
-        json.dump(res, fout)
-
     return res
 
 if __name__ == "__main__":
