@@ -111,7 +111,7 @@ class MyNN():
         self.model = self.model.to(self.device)
 
         self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate)
 
         self.learning_rate = learning_rate
         self.batch_size = batch_size
