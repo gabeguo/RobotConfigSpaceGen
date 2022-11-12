@@ -98,7 +98,7 @@ def evaluate(X, Y, test_size):
     clfs = {XGBOOST: clf_xgb, \
         WIDE_NN_RELU: clf_wideReLU, WIDE_NN_TANH: clf_wideTanh, \
         DEEP_NN_RELU: clf_deepReLU, DEEP_NN_TANH: clf_deepTanh, \
-        LIGHT_NN_RELU: clf_lightReLU, LIGHT_NN_TANH: clf_lightTanh, \
+        LIGHTWEIGHT_NN_RELU: clf_lightReLU, LIGHTWEIGHT_NN_TANH: clf_lightTanh, \
         KNN: clf_knn, SVM: clf_svm, \
         DUMMY: clf_dummy}
 

@@ -22,7 +22,12 @@ SIMULATION = 'PyBullet Simulation'
 
 XGBOOST = 'XGBoost'
 KNN = 'KNN'
-DL = 'DL'
+WIDE_NN_RELU = 'Wide NN ReLU'
+WIDE_NN_TANH = 'Wide NN Tanh'
+DEEP_NN_RELU = 'Deep NN ReLU'
+DEEP_NN_TANH = 'Deep NN Tanh'
+LIGHTWEIGHT_NN_RELU = 'Lightweight NN ReLU'
+LIGHTWEIGHT_NN_TANH = 'Lightweight NN Tanh'
 DUMMY = 'Majority Rule'
 SVM = 'SVM'
 
