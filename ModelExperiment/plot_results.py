@@ -107,9 +107,9 @@ def plot_total_time(results):
 def plot_pareto(results, num_robots=3, show_total_time=True):
     plt.xlabel('Error = 1 - ROC_AUC')
     if show_total_time:
-        plt.ylabel('Total Time Cost (s) = \nTrain + Test + Simulation')
+        plt.ylabel('Total Time Cost (s) = \nTrain + Test + Simulation \n(log scale)')
     else:
-        plt.ylabel('Time per Inference (ms)')
+        plt.ylabel('Time per Inference (ms) \n(log scale)')
     plt.grid()
 
     curr_experiment = results[str(num_robots)]
@@ -122,15 +122,22 @@ def plot_pareto(results, num_robots=3, show_total_time=True):
     x_y_pairs = list()
 
     # add simulation
-    plt.scatter(x=[1-1], y=[curr_experiment[SIMULATION_TIME]], label='PyBullet Simulation', color='m')
+    plt.scatter(x=[1-1], y=[curr_experiment[SIMULATION_TIME]], label='PyBullet Simulation', marker='s', zorder=2)
     x_y_pairs.append((0, curr_experiment[SIMULATION_TIME]))
 
     # calculate time to gather train data
     train_data_gather_time = curr_experiment[SIMULATION_TIME] \
         * (curr_experiment[XGBOOST][TRAIN_SIZE] / (curr_experiment[SAMPLE_SIZE]))
 
+    clf_to_marker = {XGBOOST:'o', \
+        WIDE_NN_RELU:'v', WIDE_NN_TANH:'^',\
+        DEEP_NN_RELU:'<', DEEP_NN_TANH:'>',\
+        LIGHTWEIGHT_NN_RELU:'P', LIGHTWEIGHT_NN_TANH:'X',\
+        KNN:'*', SVM:'p',\
+        DUMMY:'D'}
+
     # go through all the classifiers
-    for clf, linestyle in zip([XGBOOST, KNN, DUMMY, DL], ['r-', 'g-', 'b-', 'y-']):
+    for clf in clf_to_marker:
         if clf not in curr_experiment:
             continue
         if show_total_time:
@@ -146,7 +153,7 @@ def plot_pareto(results, num_robots=3, show_total_time=True):
         y = y_val
         plt.scatter(x=[x], \
             y=[y], \
-            label=clf, color=linestyle[0])
+            label=clf, s=50, marker=clf_to_marker[clf], zorder=2)
         x_y_pairs.append((x, y))
 
     # draw pareto front
@@ -159,10 +166,17 @@ def plot_pareto(results, num_robots=3, show_total_time=True):
                 viable = False
                 break
         if viable:
+            if len(pareto_front) > 0:
+                pareto_front.append((x, pareto_front[-1][1]))
             pareto_front.append((x, y))
-    plt.plot([pair[0] for pair in pareto_front], [pair[1] for pair in pareto_front], linestyle='--', color='k', alpha=0.7)
+
+    plt.plot([pair[0] for pair in pareto_front], [pair[1] for pair in pareto_front], \
+        linestyle='--', color='k', alpha=0.7, zorder=1)
 
     plt.legend()
+    plt.yscale(value='log')
+    plt.subplots_adjust(left=0.15)
+    plt.rcParams.update({'font.size': 11})
     plt.savefig('{}/Pareto_{}DOF_{}.pdf'.format(GRAPH_FOLDER_NAME, dof, 'totalTime' if show_total_time else 'inferenceTime'))
     plt.show()
 
