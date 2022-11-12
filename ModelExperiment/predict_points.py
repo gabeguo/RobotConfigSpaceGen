@@ -87,9 +87,20 @@ def evaluate(X, Y, test_size):
     clf_knn = KNeighborsClassifier(n_neighbors=5, weights='distance', algorithm='brute')
     clf_svm = SVC(C=1.0, kernel='rbf')
     clf_dummy = DummyClassifier(strategy="most_frequent")
-    clf_nn = MyNN()
 
-    clfs = {XGBOOST: clf_xgb, KNN: clf_knn, SVM: clf_svm, DUMMY: clf_dummy, DL: clf_nn}
+    clf_wideReLU = MyNN(model_type=WideNNReLU, DOF=len(X_train[0]), learning_rate=0.01, batch_size=64, epochs=10)
+    clf_wideTanh = MyNN(model_type=WideNNTanh, DOF=len(X_train[0]), learning_rate=0.01, batch_size=64, epochs=10)
+    clf_deepReLU = MyNN(model_type=DeepNNReLU, DOF=len(X_train[0]), learning_rate=0.01, batch_size=64, epochs=10)
+    clf_deepTanh = MyNN(model_type=DeepNNTanh, DOF=len(X_train[0]), learning_rate=0.01, batch_size=64, epochs=10)
+    clf_lightReLU = MyNN(model_type=LightweightNNReLU, DOF=len(X_train[0]), learning_rate=0.01, batch_size=64, epochs=10)
+    clf_lightTanh = MyNN(model_type=LightweightNNTanh, DOF=len(X_train[0]), learning_rate=0.01, batch_size=64, epochs=10)
+
+    clfs = {XGBOOST: clf_xgb, \
+        WIDE_NN_RELU: clf_wideReLU, WIDE_NN_TANH: clf_wideTanh, \
+        DEEP_NN_RELU: clf_deepReLU, DEEP_NN_TANH: clf_deepTanh, \
+        LIGHT_NN_RELU: clf_lightReLU, LIGHT_NN_TANH: clf_lightTanh, \
+        KNN: clf_knn, SVM: clf_svm, \
+        DUMMY: clf_dummy}
 
     print('training dataset size:', len(X_train))
     print('testing dataset size:', len(X_test))
@@ -109,10 +120,7 @@ def evaluate(X, Y, test_size):
         ## START TRAIN ##
         start = time.time()
         # START ACTION
-        if clf_name == 'DL':
-            clf.fit(X_train, Y_train, DOF = len(X_train[0]))
-        else:
-            clf.fit(X_train, Y_train)
+        clf.fit(X_train, Y_train)
         # END ACTION
         end = time.time()
         elapsed_train = round(end - start, 3)
