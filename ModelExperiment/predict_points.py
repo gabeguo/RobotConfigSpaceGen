@@ -135,7 +135,7 @@ def evaluate(X, Y, test_size):
         Y_pred = clf.predict(X_test)
         # END ACTION
         end = time.time()
-        elapsed_test = round(end - start, 3)
+        elapsed_test = round(end - start, 6)
         print('test time (s) on {} points: {}'.format(len(X_test), elapsed_test))
         ## END TEST ##
 

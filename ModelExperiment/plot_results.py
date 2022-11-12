@@ -105,6 +105,11 @@ def plot_total_time(results):
     return
 
 def plot_pareto(results, num_robots=3, show_total_time=True):
+    plt.rcParams.update({'figure.figsize': (8, 6)})
+    plt.rcParams.update({'font.size': 11})
+    plt.yscale(value='log')
+    plt.subplots_adjust(left=0.15)
+
     plt.xlabel('Error = 1 - ROC_AUC')
     if show_total_time:
         plt.ylabel('Total Time Cost (s) = \nTrain + Test + Simulation \n(log scale)')
@@ -153,7 +158,7 @@ def plot_pareto(results, num_robots=3, show_total_time=True):
         y = y_val
         plt.scatter(x=[x], \
             y=[y], \
-            label=clf, s=50, marker=clf_to_marker[clf], zorder=2)
+            label=clf, s=75, marker=clf_to_marker[clf], zorder=2)
         x_y_pairs.append((x, y))
 
     # draw pareto front
@@ -171,12 +176,10 @@ def plot_pareto(results, num_robots=3, show_total_time=True):
             pareto_front.append((x, y))
 
     plt.plot([pair[0] for pair in pareto_front], [pair[1] for pair in pareto_front], \
-        linestyle='--', color='k', alpha=0.7, zorder=1)
+        linestyle='-', color='k', alpha=0.7, zorder=1)
 
+    #plt.ylim([min([pair[1] for pair in x_y_pairs]) * 0.8, max([pair[1] for pair in x_y_pairs]) * 1.25])
     plt.legend()
-    plt.yscale(value='log')
-    plt.subplots_adjust(left=0.15)
-    plt.rcParams.update({'font.size': 11})
     plt.savefig('{}/Pareto_{}DOF_{}.pdf'.format(GRAPH_FOLDER_NAME, dof, 'totalTime' if show_total_time else 'inferenceTime'))
     plt.show()
 
