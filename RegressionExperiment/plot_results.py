@@ -63,7 +63,7 @@ def plot_results(results, METRIC, \
     plt.xticks([0, 0.1, 0.2, 0.3, 0.4, 0.5])
     plt.legend()
     plt.grid()
-    title='$\epsilon$ vs {}'.format(ALT_METRIC_NAME)
+    title='{} as function of $\epsilon$'.format(ALT_METRIC_NAME)
     plt.title(title)
 
     plt.savefig('{}/{}.pdf'.format(GRAPH_FOLDER_NAME, title))
