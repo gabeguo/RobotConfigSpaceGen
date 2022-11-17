@@ -23,8 +23,8 @@ def plot_results(results, METRIC, \
         curr_experiment = results[num_robots]
 
         # only when analyzing test time or total time #
-        y_by_clf[SIMULATION] = [1, 1]
-        epsilon_by_clf[SIMULATION] = [0, 0.5]
+        y_by_clf[SIMULATION] = [1 for i in range(11)]
+        epsilon_by_clf[SIMULATION] = [0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50]
 
         # go through results for every classifier
         for clf_name in curr_experiment:
@@ -51,12 +51,13 @@ def plot_results(results, METRIC, \
 
     # actually do the plotting
     styles = [':', '-', '--', '.-', '^-']
+    markers = ['o', '*', '^']
     for clf_name in y_by_clf:
         if inverse:
             y_vals = [1 - y for y in y_by_clf[clf_name]]
         else:
             y_vals = [y for y in y_by_clf[clf_name]]
-        plt.plot(epsilon_by_clf[clf_name], y_vals, styles.pop(0), alpha=0.7, marker='o', label=clf_name)
+        plt.plot(epsilon_by_clf[clf_name], y_vals, styles.pop(0), alpha=0.7, marker=markers.pop(0), label=clf_name)
 
     plt.xlabel('$\epsilon$')
     plt.ylabel(ALT_METRIC_NAME)
