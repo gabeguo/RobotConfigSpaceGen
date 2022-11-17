@@ -82,12 +82,12 @@ def plot_accuracy(results):
     return
 
 def plot_roc_auc_error(results):
-    plot_results(results, ROC_AUC, ALT_METRIC_NAME='Error = 1 - ROC_AUC', \
+    plot_results(results, ROC_AUC, ALT_METRIC_NAME='Error (1 - ROC_AUC)', \
         SIMULATION_VALUE=1, inverse=True)
     return
 
 def plot_accuracy_error(results):
-    plot_results(results, ACCURACY, ALT_METRIC_NAME='Error = 1 - Accuracy', \
+    plot_results(results, ACCURACY, ALT_METRIC_NAME='Error (1 - Accuracy)', \
         SIMULATION_VALUE=1, inverse=True)
     return
 
