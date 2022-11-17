@@ -61,7 +61,7 @@ def get_correctness(Y_actual, Y_pred, epsilon):
 
     # Get percentage of points thrown out
     percent_of_points_considered = len(considered_indices) / len(Y_pred)
-    print('{} of points considered'.format(percent_of_points_considered))
+    print('{} of points considered'.format(round(percent_of_points_considered, 3)))
 
     # Get scores
     accuracy = accuracy_score(y_true=Y_groundTruth, y_pred=Y_binarized)
@@ -135,10 +135,9 @@ def evaluate(X, Y, test_size):
         time_results = {TRAIN_TIME : elapsed_train, TEST_TIME : elapsed_test, TRAIN_SIZE : len(X_train), TEST_SIZE : len(X_test)}
         full_individual_results = {**time_results}
         # test different thresholds
-        if clf_name != DUMMY:
-            for epsilon in [0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45]:
-                curr_correctness_results = get_correctness(Y_actual=Y_test, Y_pred=Y_pred, epsilon=epsilon)
-                full_individual_results[epsilon] = curr_correctness_results
+        for epsilon in [0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.5]:
+            curr_correctness_results = get_correctness(Y_actual=Y_test, Y_pred=Y_pred, epsilon=epsilon)
+            full_individual_results[epsilon] = curr_correctness_results
 
         #full_individual_results = {**time_results, **correctness_results}
 
