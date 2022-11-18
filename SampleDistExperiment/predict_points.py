@@ -17,6 +17,8 @@ from sklearn.utils import class_weight
 from deep_learning import *
 from constants import *
 
+import json
+
 # CONSTANTS
 
 TN = 0
@@ -117,6 +119,8 @@ def evaluate(X, Y, test_size):
     all_clf_results_both_splits = dict()
 
     for dist, X_train, Y_train in zip([ORIGINAL_DIST, BALANCED_DIST], [X_train_small, X_train_balanced], [Y_train_small, Y_train_balanced]):
+        print('\nDistribution: {}'.format(dist))
+
         print('training dataset size:', len(X_train))
         print('testing dataset size:', len(X_test))
         print('# DOF:', len(X_test[0]))
@@ -124,9 +128,13 @@ def evaluate(X, Y, test_size):
         num_collision = len([i for i in Y if i == 1])
         num_free = len(Y) - num_collision
         collision_ratio = num_collision / len(Y)
-        print('% of points that are collision: {}'.format(collision_ratio))
+        print('% of points that are collision overall: {}'.format(collision_ratio))
 
-        all_clf_results = {PERCENT_COLLISION : round(collision_ratio, 3)}
+        train_collision_ratio = Y_train.count(1) / len(Y_train)
+        print('% of train points that are collision: {}'.format(train_collision_ratio))
+
+        all_clf_results = {PERCENT_COLLISION : round(collision_ratio, 3), \
+                            TRAIN_COLL_RATIO : round(train_collision_ratio, 3)}
 
         for clf_name in clfs:
             print('\n***\nClassifier:', clf_name, '\n***')
@@ -172,6 +180,8 @@ def main(test_size=0.8):
     X, Y = read_data()
 
     res = evaluate(X, Y, test_size=test_size)
+
+    print(json.dumps(res, indent=4))
 
     return res
 

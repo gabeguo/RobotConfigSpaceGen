@@ -31,3 +31,5 @@ GRAPH_FOLDER_NAME = 'graphs'
 
 ORIGINAL_DIST = 'original distribution'
 BALANCED_DIST = 'balanced distribution'
+
+TRAIN_COLL_RATIO = 'train collision ratio'
