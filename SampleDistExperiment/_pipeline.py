@@ -29,7 +29,7 @@ for num_obstacles in range(2 * MAX_NUM_OBSTACLES, 2 * MAX_NUM_OBSTACLES+1):
     print('\n*** *** ***\n{} OBSTACLE EXPERIMENT\n*** *** ***'.format(num_obstacles))
 
     print('\n** data gathering **\n')
-    simulation_res = multiple_kuka_gather_collision_points.main(NUM_ITERATIONS=400000, NUM_OBSTACLES=num_obstacles, \
+    simulation_res = multiple_kuka_gather_collision_points.main(NUM_ITERATIONS=500000, NUM_OBSTACLES=num_obstacles, \
         obstacle_positions=curr_pos, obstacle_orientations=curr_ori, obstacle_scale=obstacle_scale)
     print('\n** machine learning **\n')
     prediction_res = predict_points.main()
