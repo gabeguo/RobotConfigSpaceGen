@@ -166,7 +166,7 @@ def evaluate(X, Y, test_size):
 
         all_clf_results_both_splits[dist] = all_clf_results
 
-    return all_clf_results
+    return all_clf_results_both_splits
 
 def main(test_size=0.8):
     X, Y = read_data()
