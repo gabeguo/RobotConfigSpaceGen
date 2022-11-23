@@ -17,7 +17,7 @@ for i in nums_robots:
     robot_positions.append([radius * np.cos(theta), radius * np.sin(theta), 0])
     robot_orientations.append([0, 0, theta])
 
-simulation_res = multiple_kuka_gather_collision_points.main(NUM_ITERATIONS=500 * 1000, NUM_ROBOTS=MAX_NUM_ROBOTS, \
+simulation_res = multiple_kuka_gather_collision_points.main(NUM_ITERATIONS=5 * 1000 * 1000, NUM_ROBOTS=MAX_NUM_ROBOTS, \
     robot_positions=robot_positions, robot_orientations=robot_orientations)
 
 for test_size in [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]:
