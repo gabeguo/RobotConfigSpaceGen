@@ -26,5 +26,6 @@ DL = 'DL'
 DUMMY = 'Majority Rule'
 
 MS_PER_SEC = 1000
+SEC_PER_MIN = 60
 
 GRAPH_FOLDER_NAME = 'graphs'
