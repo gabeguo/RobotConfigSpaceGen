@@ -66,11 +66,11 @@ def plot_results(X, Y_actual, Y_pred):
     print('f1 with all points:', round(f1, 3))
     print('roc_auc with all points:', round(roc_auc, 3))
 
-    return {ACCURACY: round(accuracy, 3), \
-            PRECISION: round(precision, 3), \
-            RECALL: round(recall, 3), \
-            F1: round(f1, 3), \
-            ROC_AUC: round(roc_auc, 3)}
+    return {ACCURACY: round(accuracy, 5), \
+            PRECISION: round(precision, 5), \
+            RECALL: round(recall, 5), \
+            F1: round(f1, 5), \
+            ROC_AUC: round(roc_auc, 5)}
 
 def evaluate(X, Y, test_size):
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, \
@@ -99,7 +99,7 @@ def evaluate(X, Y, test_size):
     collision_ratio = num_collision / len(Y)
     print('% of points that are collision: {}'.format(collision_ratio))
 
-    all_clf_results = {PERCENT_COLLISION : round(collision_ratio, 3)}
+    all_clf_results = {PERCENT_COLLISION : round(collision_ratio, 5)}
 
     for clf_name in clfs:
         print('\n***\nClassifier:', clf_name, '\n***')
