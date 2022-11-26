@@ -9,6 +9,7 @@ from sklearn.dummy import DummyClassifier
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+import xgboost as xgb
 
 import time
 
@@ -20,7 +21,7 @@ FN = 2
 FP = 3
 
 N_NEIGHBORS = 7
-MARGIN_OF_CERTAINTY = 1 / N_NEIGHBORS - 1e-3 # uncertain points have scores within [MARGIN, 1 - MARGIN]
+MARGIN_OF_CERTAINTY = 1e-2#1 / N_NEIGHBORS - 1e-3 # uncertain points have scores within [MARGIN, 1 - MARGIN]
 UNCERTAIN = -1
 
 # METHODS
@@ -49,8 +50,8 @@ def plot_training_data(X, Y):
             X_pos.append(X[i])
         else:
             X_neg.append(X[i])
-    plt.scatter([x[0] for x in X_pos], [x[1] for x in X_pos], c='#ff0000', label='collision')
-    plt.scatter([x[0] for x in X_neg], [x[1] for x in X_neg], c='#00ff00', label='free')
+    plt.scatter([x[0] for x in X_pos], [x[1] for x in X_pos], s=3, c='#ff0000', label='collision')
+    plt.scatter([x[0] for x in X_neg], [x[1] for x in X_neg], s=3, c='#0000ff', label='free')
 
     plt.xlabel('theta1 (deg)')
     plt.ylabel('theta2 (deg)')
@@ -63,15 +64,15 @@ def plot_training_data(X, Y):
     return
 
 def plot_results(X, Y_actual, Y_confidence, Y_pred):
-    Y_pred_with_uncertain = [1 if math.isclose(y, 1) \
-                    else 0 if math.isclose(y, 0) \
+    Y_pred_with_uncertain = [1 if y >= 1 - MARGIN_OF_CERTAINTY \
+                    else 0 if y <= MARGIN_OF_CERTAINTY \
                     else UNCERTAIN \
                     for y in Y_confidence]
 
     # convert to deg
     X = rad2deg(X)
 
-    plt.scatter([x[0] for x in X], [x[1] for x in X], c=Y_confidence, cmap='Reds')
+    plt.scatter([x[0] for x in X], [x[1] for x in X], c=Y_confidence, s=3, alpha=1, cmap='coolwarm')
 
     plt.xlabel('theta1 (deg)')
     plt.ylabel('theta2 (deg)')
@@ -108,7 +109,14 @@ def evaluate(X, Y, test_size):
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, \
         test_size=test_size, random_state=42)
 
-    clf = KNeighborsRegressor(n_neighbors=N_NEIGHBORS)
+    #clf = KNeighborsRegressor(n_neighbors=N_NEIGHBORS)
+    clf = xgb.XGBRegressor(booster='gbtree', \
+        n_estimators=100, \
+        tree_method='hist', \
+        eta=0.1, \
+        max_depth=10, \
+        objective="binary:logistic", \
+        random_state=1)
 
     print('training dataset size:', len(X_train))
 
