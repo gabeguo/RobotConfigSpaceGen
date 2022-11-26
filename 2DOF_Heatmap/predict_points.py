@@ -60,6 +60,7 @@ def plot_training_data(X, Y):
     plt.legend()
 
     plt.show()
+    plt.savefig('2dof_train.pdf')
 
     return
 
@@ -82,6 +83,7 @@ def plot_results(X, Y_actual, Y_confidence, Y_pred):
     plt.title('configuration space prediction heatmap for 2DOF arm')
 
     plt.show()
+    plt.savefig('2dof_test.pdf')
 
     print('\ntesting dataset size:', len(X))
 
