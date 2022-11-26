@@ -123,6 +123,8 @@ def main():
 
     # GUI dummy demo of simulation starting point; does not move
     gui_id = pyb.connect(pyb.GUI)
+    pyb.resetDebugVisualizerCamera(cameraDistance=3.5, cameraYaw=0, cameraPitch=-89, cameraTargetPosition=[0, 0, 0], \
+        physicsClientId=gui_id)
     gui_collision_bodies = load_environment(gui_id)
     gui_col_detector = CollisionDetector(gui_id, gui_collision_bodies, collision_pairs)
     for i in range(5):
@@ -132,7 +134,6 @@ def main():
         gui_col_detector.compute_distances(q, max_distance=0)
         input()
         pyb.stepSimulation(physicsClientId=gui_id)
-
 
     return
 
