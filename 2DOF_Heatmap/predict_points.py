@@ -59,8 +59,8 @@ def plot_training_data(X, Y):
     plt.title('training data')
     plt.legend()
 
-    plt.show()
     plt.savefig('2dof_train.pdf')
+    plt.show()
 
     return
 
@@ -82,8 +82,9 @@ def plot_results(X, Y_actual, Y_confidence, Y_pred):
     plt.colorbar(label='probability of collision')
     plt.title('configuration space prediction heatmap for 2DOF arm')
 
-    plt.show()
     plt.savefig('2dof_test.pdf')
+    plt.show()
+
 
     print('\ntesting dataset size:', len(X))
 
