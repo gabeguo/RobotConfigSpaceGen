@@ -64,6 +64,41 @@ def plot_training_data(X, Y):
 
     return
 
+def plot_regular_cspace(X, Y_actual, Y_pred):
+    confusion_array = []
+    for i in range(len(X)):
+        if Y_actual[i] == Y_pred[i]:
+            if Y_pred[i] == 0:
+                confusion_array.append(TN)
+            else:
+                confusion_array.append(TP)
+        else:
+            if Y_pred[i] == 0:
+                confusion_array.append(FN)
+            else:
+                confusion_array.append(FP)
+
+    X_tn = [X[i] for i in range(len(X)) if confusion_array[i] == TN]
+    X_tp = [X[i] for i in range(len(X)) if confusion_array[i] == TP]
+    X_fn = [X[i] for i in range(len(X)) if confusion_array[i] == FN]
+    X_fp = [X[i] for i in range(len(X)) if confusion_array[i] == FP]
+
+    plt.scatter([x[0] for x in X_tn], [x[1] for x in X_tn], c='#0000ff', s=3, label='correctly predicted free space')
+    plt.scatter([x[0] for x in X_tp], [x[1] for x in X_tp], c='#ff0000', s=3, label='correctly predicted collision')
+    plt.scatter([x[0] for x in X_fn], [x[1] for x in X_fn], c='#00ff00', s=3, label='wrongly predicted free space')
+    plt.scatter([x[0] for x in X_fp], [x[1] for x in X_fp], c='#888888', s=3, label='wrongly predicted collision')
+
+    plt.xlabel('theta1 (deg)')
+    plt.ylabel('theta2 (deg)')
+    plt.grid(visible=True)
+    plt.legend()
+    plt.title('configuration space predictions for 2DOF arm')
+
+    plt.savefig('2dof_test.pdf')
+    plt.show()
+
+    return
+
 def plot_results(X, Y_actual, Y_confidence, Y_pred):
     Y_pred_with_uncertain = [1 if y >= 1 - MARGIN_OF_CERTAINTY \
                     else 0 if y <= MARGIN_OF_CERTAINTY \
@@ -73,6 +108,10 @@ def plot_results(X, Y_actual, Y_confidence, Y_pred):
     # convert to deg
     X = rad2deg(X)
 
+    # now show estimated configuration space
+    plot_regular_cspace(X, Y_actual, Y_pred)
+
+    # plot heatmap
     plt.scatter([x[0] for x in X], [x[1] for x in X], c=Y_confidence, s=3, alpha=1, cmap='coolwarm')
 
     plt.xlabel('theta1 (deg)')
@@ -82,9 +121,8 @@ def plot_results(X, Y_actual, Y_confidence, Y_pred):
     plt.colorbar(label='probability of collision')
     plt.title('configuration space prediction heatmap for 2DOF arm')
 
-    plt.savefig('2dof_test.pdf')
+    plt.savefig('2dof_heatmap.pdf')
     plt.show()
-
 
     print('\ntesting dataset size:', len(X))
 
