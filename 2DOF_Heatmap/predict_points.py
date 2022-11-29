@@ -41,7 +41,20 @@ def read_data():
 def rad2deg(X):
     return [[x[0] / np.pi * 180, x[1] / np.pi * 180] for x in X]
 
-def plot_training_data(X, Y):
+def plot_training_data(X, Y, X_total, Y_total):
+    # plot real c space
+    X_total = rad2deg(X_total)
+    X_dense_pos = []
+    X_dense_neg = []
+    for i in range(len(X_total)):
+        if Y_total[i] == 1:
+            X_dense_pos.append(X_total[i])
+        else:
+            X_dense_neg.append(X_total[i])
+    plt.scatter([x[0] for x in X_dense_pos], [x[1] for x in X_dense_pos], s=3, c='#aa0000', alpha=0.02)
+    plt.scatter([x[0] for x in X_dense_neg], [x[1] for x in X_dense_neg], s=3, c='#0000aa', alpha=0.02)
+
+    # plot sampled c space
     X = rad2deg(X)
     X_pos = []
     X_neg = []
@@ -53,6 +66,7 @@ def plot_training_data(X, Y):
     plt.scatter([x[0] for x in X_pos], [x[1] for x in X_pos], s=3, c='#ff0000', label='collision')
     plt.scatter([x[0] for x in X_neg], [x[1] for x in X_neg], s=3, c='#0000ff', label='free')
 
+    # axis labels
     plt.xlabel('theta1 (deg)')
     plt.ylabel('theta2 (deg)')
     plt.grid(visible=True)
@@ -127,20 +141,20 @@ def plot_results(X, Y_actual, Y_confidence, Y_pred):
     print('\ntesting dataset size:', len(X))
 
     # traditional accuracy, including uncertain points
-    print('\naccuracy with all points:', round(accuracy_score(y_true=Y_actual, y_pred=Y_pred), 3))
-    print('precision with all points:', round(precision_score(y_true=Y_actual, y_pred=Y_pred), 3))
-    print('recall with all points:', round(recall_score(y_true=Y_actual, y_pred=Y_pred), 3))
-    print('f1 with all points:', round(f1_score(y_true=Y_actual, y_pred=Y_pred), 3))
+    print('\naccuracy with all points:', round(accuracy_score(y_true=Y_actual, y_pred=Y_pred), 6))
+    print('precision with all points:', round(precision_score(y_true=Y_actual, y_pred=Y_pred), 6))
+    print('recall with all points:', round(recall_score(y_true=Y_actual, y_pred=Y_pred), 6))
+    print('f1 with all points:', round(f1_score(y_true=Y_actual, y_pred=Y_pred), 6))
     # accuracy, EXCLUDING uncertain points (only have points we are confident in)
     certain_indices = [i for i in range(len(Y_pred_with_uncertain)) if Y_pred_with_uncertain[i] != UNCERTAIN]
     certain_y_pred = [Y_pred[i] for i in certain_indices]
     certain_y_true = [Y_actual[i] for i in certain_indices]
-    print('\naccuracy excluding uncertain points:', round(accuracy_score(y_true=certain_y_true, y_pred=certain_y_pred), 3))
-    print('precision excluding uncertain points:', round(precision_score(y_true=certain_y_true, y_pred=certain_y_pred), 3))
-    print('recall excluding uncertain points:', round(recall_score(y_true=certain_y_true, y_pred=certain_y_pred), 3))
-    print('f1 excluding uncertain points:', round(f1_score(y_true=certain_y_true, y_pred=certain_y_pred), 3))
+    print('\naccuracy excluding uncertain points:', round(accuracy_score(y_true=certain_y_true, y_pred=certain_y_pred), 6))
+    print('precision excluding uncertain points:', round(precision_score(y_true=certain_y_true, y_pred=certain_y_pred), 6))
+    print('recall excluding uncertain points:', round(recall_score(y_true=certain_y_true, y_pred=certain_y_pred), 6))
+    print('f1 excluding uncertain points:', round(f1_score(y_true=certain_y_true, y_pred=certain_y_pred), 6))
     # Count number of uncertain points
-    print('\nproportion of points that model is uncertain about:', round(1 - len(certain_indices) / len(Y_actual), 3))
+    print('\nproportion of points that model is uncertain about:', round(1 - len(certain_indices) / len(Y_actual), 6))
     print('number of points model is certain about:', len(certain_indices))
     print()
 
@@ -182,7 +196,7 @@ def evaluate(X, Y, test_size):
     print('dummy results:', round(accuracy_score(y_true=Y_test, y_pred=dummy.predict(X_test)), 3))
 
     # get accuracy
-    plot_training_data(X_train, Y_train)
+    plot_training_data(X_train, Y_train, X, Y)
     plot_results(X=X_test, Y_actual=Y_test, Y_confidence=Y_confidence_score, Y_pred=Y_pred)
 
     return
@@ -190,7 +204,7 @@ def evaluate(X, Y, test_size):
 def main():
     X, Y = read_data()
 
-    evaluate(X, Y, test_size=0.8)
+    evaluate(X, Y, test_size=0.99)
 
     return
 
