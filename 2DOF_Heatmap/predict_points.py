@@ -21,7 +21,7 @@ FN = 2
 FP = 3
 
 N_NEIGHBORS = 7
-MARGIN_OF_CERTAINTY = 1e-2#1 / N_NEIGHBORS - 1e-3 # uncertain points have scores within [MARGIN, 1 - MARGIN]
+MARGIN_OF_CERTAINTY = 1e-1#1 / N_NEIGHBORS - 1e-3 # uncertain points have scores within [MARGIN, 1 - MARGIN]
 UNCERTAIN = -1
 
 # METHODS
