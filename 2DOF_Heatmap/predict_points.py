@@ -51,8 +51,8 @@ def plot_training_data(X, Y, X_total, Y_total):
             X_dense_pos.append(X_total[i])
         else:
             X_dense_neg.append(X_total[i])
-    plt.scatter([x[0] for x in X_dense_pos], [x[1] for x in X_dense_pos], s=3, c='#aa0000', alpha=0.02)
-    plt.scatter([x[0] for x in X_dense_neg], [x[1] for x in X_dense_neg], s=3, c='#0000aa', alpha=0.02)
+    plt.scatter([x[0] for x in X_dense_pos], [x[1] for x in X_dense_pos], s=3, c='#aaaaaa', alpha=1)
+    plt.scatter([x[0] for x in X_dense_neg], [x[1] for x in X_dense_neg], s=3, c='#eeeeee', alpha=1)
 
     # plot sampled c space
     X = rad2deg(X)
@@ -71,7 +71,7 @@ def plot_training_data(X, Y, X_total, Y_total):
     plt.ylabel('theta2 (deg)')
     plt.grid(visible=True)
     plt.title('training data')
-    plt.legend()
+    #plt.legend()
 
     plt.savefig('2dof_train.pdf')
     plt.show()
@@ -105,8 +105,8 @@ def plot_regular_cspace(X, Y_actual, Y_pred):
     plt.xlabel('theta1 (deg)')
     plt.ylabel('theta2 (deg)')
     plt.grid(visible=True)
-    plt.legend()
-    plt.title('configuration space predictions for 2DOF arm')
+    #plt.legend()
+    plt.title('configuration space predictions for 2DoF arm')
 
     plt.savefig('2dof_test.pdf')
     plt.show()
@@ -133,7 +133,7 @@ def plot_results(X, Y_actual, Y_confidence, Y_pred):
     plt.grid(visible=True)
     #plt.legend()
     plt.colorbar(label='probability of collision')
-    plt.title('configuration space prediction heatmap for 2DOF arm')
+    plt.title('configuration space prediction heatmap for 2DoF arm')
 
     plt.savefig('2dof_heatmap.pdf')
     plt.show()
@@ -204,7 +204,7 @@ def evaluate(X, Y, test_size):
 def main():
     X, Y = read_data()
 
-    evaluate(X, Y, test_size=0.99)
+    evaluate(X, Y, test_size=0.975)
 
     return
 
