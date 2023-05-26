@@ -3,15 +3,16 @@ import torch.nn as nn
 import numpy as np
 
 class PositionEmbedder(nn.Module):
-    def __init__(self, num_freq=16, sigma=3):
+    def __init__(self, dof=7, num_freq=16, sigma=3):
         super(PositionEmbedder, self).__init__()
 
+        self.dof = dof
         self.num_freq = num_freq
         self.sigma = sigma
 
         self.freq = nn.Linear(in_features=3, out_features=self.num_freq)
         with torch.no_grad(): # fix these weights
-            self.freq.weight = nn.Parameter(torch.normal(mean=0, std=self.sigma, size=(self.num_freq, 3)), requires_grad=False)
+            self.freq.weight = nn.Parameter(torch.normal(mean=0, std=self.sigma, size=(self.num_freq, self.dof)), requires_grad=False)
             self.freq.bias = nn.Parameter(torch.zeros(self.num_freq), requires_grad=False)
 
         return
@@ -21,7 +22,7 @@ class PositionEmbedder(nn.Module):
         return on_device_model
     
     """
-    Input is 3-dimensional
+    Input is (self.dof)-dimensional
     Output is (2*self.num_freq)-dimensional
     # Uses Fourier Features: https://bmild.github.io/fourfeat/
     """
@@ -38,13 +39,14 @@ class PositionEmbedder(nn.Module):
         return x
 
 class CSpaceNet(nn.Module):
-    def __init__(self, num_freq, sigma):
+    def __init__(self, dof, num_freq, sigma):
         super(CSpaceNet, self).__init__()
 
+        self.dof = dof
         self.num_freq = num_freq
         self.sigma = sigma
 
-        self.position_embedder = PositionEmbedder(num_freq=self.num_freq, sigma=self.sigma)
+        self.position_embedder = PositionEmbedder(dof=self.dof, num_freq=self.num_freq, sigma=self.sigma)
 
         self.block1 = nn.Sequential(
             nn.Linear(2*self.num_freq, 128),
