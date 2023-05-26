@@ -48,9 +48,7 @@ def train_test_deep_learning(X_train, Y_train, X_test, learning_rate=5e-3):
     last_val_loss = 10e6
 
     X_train = torch.FloatTensor(X_train).cuda()
-    Y_train = torch.FloatTensor(
-        [[0, 1] if curr_y > 0.5 else [1, 0] for curr_y in Y_train]
-    ).cuda()
+    Y_train = torch.FloatTensor(Y_train).long().cuda()
     X_test = torch.FloatTensor(X_test).cuda()
 
     for i in range(EPOCHS):
