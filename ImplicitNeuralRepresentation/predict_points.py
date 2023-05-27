@@ -13,6 +13,8 @@ import xgboost as xgb
 import time
 import math
 from sklearn.utils import class_weight
+from torch.utils.data import DataLoader
+import random
 
 from cspace_net import CSpaceNet
 
@@ -34,52 +36,81 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-def train_test_deep_learning(X_train, Y_train, X_test, learning_rate=5e-3):
-    model = CSpaceNet(dof=14, num_freq=128, sigma=5).cuda()
+def train_test_deep_learning(X_train, Y_train, X_test, learning_rate=1e-4, batch_size=512, train_percent=0.9):
+    model = CSpaceNet(dof=14, num_freq=256, sigma=1).cuda()
 
-    print(model)
+    #print(model)
 
-    criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-
-    BATCH_SIZE = 512
     EPOCHS = 100
 
-    last_val_loss = 10e6
+    best_val_loss = 1e6
+    best_epoch = -1
 
+    first_val_index = int(len(Y_train) * train_percent)
     X_train = torch.FloatTensor(X_train).cuda()
-    Y_train = torch.FloatTensor(Y_train).long().cuda()
+    Y_train = torch.LongTensor(Y_train).cuda()
     X_test = torch.FloatTensor(X_test).cuda()
+
+    X_val = X_train[first_val_index:]
+    Y_val = Y_train[first_val_index:]
+    X_train = X_train[:first_val_index]
+    Y_train = Y_train[:first_val_index]
+
+    percent_collision = torch.sum(Y_train == 1) / len(Y_train)
+    print('percent collision:', percent_collision)
+
+    pos_sample_weight = 1/percent_collision
+    neg_sample_weight = 1/(1-percent_collision)
+
+    weights = None#torch.Tensor([neg_sample_weight, pos_sample_weight]).cuda()
+    criterion = nn.CrossEntropyLoss(weight=weights, reduction='sum')
+    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.99, weight_decay=1e-2)
 
     for i in range(EPOCHS):
         total_loss = 0
+
         # train
-        for t in range(0, len(Y_train) - BATCH_SIZE, BATCH_SIZE):
-            x = X_train[t:t+BATCH_SIZE]
-            y = Y_train[t:t+BATCH_SIZE]
+        model.train()
+
+        indices = list(range(0, len(X_val), batch_size))
+        random.shuffle(indices)
+        for idx in indices:
+            model.zero_grad()
+
+            x = X_train[idx:idx+batch_size]
+            y = Y_train[idx:idx+batch_size]
 
             y_pred = model(x)
             loss = criterion(y_pred, y)
+            
             """
             if t % 1000 == 0:
                 print(t, loss.item())
             """
             total_loss += loss
-            model.zero_grad()
             loss.backward()
             optimizer.step()
 
-        print('loss in epoch {}: {}'.format(i, total_loss / len(Y_train) * BATCH_SIZE))
-        # calculate validation loss
-        x = X_train[len(Y_train) - BATCH_SIZE:]
-        y = Y_train[len(Y_train) - BATCH_SIZE:]
-        val_loss = criterion(model(x), y)
-        print('\tvalidation loss epoch {}: {}'.format(i, val_loss))
-        # if val_loss > 2 * last_val_loss:
-        #     print('stop early, due to increasing val loss')
-        #     break
-        last_val_loss = val_loss
+        print('loss in epoch {}: {}'.format(i, total_loss / len(Y_train)))
 
+        # calculate validation loss
+        model.eval()
+
+        total_val_loss = 0
+        for idx in range(0, len(Y_val), batch_size):
+            x = X_val[idx:idx+batch_size]
+            y = Y_val[idx:idx+batch_size]
+            val_loss = criterion(model(x), y)
+            total_val_loss += val_loss
+        print('\tvalidation loss epoch {}: {}'.format(i, val_loss / len(Y_val)))
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            best_epoch = i
+            torch.save(model.state_dict(), 'best_model.pth')
+
+    print('best epoch: {}'.format(best_epoch))
+    #model.load_state_dict(torch.load('best_model.pth'))
+    model.eval()
     return [int(y) for y in torch.argmax(model(X_test), dim=1).tolist()]
     #return [int(model(torch.FloatTensor(x)).item()+0.5) for x in X_test]
 
