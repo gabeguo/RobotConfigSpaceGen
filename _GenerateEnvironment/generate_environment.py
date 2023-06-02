@@ -73,6 +73,8 @@ def main(NUM_ITERATIONS=10000, NUM_OBSTACLES=50, obstacle_scale=0.1, SEED=0):
     obstacle_positions[:, 0:2] *= 1.25
     obstacle_orientations = 2 * np.pi * np.random.rand(NUM_OBSTACLES, 3)
 
+    print(obstacle_positions)
+
     assert NUM_OBSTACLES == len(obstacle_positions) and len(obstacle_positions) == len(obstacle_orientations)
 
     # main simulation server
@@ -107,6 +109,8 @@ def main(NUM_ITERATIONS=10000, NUM_OBSTACLES=50, obstacle_scale=0.1, SEED=0):
     COLLISION_DATA_LABELS = \
         ['robot{}_theta{}'.format(0, j) \
             for j in range(1, 7+1)] + \
+        ['robot{}_joint{}_pos{}'.format(0, i, j) \
+            for i in range(1, 7+1) for j in range(1, 3+1)] + \
         ['collision']
 
     _collision_data = []
@@ -118,16 +122,26 @@ def main(NUM_ITERATIONS=10000, NUM_OBSTACLES=50, obstacle_scale=0.1, SEED=0):
     start = time.time()
 
     Q_trial = [] # Q_trial_robot[i] = configuration on trial i
+    all_link_states = []
     for i in range(0, NUM_ITERATIONS):
         Q_trial.append(list())
         for dof in range(7):
             Q_trial[i].append(MAX_JOINT_ANGLE[dof] * 2 * np.random.random() - MAX_JOINT_ANGLE[dof])
+ 
+        pyb.setJointMotorControlArray(collision_bodies['robot0'], range(pyb.getNumJoints(collision_bodies['robot0'])), pyb.POSITION_CONTROL, targetPositions=Q_trial[i])
+        # Step the simulation
+        pyb.stepSimulation()
+        # Get the position and orientation of all joints
+        curr_link_state = [pyb.getLinkState(collision_bodies['robot0'], i)[0] for i in range(pyb.getNumJoints(collision_bodies['robot0']))]
+        all_link_states.append([coord for individual_link in curr_link_state for coord in individual_link])
 
     end = time.time()
     elapsed = round(end - start, 3)
     print('time elapsed in generating', NUM_ITERATIONS, 'configurations:', elapsed, 'seconds')
 
-    Q = [[theta for theta in trial] for trial in Q_trial]
+    assert len(Q_trial) == NUM_ITERATIONS
+    assert len(all_link_states) == NUM_ITERATIONS
+    Q = [Q_trial[trial_idx] + all_link_states[trial_idx] for trial_idx in range(len(Q_trial))]
 
     # start detecting collisions
     start = time.time()
@@ -162,7 +176,7 @@ def main(NUM_ITERATIONS=10000, NUM_OBSTACLES=50, obstacle_scale=0.1, SEED=0):
             fov=45.0,
             aspect=1.0,
             nearVal=0.1,
-            farVal=15)
+            farVal=10)
         width, height, rgbImg, depthImg, segImg = pyb.getCameraImage(
             width=1024,
             height=1024,
