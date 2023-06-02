@@ -36,12 +36,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-def train_test_deep_learning(X_train, Y_train, X_test, learning_rate=1e-3, batch_size=256, train_percent=0.9):
+def train_test_deep_learning(X_train, Y_train, X_test, learning_rate=1e-3, batch_size=512, train_percent=0.9):
     model = CSpaceNet(dof=7*4, num_freq=128, sigma=1.5).cuda()
 
     #print(model)
 
-    EPOCHS = 100
+    EPOCHS = 200
 
     best_val_loss = 1e6
     best_epoch = -1
@@ -65,6 +65,7 @@ def train_test_deep_learning(X_train, Y_train, X_test, learning_rate=1e-3, batch
     weights = None#torch.Tensor([neg_sample_weight, pos_sample_weight]).cuda()
     criterion = nn.CrossEntropyLoss(weight=weights, reduction='sum')
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=EPOCHS, eta_min=1e-7)
 
     for i in range(EPOCHS):
         total_loss = 0
@@ -93,7 +94,7 @@ def train_test_deep_learning(X_train, Y_train, X_test, learning_rate=1e-3, batch
             total_loss += loss
             loss.backward()
             optimizer.step()
-        if i % 10 == 0:
+        if i % 20 == 0:
             print('loss in epoch {}: {}'.format(i, total_loss / len(Y_train)))
 
         # calculate validation loss
@@ -105,12 +106,14 @@ def train_test_deep_learning(X_train, Y_train, X_test, learning_rate=1e-3, batch
             y = Y_val[idx:idx+batch_size]
             val_loss = criterion(model(x), y)
             total_val_loss += val_loss
-        if i % 10 == 0:
+        if i % 20 == 0:
             print('\tvalidation loss epoch {}: {}'.format(i, val_loss / len(Y_val)))
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             best_epoch = i
             torch.save(model.state_dict(), 'best_model.pth')
+        
+        scheduler.step()
 
     print('best epoch: {}'.format(best_epoch))
     model.load_state_dict(torch.load('best_model.pth'))
