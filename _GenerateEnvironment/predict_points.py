@@ -36,8 +36,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-def train_test_deep_learning(X_train, Y_train, X_test, learning_rate=1e-3, batch_size=512, train_percent=0.9):
-    model = CSpaceNet(dof=7*3, num_freq=256, sigma=1).cuda()
+def train_test_deep_learning(X_train, Y_train, X_test, learning_rate=1e-3, batch_size=256, train_percent=0.9):
+    model = CSpaceNet(dof=7*4, num_freq=128, sigma=1.5).cuda()
 
     #print(model)
 
@@ -64,7 +64,7 @@ def train_test_deep_learning(X_train, Y_train, X_test, learning_rate=1e-3, batch
 
     weights = None#torch.Tensor([neg_sample_weight, pos_sample_weight]).cuda()
     criterion = nn.CrossEntropyLoss(weight=weights, reduction='sum')
-    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=1e-2)
+    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
 
     for i in range(EPOCHS):
         total_loss = 0
@@ -79,7 +79,7 @@ def train_test_deep_learning(X_train, Y_train, X_test, learning_rate=1e-3, batch
             #print(idx)
             model.zero_grad()
 
-            x = X_train[idx:idx+batch_size, 7:]
+            x = X_train[idx:idx+batch_size, :]
             #print(x.shape)
             y = Y_train[idx:idx+batch_size]
 
@@ -101,7 +101,7 @@ def train_test_deep_learning(X_train, Y_train, X_test, learning_rate=1e-3, batch
 
         total_val_loss = 0
         for idx in range(0, len(Y_val), batch_size):
-            x = X_val[idx:idx+batch_size, 7:]
+            x = X_val[idx:idx+batch_size, :]
             y = Y_val[idx:idx+batch_size]
             val_loss = criterion(model(x), y)
             total_val_loss += val_loss
@@ -113,9 +113,9 @@ def train_test_deep_learning(X_train, Y_train, X_test, learning_rate=1e-3, batch
             torch.save(model.state_dict(), 'best_model.pth')
 
     print('best epoch: {}'.format(best_epoch))
-    #model.load_state_dict(torch.load('best_model.pth'))
+    model.load_state_dict(torch.load('best_model.pth'))
     model.eval()
-    return [int(y) for y in torch.argmax(model(X_test[:, 7:]), dim=1).tolist()]
+    return [int(y) for y in torch.argmax(model(X_test[:, :]), dim=1).tolist()]
     #return [int(model(torch.FloatTensor(x)).item()+0.5) for x in X_test]
 
 def read_data():
@@ -286,7 +286,7 @@ def evaluate(X, Y, test_size):
 def main():
     X, Y = read_data()
 
-    evaluate(X, Y, test_size=0.8)
+    evaluate(X, Y, test_size=0.2)
 
     return
 

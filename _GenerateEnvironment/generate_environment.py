@@ -17,6 +17,41 @@ import os
 
 from PIL import Image
 
+# Thanks ChatGPT
+def sample_points_inside_box(centers, length, width, height, num_points):
+    center_indices = np.random.choice(range(len(centers)), size=len(centers), replace=True)
+    x = centers[center_indices][0] + (np.random.rand(num_points) - 0.5) * length
+    y = centers[center_indices][1] + (np.random.rand(num_points) - 0.5) * width
+    z = centers[center_indices][2] + (np.random.rand(num_points) - 0.5) * height
+    
+    return np.vstack((x, y, z)).T
+
+# Thanks ChatGPT
+def sample_points_inside_sphere(center, radius, num_points):
+    u = np.random.rand(num_points)
+    v = np.random.rand(num_points)
+    w = np.random.rand(num_points)
+    r = radius * np.cbrt(u)
+
+    x = center[0] + r * np.sin(v * 2 * np.pi) * np.cos(w * 2 * np.pi)
+    y = center[1] + r * np.sin(v * 2 * np.pi) * np.sin(w * 2 * np.pi)
+    z = center[2] + r * np.cos(v * 2 * np.pi)
+    
+    return np.vstack((x, y, z)).T
+
+# Thanks ChatGPT
+def sample_points_inside_cylinder(center, height, radius, num_points):
+    # Sample cylindrical coordinates.
+    z = center[2] + (np.random.rand(num_points) - 0.5) * height
+    theta = np.random.rand(num_points) * 2 * np.pi
+    r = radius * np.sqrt(np.random.rand(num_points))  # Use sqrt to ensure uniform distribution.
+
+    # Convert to Cartesian coordinates.
+    x = center[0] + r * np.cos(theta)
+    y = center[1] + r * np.sin(theta)
+
+    return np.vstack((x, y, z)).T
+
 def load_environment(client_id, NUM_OBSTACLES, obstacle_positions, obstacle_orientations, obstacle_scale):
     assert len(obstacle_positions) == len(obstacle_orientations)
 
@@ -39,7 +74,7 @@ def load_environment(client_id, NUM_OBSTACLES, obstacle_positions, obstacle_orie
     sphereShape = pyb.createCollisionShape(shapeType=pyb.GEOM_SPHERE, radius=0.05)
     cylinderShape = pyb.createCollisionShape(shapeType=pyb.GEOM_CYLINDER, radius=0.05, height=0.1)
     possibleShapes = [cubeShape, sphereShape, cylinderShape]
-    obstacle_ids = [pyb.createMultiBody(baseMass=1, baseCollisionShapeIndex=possibleShapes[i%3], \
+    obstacle_ids = [pyb.createMultiBody(baseMass=1, baseCollisionShapeIndex=possibleShapes[i], \
                                         basePosition=obstacle_positions[i], \
                                         baseOrientation=pyb.getQuaternionFromEuler(obstacle_orientations[i])) \
                                     for i in range(len(obstacle_positions))]
@@ -64,7 +99,7 @@ def write_collision_data(fields, data):
         writer.writerows(data)
     return
 
-def main(NUM_ITERATIONS=10000, NUM_OBSTACLES=50, obstacle_scale=0.1, SEED=0):
+def main(NUM_ITERATIONS=50000, NUM_OBSTACLES=25, obstacle_scale=0.1, SEED=0):
     np.random.seed(SEED)
 
     obstacle_positions = np.random.rand(NUM_OBSTACLES, 3)
@@ -198,3 +233,5 @@ def main(NUM_ITERATIONS=10000, NUM_OBSTACLES=50, obstacle_scale=0.1, SEED=0):
 
 if __name__ == "__main__":
     main()
+
+    # TODO: log time to get forward kinematics!!

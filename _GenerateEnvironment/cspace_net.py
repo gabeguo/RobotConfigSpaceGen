@@ -49,24 +49,22 @@ class CSpaceNet(nn.Module):
         self.position_embedder = PositionEmbedder(dof=self.dof, num_freq=self.num_freq, sigma=self.sigma)
 
         self.block1 = nn.Sequential(
-            nn.Linear(self.num_freq * 2, 1024),
+            nn.Linear(self.dof, 128),
+            #nn.Linear(self.num_freq * 2, 128),
             nn.ReLU(),
-            nn.Linear(1024, 1024),
+            nn.Linear(128, 128),
             nn.ReLU(),
-            nn.Linear(1024, 1024),
-            nn.ReLU(),
-            nn.Linear(1024, 1024),
+            nn.Linear(128, 128),
             nn.ReLU(),
         )
 
         self.block2 = nn.Sequential(
-            nn.Linear(self.num_freq * 2 + 1024, 1024),
+            nn.Linear(self.dof + 128, 128),
+            #nn.Linear(self.num_freq * 2 + 128, 128),
             nn.ReLU(),
-            nn.Linear(1024, 1024),
+            nn.Linear(128, 128),
             nn.ReLU(),
-            nn.Linear(1024, 1024),
-            nn.ReLU(),
-            nn.Linear(1024, 2)
+            nn.Linear(128, 2)
         )
 
     def to(self, device):
@@ -75,10 +73,11 @@ class CSpaceNet(nn.Module):
         return on_device_net
 
     def forward(self, x):
-        positional_encoding = self.position_embedder(x)
-        x_intermediate = self.block1(positional_encoding)
-        x_output = self.block2(torch.cat((positional_encoding, x_intermediate), dim=1))
-        return x_output
+        # positional_encoding = self.position_embedder(x)
+        # x_intermediate = self.block1(positional_encoding)
+        # x_output = self.block2(torch.cat((positional_encoding, x_intermediate), dim=1))
+        # return x_output
     
-        #x_intermediate = self.block1(x)
-        #x_output = self.block2(torch.cat((x_intermediate, x), dim=1))
+        x_intermediate = self.block1(x)
+        x_output = self.block2(torch.cat((x_intermediate, x), dim=1))
+        return x_output
