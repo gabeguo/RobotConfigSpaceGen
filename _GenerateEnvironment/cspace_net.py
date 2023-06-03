@@ -49,22 +49,29 @@ class CSpaceNet(nn.Module):
         self.position_embedder = PositionEmbedder(dof=self.dof, num_freq=self.num_freq, sigma=self.sigma)
 
         self.block1 = nn.Sequential(
-            nn.Linear(self.dof, 128),
+            nn.Linear(self.dof, 256),
             #nn.Linear(self.num_freq * 2, 128),
+            nn.BatchNorm1d(num_features=256),
             nn.ReLU(),
-            nn.Linear(128, 128),
+            nn.Linear(256, 256),
+            nn.BatchNorm1d(num_features=256),
             nn.ReLU(),
-            nn.Linear(128, 128),
+            nn.Linear(256, 256),
+            nn.BatchNorm1d(num_features=256),
             nn.ReLU(),
         )
 
         self.block2 = nn.Sequential(
-            nn.Linear(self.dof + 128, 128),
+            nn.Linear(self.dof + 256, 256),
             #nn.Linear(self.num_freq * 2 + 128, 128),
+            nn.BatchNorm1d(num_features=256),
             nn.ReLU(),
-            nn.Linear(128, 128),
+            nn.Linear(256, 256),
+            nn.BatchNorm1d(num_features=256),
             nn.ReLU(),
-            nn.Linear(128, 2)
+            nn.Linear(256, 1),
+            nn.BatchNorm1d(num_features=1),
+            nn.Sigmoid()
         )
 
     def to(self, device):

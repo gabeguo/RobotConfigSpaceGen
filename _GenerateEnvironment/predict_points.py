@@ -48,7 +48,7 @@ def train_test_deep_learning(X_train, Y_train, X_test, learning_rate=1e-3, batch
 
     first_val_index = int(len(Y_train) * train_percent)
     X_train = torch.FloatTensor(X_train).cuda()
-    Y_train = torch.LongTensor(Y_train).cuda()
+    Y_train = torch.FloatTensor(Y_train).cuda()
     X_test = torch.FloatTensor(X_test).cuda()
 
     X_val = X_train[first_val_index:]
@@ -63,8 +63,8 @@ def train_test_deep_learning(X_train, Y_train, X_test, learning_rate=1e-3, batch
     neg_sample_weight = 1/(1-percent_collision)
 
     weights = None#torch.Tensor([neg_sample_weight, pos_sample_weight]).cuda()
-    criterion = nn.CrossEntropyLoss(weight=weights, reduction='sum')
-    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
+    criterion = nn.L1Loss(reduction='sum')#nn.CrossEntropyLoss(weight=weights, reduction='sum')
+    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=0)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=EPOCHS, eta_min=1e-7)
 
     for i in range(EPOCHS):
@@ -85,16 +85,12 @@ def train_test_deep_learning(X_train, Y_train, X_test, learning_rate=1e-3, batch
             y = Y_train[idx:idx+batch_size]
 
             y_pred = model(x)
-            loss = criterion(y_pred, y)
+            loss = criterion(y_pred.flatten(), y.flatten())
             
-            """
-            if t % 1000 == 0:
-                print(t, loss.item())
-            """
             total_loss += loss
             loss.backward()
             optimizer.step()
-        if i % 20 == 0:
+        if i % 5 == 0:
             print('loss in epoch {}: {}'.format(i, total_loss / len(Y_train)))
 
         # calculate validation loss
@@ -104,9 +100,9 @@ def train_test_deep_learning(X_train, Y_train, X_test, learning_rate=1e-3, batch
         for idx in range(0, len(Y_val), batch_size):
             x = X_val[idx:idx+batch_size, :]
             y = Y_val[idx:idx+batch_size]
-            val_loss = criterion(model(x), y)
+            val_loss = criterion(model(x).flatten(), y.flatten())
             total_val_loss += val_loss
-        if i % 20 == 0:
+        if i % 5 == 0:
             print('\tvalidation loss epoch {}: {}'.format(i, val_loss / len(Y_val)))
         if val_loss < best_val_loss:
             best_val_loss = val_loss
@@ -116,9 +112,11 @@ def train_test_deep_learning(X_train, Y_train, X_test, learning_rate=1e-3, batch
         scheduler.step()
 
     print('best epoch: {}'.format(best_epoch))
+
     model.load_state_dict(torch.load('best_model.pth'))
     model.eval()
-    return [int(y) for y in torch.argmax(model(X_test[:, :]), dim=1).tolist()]
+    print(model(X_test).shape)
+    return [int(y + 0.5) for y in model(X_test[:, :]).flatten().tolist()]
     #return [int(model(torch.FloatTensor(x)).item()+0.5) for x in X_test]
 
 def read_data():

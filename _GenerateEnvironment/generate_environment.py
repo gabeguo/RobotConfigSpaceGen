@@ -70,11 +70,11 @@ def load_environment(client_id, NUM_OBSTACLES, obstacle_positions, obstacle_orie
         globalScaling=1
     )
 
-    cubeShape = pyb.createCollisionShape(shapeType=pyb.GEOM_BOX, halfExtents=[0.05, 0.05, 0.05])
-    sphereShape = pyb.createCollisionShape(shapeType=pyb.GEOM_SPHERE, radius=0.05)
-    cylinderShape = pyb.createCollisionShape(shapeType=pyb.GEOM_CYLINDER, radius=0.05, height=0.1)
+    cubeShape = pyb.createCollisionShape(shapeType=pyb.GEOM_BOX, halfExtents=[obstacle_scale for i in range(3)])
+    sphereShape = pyb.createCollisionShape(shapeType=pyb.GEOM_SPHERE, radius=obstacle_scale)
+    cylinderShape = pyb.createCollisionShape(shapeType=pyb.GEOM_CYLINDER, radius=obstacle_scale, height=0.1)
     possibleShapes = [cubeShape, sphereShape, cylinderShape]
-    obstacle_ids = [pyb.createMultiBody(baseMass=1, baseCollisionShapeIndex=possibleShapes[i%len(possibleShapes)], \
+    obstacle_ids = [pyb.createMultiBody(baseMass=0, baseCollisionShapeIndex=possibleShapes[i%len(possibleShapes)], \
                                         basePosition=obstacle_positions[i], \
                                         baseOrientation=pyb.getQuaternionFromEuler(obstacle_orientations[i])) \
                                     for i in range(len(obstacle_positions))]
@@ -99,7 +99,7 @@ def write_collision_data(fields, data):
         writer.writerows(data)
     return
 
-def main(NUM_ITERATIONS=50000, NUM_OBSTACLES=25, obstacle_scale=0.1, SEED=0):
+def main(NUM_ITERATIONS=10000, NUM_OBSTACLES=10, obstacle_scale=0.1, SEED=0):
     np.random.seed(SEED)
 
     obstacle_positions = np.random.rand(NUM_OBSTACLES, 3)
