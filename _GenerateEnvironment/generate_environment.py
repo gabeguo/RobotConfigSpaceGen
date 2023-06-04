@@ -52,23 +52,25 @@ def sample_points_inside_cylinder(center, height, radius, num_points):
 
     return np.vstack((x, y, z)).T
 
-def load_environment(client_id, NUM_OBSTACLES, obstacle_positions, obstacle_orientations, obstacle_scale):
+def load_environment(client_id, NUM_OBSTACLES, obstacle_positions, obstacle_orientations, obstacle_scale, \
+                     NUM_ROBOTS, robot_positions, robot_orientations):
     assert len(obstacle_positions) == len(obstacle_orientations)
 
     pyb.setAdditionalSearchPath(
         pybullet_data.getDataPath(), physicsClientId=client_id
     )
 
-    # arm_id = [None for i in range(NUM_ROBOTS)]
+    arm_id = [None for i in range(NUM_ROBOTS)]
 
-    arm_id = pyb.loadURDF(
-        "kuka_iiwa/model.urdf",
-        basePosition=[0, 0, 0],
-        baseOrientation=pyb.getQuaternionFromEuler([0, 0, 0]),
-        useFixedBase=True,
-        physicsClientId=client_id,
-        globalScaling=1
-    )
+    for i in range(NUM_ROBOTS):
+        arm_id[i] = pyb.loadURDF(
+            "kuka_iiwa/model.urdf",
+            basePosition=robot_positions[i],
+            baseOrientation=pyb.getQuaternionFromEuler(robot_orientations[i]),
+            useFixedBase=True,
+            physicsClientId=client_id,
+            globalScaling=1
+        )
 
     cubeShape = pyb.createCollisionShape(shapeType=pyb.GEOM_BOX, halfExtents=[obstacle_scale for i in range(3)])
     sphereShape = pyb.createCollisionShape(shapeType=pyb.GEOM_SPHERE, radius=obstacle_scale)
@@ -80,11 +82,12 @@ def load_environment(client_id, NUM_OBSTACLES, obstacle_positions, obstacle_orie
                                     for i in range(len(obstacle_positions))]
     planeId = pyb.loadURDF('plane.urdf')
 
-    # add robot
+    # add robots
     bodies = {
-        "robot{}".format(0) : arm_id,
-        "plane" : planeId
+        "robot{}".format(i) : arm_id[i] for i in range(NUM_ROBOTS)
     }
+    # add plane
+    bodies["plane"] = planeId
     # also add obstacles
     bodies.update({
         "obstacle{}".format(i): obstacle_ids[i] for i in range(NUM_OBSTACLES)
@@ -109,14 +112,19 @@ def labels_to_np(labels):
     np.save('labels.npy', labels)
     return
 
-def main(NUM_ITERATIONS=100000, NUM_OBSTACLES=4, obstacle_scale=0.1, SEED=0):
+def main(NUM_ITERATIONS=10000, NUM_OBSTACLES=4, NUM_ROBOTS=2, obstacle_scale=0.1, SEED=0):
     np.random.seed(SEED)
 
     obstacle_positions = np.random.rand(NUM_OBSTACLES, 3)
-    obstacle_positions[:, 0] -= 0.5
-    obstacle_positions[:, 1] -= 0.5
+    obstacle_positions[:, 0:2] -= 0.5
     obstacle_positions[:, 0:2] *= 1.25
     obstacle_orientations = 2 * np.pi * np.random.rand(NUM_OBSTACLES, 3)
+
+    robot_positions = np.random.rand(NUM_ROBOTS, 3)
+    robot_positions[:,0:2] -= 0.5
+    robot_positions[:,2] = 0
+    robot_orientations = 2 * np.pi * np.random.rand(NUM_ROBOTS, 3)
+    robot_orientations[:,0:2] = 0
 
     print(obstacle_positions)
 
@@ -125,7 +133,9 @@ def main(NUM_ITERATIONS=100000, NUM_OBSTACLES=4, obstacle_scale=0.1, SEED=0):
     # main simulation server
     sim_id = pyb.connect(pyb.DIRECT)
 
-    collision_bodies = load_environment(sim_id, NUM_OBSTACLES, obstacle_positions, obstacle_orientations, obstacle_scale)
+    collision_bodies = load_environment(sim_id, \
+                                        NUM_OBSTACLES, obstacle_positions, obstacle_orientations, obstacle_scale,\
+                                        NUM_ROBOTS, robot_positions, robot_orientations)
 
     for body in collision_bodies:
         #print(pyb.getCollisionShapeData(collision_bodies[body], -1, sim_id))
@@ -136,12 +146,25 @@ def main(NUM_ITERATIONS=100000, NUM_OBSTACLES=4, obstacle_scale=0.1, SEED=0):
     # collision checking
 
     obstacles = [NamedCollisionObject("obstacle{}".format(i)) for i in range(NUM_OBSTACLES)]
-    robotlinks = [NamedCollisionObject("robot0", "lbr_iiwa_link_{}".format(j)) for j in range(1, 7+1)] + \
-        [NamedCollisionObject("robot0", None)]
 
-    collision_objects = robotlinks + obstacles + ["plane"]
+    robotlinks = [\
+        [NamedCollisionObject("robot{}".format(i), "lbr_iiwa_link_{}".format(j)) \
+                    for j in range(1, 7+1)] + \
+        [NamedCollisionObject("robot{}".format(i), None)] \
+                    for i in range(NUM_ROBOTS)]
 
-    collision_pairs = [(the_link, the_obstacle) for the_link in robotlinks for the_obstacle in obstacles]
+    collision_objects = [the_link for the_robotlinks in robotlinks for the_link in the_robotlinks] \
+        + obstacles + ['plane']
+
+    collision_pairs = [(link_i, link_j) \
+            for i in range(len(robotlinks)) \
+                for j in range(i + 1, len(robotlinks)) \
+                    for link_i in robotlinks[i] \
+                        for link_j in robotlinks[j]] + \
+        [(the_link, the_obstacle) \
+            for the_robotlinks in robotlinks \
+                for the_link in the_robotlinks \
+                    for the_obstacle in obstacles]
 
     #print(collision_pairs)
 
@@ -152,11 +175,10 @@ def main(NUM_ITERATIONS=100000, NUM_OBSTACLES=4, obstacle_scale=0.1, SEED=0):
     )
 
     COLLISION_DATA_LABELS = \
-        ['robot{}_theta{}'.format(0, j) \
+        ['robot{}_theta{}'.format(i, j) \
+            for i in range(NUM_ROBOTS) \
             for j in range(1, 7+1)] + \
         ['collision']
-        # ['robot{}_joint{}_pos{}'.format(0, i, j) \
-        #     for i in range(1, 7+1) for j in range(1, 3+1)] + \
 
     _collision_data = []
 
@@ -166,34 +188,22 @@ def main(NUM_ITERATIONS=100000, NUM_OBSTACLES=4, obstacle_scale=0.1, SEED=0):
     # generate angles (since it is biased to generate them while also detecting if they collide)
     start = time.time()
 
-    Q_trial = [] # Q_trial_robot[i] = configuration on trial i
-    #all_link_states = []
+    Q_trial_robot = [] # Q_trial_robot[i][j] = configuration of robot j on trial i
     for i in range(0, NUM_ITERATIONS):
-        Q_trial.append(list())
-        for dof in range(7):
-            Q_trial[i].append(MAX_JOINT_ANGLE[dof] * 2 * np.random.random() - MAX_JOINT_ANGLE[dof])
- 
-        """
-        pyb.setJointMotorControlArray(collision_bodies['robot0'], range(pyb.getNumJoints(collision_bodies['robot0'])), pyb.POSITION_CONTROL, targetPositions=Q_trial[i])
-        # Step the simulation
-        pyb.stepSimulation()
-        """
-        # Get the position and orientation of all joints
-        """
-        curr_link_state = [pyb.getLinkState(collision_bodies['robot0'], i)[0] for i in range(pyb.getNumJoints(collision_bodies['robot0']))]
-        all_link_states.append([coord for individual_link in curr_link_state for coord in individual_link])
-        """
+        Q_trial_robot.append(list())
+        for j in range(NUM_ROBOTS):
+            Q_trial_robot[i].append(list())
+            for dof in range(7):
+                Q_trial_robot[i][j].append(MAX_JOINT_ANGLE[dof] * 2 * np.random.random() - MAX_JOINT_ANGLE[dof])
 
     end = time.time()
     elapsed = round(end - start, 3)
     print('time elapsed in generating', NUM_ITERATIONS, 'configurations:', elapsed, 'seconds')
 
-    assert len(Q_trial) == NUM_ITERATIONS
-    """
-    assert len(all_link_states) == NUM_ITERATIONS
-    Q = [Q_trial[trial_idx] + all_link_states[trial_idx] for trial_idx in range(len(Q_trial))]
-    """
-    Q = [Q_trial[trial_idx] for trial_idx in range(len(Q_trial))]
+    assert len(Q_trial_robot) == NUM_ITERATIONS
+
+    Q = [[theta for robot_data in trial for theta in robot_data] for trial in Q_trial_robot]
+    all_configs = np.array(Q)
     labels = list()
 
     # start detecting collisions
@@ -201,7 +211,7 @@ def main(NUM_ITERATIONS=100000, NUM_OBSTACLES=4, obstacle_scale=0.1, SEED=0):
 
     for i in range(0, NUM_ITERATIONS):
         # compute shortest distances for a configuration
-        distances = col_detector.compute_distances(Q_trial[i], max_distance=0)
+        distances = col_detector.compute_distances_multi_robot(Q_trial_robot[i], max_distance=0)
         in_col = (distances < 0).any()
 
         Q[i].append(int(in_col))
@@ -216,7 +226,7 @@ def main(NUM_ITERATIONS=100000, NUM_OBSTACLES=4, obstacle_scale=0.1, SEED=0):
 
     results = {TIME_COST : elapsed, SAMPLE_SIZE : NUM_ITERATIONS}
 
-    configs_to_np(Q_trial)
+    configs_to_np(all_configs)
     labels_to_np(labels)
 
     write_collision_data(COLLISION_DATA_LABELS, _collision_data)
