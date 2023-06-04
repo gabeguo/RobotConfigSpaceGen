@@ -99,7 +99,17 @@ def write_collision_data(fields, data):
         writer.writerows(data)
     return
 
-def main(NUM_ITERATIONS=10000, NUM_OBSTACLES=10, obstacle_scale=0.1, SEED=0):
+def configs_to_np(configs):
+    configs = np.array(configs)
+    np.save('configs.npy', configs)
+    return
+
+def labels_to_np(labels):
+    labels = np.array([1 if y > 0 else -1 for y in labels])
+    np.save('labels.npy', labels)
+    return
+
+def main(NUM_ITERATIONS=100000, NUM_OBSTACLES=4, obstacle_scale=0.1, SEED=0):
     np.random.seed(SEED)
 
     obstacle_positions = np.random.rand(NUM_OBSTACLES, 3)
@@ -144,9 +154,9 @@ def main(NUM_ITERATIONS=10000, NUM_OBSTACLES=10, obstacle_scale=0.1, SEED=0):
     COLLISION_DATA_LABELS = \
         ['robot{}_theta{}'.format(0, j) \
             for j in range(1, 7+1)] + \
-        ['robot{}_joint{}_pos{}'.format(0, i, j) \
-            for i in range(1, 7+1) for j in range(1, 3+1)] + \
         ['collision']
+        # ['robot{}_joint{}_pos{}'.format(0, i, j) \
+        #     for i in range(1, 7+1) for j in range(1, 3+1)] + \
 
     _collision_data = []
 
@@ -157,26 +167,34 @@ def main(NUM_ITERATIONS=10000, NUM_OBSTACLES=10, obstacle_scale=0.1, SEED=0):
     start = time.time()
 
     Q_trial = [] # Q_trial_robot[i] = configuration on trial i
-    all_link_states = []
+    #all_link_states = []
     for i in range(0, NUM_ITERATIONS):
         Q_trial.append(list())
         for dof in range(7):
             Q_trial[i].append(MAX_JOINT_ANGLE[dof] * 2 * np.random.random() - MAX_JOINT_ANGLE[dof])
  
+        """
         pyb.setJointMotorControlArray(collision_bodies['robot0'], range(pyb.getNumJoints(collision_bodies['robot0'])), pyb.POSITION_CONTROL, targetPositions=Q_trial[i])
         # Step the simulation
         pyb.stepSimulation()
+        """
         # Get the position and orientation of all joints
+        """
         curr_link_state = [pyb.getLinkState(collision_bodies['robot0'], i)[0] for i in range(pyb.getNumJoints(collision_bodies['robot0']))]
         all_link_states.append([coord for individual_link in curr_link_state for coord in individual_link])
+        """
 
     end = time.time()
     elapsed = round(end - start, 3)
     print('time elapsed in generating', NUM_ITERATIONS, 'configurations:', elapsed, 'seconds')
 
     assert len(Q_trial) == NUM_ITERATIONS
+    """
     assert len(all_link_states) == NUM_ITERATIONS
     Q = [Q_trial[trial_idx] + all_link_states[trial_idx] for trial_idx in range(len(Q_trial))]
+    """
+    Q = [Q_trial[trial_idx] for trial_idx in range(len(Q_trial))]
+    labels = list()
 
     # start detecting collisions
     start = time.time()
@@ -189,12 +207,17 @@ def main(NUM_ITERATIONS=10000, NUM_OBSTACLES=10, obstacle_scale=0.1, SEED=0):
         Q[i].append(int(in_col))
         _collision_data.append(Q[i])
 
+        labels.append(1 if in_col else -1)
+
     end = time.time()
     elapsed = round(end - start, 3)
     print('time elapsed in checking', NUM_ITERATIONS, 'configurations for collision:', elapsed, 'seconds')
     # stop detecting collisions
 
     results = {TIME_COST : elapsed, SAMPLE_SIZE : NUM_ITERATIONS}
+
+    configs_to_np(Q_trial)
+    labels_to_np(labels)
 
     write_collision_data(COLLISION_DATA_LABELS, _collision_data)
 
