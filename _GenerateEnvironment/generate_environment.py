@@ -112,7 +112,7 @@ def labels_to_np(labels):
     np.save('labels.npy', labels)
     return
 
-def main(NUM_ITERATIONS=10000, NUM_OBSTACLES=4, NUM_ROBOTS=2, obstacle_scale=0.1, SEED=0):
+def main(NUM_ITERATIONS=10000, NUM_OBSTACLES=4, NUM_ROBOTS=3, obstacle_scale=0.1, SEED=0):
     np.random.seed(SEED)
 
     obstacle_positions = np.random.rand(NUM_OBSTACLES, 3)
@@ -122,6 +122,7 @@ def main(NUM_ITERATIONS=10000, NUM_OBSTACLES=4, NUM_ROBOTS=2, obstacle_scale=0.1
 
     robot_positions = np.random.rand(NUM_ROBOTS, 3)
     robot_positions[:,0:2] -= 0.5
+    robot_positions[:,0:2] *= 1.25
     robot_positions[:,2] = 0
     robot_orientations = 2 * np.pi * np.random.rand(NUM_ROBOTS, 3)
     robot_orientations[:,0:2] = 0
