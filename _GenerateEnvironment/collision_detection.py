@@ -72,7 +72,7 @@ def index_collision_pairs(physics_uid, bodies, named_collision_pairs):
 class CollisionDetector:
     def __init__(self, col_id, bodies, named_collision_pairs):
         self.col_id = col_id
-        self.robot_id = bodies['robot0']
+        self.robot_ids = [bodies[body] for body in bodies if "robot" in body]
         self.indexed_collision_pairs = index_collision_pairs(
             self.col_id, bodies, named_collision_pairs
         )
