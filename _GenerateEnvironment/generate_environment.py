@@ -72,8 +72,8 @@ def load_environment(client_id, NUM_OBSTACLES, obstacle_positions, obstacle_orie
 
     cubeShape = pyb.createCollisionShape(shapeType=pyb.GEOM_BOX, halfExtents=[obstacle_scale for i in range(3)])
     sphereShape = pyb.createCollisionShape(shapeType=pyb.GEOM_SPHERE, radius=obstacle_scale)
-    cylinderShape = pyb.createCollisionShape(shapeType=pyb.GEOM_CYLINDER, radius=obstacle_scale, height=0.1)
-    possibleShapes = [cubeShape, sphereShape, cylinderShape]
+    #cylinderShape = pyb.createCollisionShape(shapeType=pyb.GEOM_CYLINDER, radius=obstacle_scale, height=0.1)
+    possibleShapes = [cubeShape, sphereShape]#, cylinderShape]
     obstacle_ids = [pyb.createMultiBody(baseMass=0, baseCollisionShapeIndex=possibleShapes[i%len(possibleShapes)], \
                                         basePosition=obstacle_positions[i], \
                                         baseOrientation=pyb.getQuaternionFromEuler(obstacle_orientations[i])) \
