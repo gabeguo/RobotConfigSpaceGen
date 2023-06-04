@@ -7,6 +7,7 @@ import numpy as np
 from fastronWrapper.fastronWrapper import PyFastron
 
 from sklearn.metrics import confusion_matrix
+import time
 
 all_data = np.load('configs.npy')
 
@@ -30,11 +31,16 @@ fastron.maxUpdates = 10000
 fastron.maxSupportPoints = 1500
 fastron.beta = 100
 
+start = time.time()
 # Train model
 fastron.updateModel()
 
 # Predict values for a test set
 pred = fastron.eval(data_test) # where data_test.shape = (N_test, d) 
+
+end = time.time()
+elapsed = round(end - start, 3)
+print('time elapsed in fitting on', len(data_train), 'points and testing on', len(data_test), 'points:', elapsed, 'seconds')
 
 cm = confusion_matrix(y_true=y_test.astype(int).flatten(), y_pred=pred.astype(int).flatten())
 print(cm)
