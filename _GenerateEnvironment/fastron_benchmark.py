@@ -14,7 +14,7 @@ all_data = np.load('configs.npy')
 y = np.load('labels.npy')
 y = np.reshape(y, (-1, 1)).astype(float)
 
-num_training_samples = 20000
+num_training_samples = 5000
 
 data_train = all_data[:num_training_samples]
 data_test = all_data[num_training_samples:]
@@ -28,7 +28,7 @@ fastron.y = y_train # where y.shape = (N,)
 
 fastron.g = 10
 fastron.maxUpdates = 10000
-fastron.maxSupportPoints = 1500
+fastron.maxSupportPoints = 10000
 fastron.beta = 100
 
 start = time.time()
