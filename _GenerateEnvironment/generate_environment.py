@@ -16,6 +16,7 @@ from constants import *
 import os
 
 from PIL import Image
+from tqdm import tqdm
 
 # Thanks ChatGPT
 def sample_points_inside_box(centers, length, width, height, num_points):
@@ -147,7 +148,7 @@ def labels_to_np(labels):
     np.save('labels.npy', labels)
     return
 
-def main(NUM_ITERATIONS=50000, NUM_OBSTACLES=35, NUM_ROBOTS=3, obstacle_scale=0.1, SEED=0):
+def main(NUM_ITERATIONS=100000, NUM_OBSTACLES=35, NUM_ROBOTS=3, obstacle_scale=0.1, SEED=0):
     np.random.seed(SEED)
 
     robot_positions = generate_coordinates(n=NUM_ROBOTS, \
@@ -255,7 +256,7 @@ def main(NUM_ITERATIONS=50000, NUM_OBSTACLES=35, NUM_ROBOTS=3, obstacle_scale=0.
     # start detecting collisions
     start = time.time()
 
-    for i in range(0, NUM_ITERATIONS):
+    for i in tqdm(range(0, NUM_ITERATIONS)):
         # compute shortest distances for a configuration
         distances = col_detector.compute_distances_multi_robot(Q_trial_robot[i], max_distance=0)
         in_col = (distances < 0).any()
