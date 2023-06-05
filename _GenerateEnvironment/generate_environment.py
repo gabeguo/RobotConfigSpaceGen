@@ -52,6 +52,41 @@ def sample_points_inside_cylinder(center, height, radius, num_points):
 
     return np.vstack((x, y, z)).T
 
+def generate_coordinates(n, min_distance_fixed, max_distance_fixed, min_distance_gen, max_distance_gen,
+                         fixed_points=None, x_range=(0, 1), y_range=(0, 1), z_range=(0, 1), z_fixed=None):
+    if isinstance(fixed_points, np.ndarray):
+        fixed_points = fixed_points.tolist()
+    points = [] if fixed_points is None else fixed_points.copy()
+    generated_points = []
+    while len(generated_points) < n:
+        # Generate a random point
+        x = np.random.uniform(*x_range)
+        y = np.random.uniform(*y_range)
+        z = z_fixed if z_fixed is not None else np.random.uniform(*z_range)
+        point = np.array([x, y, z])
+
+        # Compute distances to fixed points
+        if points:
+            distances_fixed = np.linalg.norm(np.array(points) - point, axis=1)
+        else:
+            distances_fixed = np.array([min_distance_fixed, max_distance_fixed])
+
+        # Compute distances to already generated points
+        if generated_points:
+            distances_gen = np.linalg.norm(np.array(generated_points) - point, axis=1)
+        else:
+            distances_gen = np.array([min_distance_gen, max_distance_gen])
+
+        # If it's far enough from all existing points and generated points, and not too far from any fixed points or generated points, add it
+        if (np.all(distances_fixed >= min_distance_fixed) 
+                and np.any(distances_fixed <= max_distance_fixed) # just needds to be close to one other
+                and np.all(distances_gen >= min_distance_gen)
+                and np.any(distances_gen <= max_distance_gen)): # just needs to be close to one other
+            generated_points.append(point)
+
+    return np.array(generated_points)  # Return only the new points
+
+
 def load_environment(client_id, NUM_OBSTACLES, obstacle_positions, obstacle_orientations, obstacle_scale, \
                      NUM_ROBOTS, robot_positions, robot_orientations):
     assert len(obstacle_positions) == len(obstacle_orientations)
@@ -112,27 +147,37 @@ def labels_to_np(labels):
     np.save('labels.npy', labels)
     return
 
-def main(NUM_ITERATIONS=10000, NUM_OBSTACLES=4, NUM_ROBOTS=3, obstacle_scale=0.1, SEED=0):
+def main(NUM_ITERATIONS=50000, NUM_OBSTACLES=35, NUM_ROBOTS=3, obstacle_scale=0.1, SEED=0):
     np.random.seed(SEED)
 
-    obstacle_positions = np.random.rand(NUM_OBSTACLES, 3)
-    obstacle_positions[:, 0:2] -= 0.5
-    obstacle_positions[:, 0:2] *= 1.25
-    obstacle_orientations = 2 * np.pi * np.random.rand(NUM_OBSTACLES, 3)
-
-    robot_positions = np.random.rand(NUM_ROBOTS, 3)
-    robot_positions[:,0:2] -= 0.5
-    robot_positions[:,0:2] *= 1.25
-    robot_positions[:,2] = 0
+    robot_positions = generate_coordinates(n=NUM_ROBOTS, \
+                        min_distance_fixed=0, max_distance_fixed=10, \
+                        min_distance_gen=0.5, max_distance_gen=5, \
+                        fixed_points=None, 
+                        x_range=(-1.5, 1.5), y_range=(-1.5, 1.5), z_range=None, z_fixed=0)
     robot_orientations = 2 * np.pi * np.random.rand(NUM_ROBOTS, 3)
     robot_orientations[:,0:2] = 0
 
+    obstacle_positions = generate_coordinates(n=NUM_OBSTACLES, \
+                        min_distance_fixed=0.5, max_distance_fixed=1.25, \
+                        min_distance_gen=0.1, max_distance_gen=10, \
+                        fixed_points=robot_positions, 
+                        x_range=(-2, 2), y_range=(-2, 2), z_range=(0.1, 1.75), z_fixed=None)
+    obstacle_orientations = 2 * np.pi * np.random.rand(NUM_OBSTACLES, 3)
+
+    print(robot_positions)
     print(obstacle_positions)
 
     assert NUM_OBSTACLES == len(obstacle_positions) and len(obstacle_positions) == len(obstacle_orientations)
 
     # main simulation server
     sim_id = pyb.connect(pyb.DIRECT)
+    # Draw the x-axis
+    pyb.addUserDebugLine([0, 0, 0], [1, 0, 0], [1, 0, 0])  # Red line
+    # Draw the y-axis
+    pyb.addUserDebugLine([0, 0, 0], [0, 1, 0], [0, 1, 0])  # Green line
+    # Draw the z-axis
+    pyb.addUserDebugLine([0, 0, 0], [0, 0, 1], [0, 0, 1])  # Blue line
 
     collision_bodies = load_environment(sim_id, \
                                         NUM_OBSTACLES, obstacle_positions, obstacle_orientations, obstacle_scale,\
@@ -234,7 +279,7 @@ def main(NUM_ITERATIONS=10000, NUM_OBSTACLES=4, NUM_ROBOTS=3, obstacle_scale=0.1
 
     ## GUI dummy demo of simulation starting point; does not move
 
-    cameraEyePositions = [[3.5, 0, 1.5], [0, 3.5, 1.5], [-3.5, 0, 1.5], [0, -3.5, 1.5]]
+    cameraEyePositions = [[4, 0, 1.5], [0, 4, 1.5], [-4, 0, 1.5], [0, -4, 1.5]]
     for i in range(len(cameraEyePositions)):
         cameraEyePosition = cameraEyePositions[i]
         viewMatrix = pyb.computeViewMatrix(
@@ -242,7 +287,7 @@ def main(NUM_ITERATIONS=10000, NUM_OBSTACLES=4, NUM_ROBOTS=3, obstacle_scale=0.1
             cameraTargetPosition=[0, 0, 0],
             cameraUpVector=[0, 0, 1])
         projectionMatrix = pyb.computeProjectionMatrixFOV(
-            fov=45.0,
+            fov=60.0,
             aspect=1.0,
             nearVal=0.1,
             farVal=10)
