@@ -148,7 +148,12 @@ def labels_to_np(labels):
     np.save('labels.npy', labels)
     return
 
-def main(NUM_ITERATIONS=100000, NUM_OBSTACLES=35, NUM_ROBOTS=3, obstacle_scale=0.1, SEED=0):
+def link_pos_to_np(all_link_pos):
+    all_link_pos = np.array(all_link_pos)
+    np.save('link_positions.npy', all_link_pos)
+    return
+
+def main(NUM_ITERATIONS=20000, NUM_OBSTACLES=35, NUM_ROBOTS=3, obstacle_scale=0.1, SEED=0):
     np.random.seed(SEED)
 
     robot_positions = generate_coordinates(n=NUM_ROBOTS, \
@@ -236,12 +241,17 @@ def main(NUM_ITERATIONS=100000, NUM_OBSTACLES=35, NUM_ROBOTS=3, obstacle_scale=0
     start = time.time()
 
     Q_trial_robot = [] # Q_trial_robot[i][j] = configuration of robot j on trial i
+    normalized_configurations = list() # normalized_configurations[i][j] = Q_trial_robot[i][j], but normalized to [-1, +1]
     for i in range(0, NUM_ITERATIONS):
         Q_trial_robot.append(list())
+        normalized_configurations.append(list())
         for j in range(NUM_ROBOTS):
             Q_trial_robot[i].append(list())
+            normalized_configurations[i].append(list())
             for dof in range(7):
-                Q_trial_robot[i][j].append(MAX_JOINT_ANGLE[dof] * 2 * np.random.random() - MAX_JOINT_ANGLE[dof])
+                curr_normalized_config = 2 * np.random.random() - 1 # [-1, +1]
+                Q_trial_robot[i][j].append(MAX_JOINT_ANGLE[dof] * curr_normalized_config)
+                normalized_configurations[i][j].append(curr_normalized_config)
 
     end = time.time()
     elapsed = round(end - start, 3)
@@ -249,9 +259,12 @@ def main(NUM_ITERATIONS=100000, NUM_OBSTACLES=35, NUM_ROBOTS=3, obstacle_scale=0
 
     assert len(Q_trial_robot) == NUM_ITERATIONS
 
-    Q = [[theta for robot_data in trial for theta in robot_data] for trial in Q_trial_robot]
+    # this contains NORMALIZED CONFIGURATIONS!
+    Q = [[theta for robot_data in trial for theta in robot_data] for trial in normalized_configurations]
     all_configs = np.array(Q)
     labels = list()
+
+    all_link_pos = list()
 
     # start detecting collisions
     start = time.time()
@@ -266,6 +279,15 @@ def main(NUM_ITERATIONS=100000, NUM_OBSTACLES=35, NUM_ROBOTS=3, obstacle_scale=0
 
         labels.append(1 if in_col else -1)
 
+        all_link_pos.append(list())
+        for body_name in sorted(collision_bodies):
+            if 'robot' not in body_name:
+                continue
+            robot_id = collision_bodies[body_name]
+            for link_id in range(0, 7):
+                link_pos = pyb.getLinkState(robot_id, link_id)[0]
+                all_link_pos[i].extend(link_pos)
+
     end = time.time()
     elapsed = round(end - start, 3)
     print('time elapsed in checking', NUM_ITERATIONS, 'configurations for collision:', elapsed, 'seconds')
@@ -275,6 +297,7 @@ def main(NUM_ITERATIONS=100000, NUM_OBSTACLES=35, NUM_ROBOTS=3, obstacle_scale=0
 
     configs_to_np(all_configs)
     labels_to_np(labels)
+    link_pos_to_np(all_link_pos)
 
     write_collision_data(COLLISION_DATA_LABELS, _collision_data)
 
