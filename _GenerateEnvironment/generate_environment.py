@@ -313,5 +313,3 @@ def main(NUM_ITERATIONS=100000, NUM_OBSTACLES=35, NUM_ROBOTS=3, obstacle_scale=0
 
 if __name__ == "__main__":
     main()
-
-    # TODO: log time to get forward kinematics!!
