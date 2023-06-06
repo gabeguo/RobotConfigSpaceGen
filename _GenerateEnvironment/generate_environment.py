@@ -204,7 +204,7 @@ def take_pictures(args):
         print(type(rgbImg))
         im = Image.fromarray(rgbImg)
         im.save("workspace_vis/{}robots_{}obstacles_seed{}_sample{}{}.png".format(\
-            args.num_robots, args.num_obstacles, args.seed, i, '_' + args.keyword if len(args.keyword) > 0 else '')\
+            args.num_robots, args.num_obstacles, args.seed, i, '_' + args.keyword_name if len(args.keyword_name) > 0 else '')\
         )
     return
 
