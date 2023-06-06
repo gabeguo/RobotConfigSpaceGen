@@ -64,7 +64,7 @@ def run_fastron(args):
     pred = fastron.eval(data_test) # where data_test.shape = (N_test, d) 
     end = time.time()
     elapsed_test = end - start
-    print('time elapsed in testing on {} points for {} dof: {:.3f} seconds'.format(len(data_test), data_test.shape[1], elapsed_test))
+    print('time elapsed in testing on {} points for {} dof: {:.3f} seconds'.format(len(data_test), data_test.shape[1]  / (3 if args.forward_kinematics_kernel else 1), elapsed_test))
 
     # Get metrics
     cm = confusion_matrix(y_true=y_test.astype(int).flatten(), y_pred=pred.astype(int).flatten())
