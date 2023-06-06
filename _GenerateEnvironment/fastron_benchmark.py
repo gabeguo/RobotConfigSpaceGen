@@ -9,49 +9,112 @@ from fastronWrapper.fastronWrapper import PyFastron
 from sklearn.metrics import confusion_matrix
 import time
 
-all_data = np.load('configs.npy')
+import argparse
+import json
 
-y = np.load('labels.npy')
-y = np.reshape(y, (-1, 1)).astype(float)
+from constants import *
 
-num_training_samples = 5000
+"""
+--num_training_samples 10000 \
+--dataset_name "1robots_25obstacles_seed0_" \
+--g 10 \
+--beta 500 \
+--maxUpdates 10000 \
+--maxSupportPoints 10000 \
+--forward_kinematics_kernel \
+"""
 
-data_train = all_data[:num_training_samples]
-data_test = all_data[num_training_samples:]
-y_train = y[:num_training_samples]
-y_test = y[num_training_samples:]
+def run_fastron(args):
+    # load data
+    if args.forward_kinematics_kernel:
+        config_filename = 'linkPositions_{}.npy'.format(args.dataset_name)
+    else: # use normalized joint angles
+        config_filename = 'configs_{}.npy'.format(args.dataset_name)
+    all_data = np.load(config_filename)
+    print('min and max: {:.2f}, {:.2f}'.format(all_data.min(), all_data.max()))
 
-# Initialize PyFastron
-fastron = PyFastron(data_train) # where data.shape = (N, d)
+    y = np.load('labels_{}.npy'.format(args.dataset_name))
+    y = np.reshape(y, (-1, 1)).astype(float)
 
-fastron.y = y_train # where y.shape = (N,)
+    data_train = all_data[:args.num_training_samples]
+    data_test = all_data[args.num_training_samples:]
+    y_train = y[:args.num_training_samples]
+    y_test = y[args.num_training_samples:]
 
-fastron.g = 10
-fastron.maxUpdates = 10000
-fastron.maxSupportPoints = 10000
-fastron.beta = 100
+    # Initialize PyFastron
+    fastron = PyFastron(data_train) # where data.shape = (N, d)
 
-start = time.time()
-# Train model
-fastron.updateModel()
+    fastron.y = y_train # where y.shape = (N,)
 
-# Predict values for a test set
-pred = fastron.eval(data_test) # where data_test.shape = (N_test, d) 
+    fastron.g = args.g # from paper for high DOF: 5
+    fastron.maxUpdates = args.maxUpdates
+    fastron.maxSupportPoints = args.maxSupportPoints
+    fastron.beta = args.beta # from paper for high DOF: 500
 
-end = time.time()
-elapsed = round(end - start, 3)
-print('time elapsed in fitting on', len(data_train), 'points and testing on', len(data_test), 'points:', elapsed, 'seconds')
+    # Train model
+    start = time.time()
+    fastron.updateModel()
+    end = time.time()
+    elapsed_train = end - start
+    print('time elapsed in fitting on {} points for {} dof: {:.3f} seconds'.format(len(data_train), data_train.shape[1], elapsed_train))
 
-cm = confusion_matrix(y_true=y_test.astype(int).flatten(), y_pred=pred.astype(int).flatten())
-print(cm)
+    # Predict values for a test set
+    start = time.time()
+    pred = fastron.eval(data_test) # where data_test.shape = (N_test, d) 
+    end = time.time()
+    elapsed_test = end - start
+    print('time elapsed in testing on {} points for {} dof: {:.3f} seconds'.format(len(data_test), data_test.shape[1], elapsed_test))
 
-TN = cm[0][0]
-FN = cm[1][0]
-TP = cm[1][1]
-FP = cm[0][1]
+    # Get metrics
+    cm = confusion_matrix(y_true=y_test.astype(int).flatten(), y_pred=pred.astype(int).flatten())
+    print(cm)
 
-# traditional accuracy, including uncertain points
-print()
-print('accuracy:', round((TP+TN)/(TP+TN+FP+FN), 3))
-print('sensitivity (TPR):', round(TP/(TP+FN), 3))
-print('specificity (TNR):', round(TN/(TN+FP), 3))
+    TN = cm[0][0]
+    FN = cm[1][0]
+    TP = cm[1][1]
+    FP = cm[0][1]
+
+    # traditional accuracy, including uncertain points
+    acc = (TP+TN)/(TP+TN+FP+FN)
+    tpr = TP/(TP+FN)
+    tnr = TN/(TN+FP)
+    print()
+    print('accuracy:', round(acc, 3))
+    print('sensitivity (TPR):', round(tpr, 3))
+    print('specificity (TNR):', round(tnr, 3))
+
+    # log results & args
+    assert args.num_training_samples == data_train.shape[0]
+    results = {
+        ACCURACY: acc,
+        TPR: tpr,
+        TNR: tnr,
+        TRAIN_TIME:elapsed_train,
+        TEST_TIME:elapsed_test,
+        TRAIN_SIZE:args.num_training_samples,
+        TEST_SIZE:data_test.shape[0],
+    }
+    results.update(vars(args)) # update with args
+
+    filename = 'fastronResults_{}.json'.format(args.dataset_name)
+    with open(filename, 'w') as f:
+        json.dump(results, f, indent=4)
+    return
+
+def main():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--num_training_samples', type=int, default=10000)
+    parser.add_argument('--dataset_name', type=str, default="1robots_25obstacles_seed0_")
+    parser.add_argument('--g', type=int, default=10)
+    parser.add_argument('--beta', type=int, default=500)
+    parser.add_argument('--maxUpdates', type=int, default=10000)
+    parser.add_argument('--maxSupportPoints', type=int, default=10000)
+    parser.add_argument('--forward_kinematics_kernel', action='store_true')
+
+    args = parser.parse_args()
+
+    run_fastron(args)
+
+if __name__ == '__main__':
+    main()
