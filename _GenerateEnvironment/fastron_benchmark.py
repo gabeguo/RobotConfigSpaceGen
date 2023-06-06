@@ -57,7 +57,7 @@ def run_fastron(args):
     fastron.updateModel()
     end = time.time()
     elapsed_train = end - start
-    print('time elapsed in fitting on {} points for {} dof: {:.3f} seconds'.format(len(data_train), data_train.shape[1], elapsed_train))
+    print('time elapsed in fitting on {} points for {} dof: {:.3f} seconds'.format(len(data_train), data_train.shape[1] / (3 if args.forward_kinematics_kernel else 1), elapsed_train))
 
     # Predict values for a test set
     start = time.time()
