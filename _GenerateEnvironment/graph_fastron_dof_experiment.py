@@ -51,7 +51,7 @@ def graph_results_by_metric(all_data, metric):
     plt.legend()
     plt.show()
     os.makedirs(GRAPH_FOLDER_NAME, exist_ok=True)
-    plt.savefig(title=f'{GRAPH_FOLDER_NAME}/{metric}_by_dof.pdf')
+    plt.savefig(fname=f'{GRAPH_FOLDER_NAME}/{metric}_by_dof.pdf')
     plt.clf()
 
     return
