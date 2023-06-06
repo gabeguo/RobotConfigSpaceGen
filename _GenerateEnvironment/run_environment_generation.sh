@@ -7,7 +7,7 @@ do
     do
         python main.py --num_robots $num_robots --seed $seed \
         --num_obstacles 25 \
-        --num_samples 50000 \
+        --num_samples 50000
     done
 done
 
