@@ -179,6 +179,34 @@ def save_results(results, args):
 
     return
 
+def take_pictures(args):
+    cameraEyePositions = [[4, 0, 1.5], [0, 4, 1.5], [-4, 0, 1.5], [0, -4, 1.5]]
+    for i in range(len(cameraEyePositions)):
+        cameraEyePosition = cameraEyePositions[i]
+        viewMatrix = pyb.computeViewMatrix(
+            cameraEyePosition=cameraEyePosition,
+            cameraTargetPosition=[0, 0, 0],
+            cameraUpVector=[0, 0, 1])
+        projectionMatrix = pyb.computeProjectionMatrixFOV(
+            fov=60.0,
+            aspect=1.0,
+            nearVal=0.1,
+            farVal=10)
+        width, height, rgbImg, depthImg, segImg = pyb.getCameraImage(
+            width=1024,
+            height=1024,
+            viewMatrix=viewMatrix,
+            projectionMatrix=projectionMatrix)
+
+        os.makedirs('graphs', exist_ok=True)
+
+        print(type(rgbImg))
+        im = Image.fromarray(rgbImg)
+        im.save("graphs/{}robots_{}obstacles_seed{}_sample{}.png".format(\
+            args.num_robots, args.num_obstacles, args.seed, i)\
+        )
+    return
+
 def main():
     args = get_args()
 
@@ -326,30 +354,8 @@ def main():
     write_collision_data(collision_data_labels, _collision_data, args)
 
     ## GUI dummy demo of simulation starting point; does not move
-
-    cameraEyePositions = [[4, 0, 1.5], [0, 4, 1.5], [-4, 0, 1.5], [0, -4, 1.5]]
-    for i in range(len(cameraEyePositions)):
-        cameraEyePosition = cameraEyePositions[i]
-        viewMatrix = pyb.computeViewMatrix(
-            cameraEyePosition=cameraEyePosition,
-            cameraTargetPosition=[0, 0, 0],
-            cameraUpVector=[0, 0, 1])
-        projectionMatrix = pyb.computeProjectionMatrixFOV(
-            fov=60.0,
-            aspect=1.0,
-            nearVal=0.1,
-            farVal=10)
-        width, height, rgbImg, depthImg, segImg = pyb.getCameraImage(
-            width=1024,
-            height=1024,
-            viewMatrix=viewMatrix,
-            projectionMatrix=projectionMatrix)
-
-        os.makedirs('graphs', exist_ok=True)
-
-        print(type(rgbImg))
-        im = Image.fromarray(rgbImg)
-        im.save("graphs/{}_obstacles_trial{}.png".format(len(obstacles), i))
+    ## Take pictures
+    take_pictures(args)
 
     ## cleanup
 
