@@ -168,7 +168,8 @@ def link_pos_to_np(all_link_pos, args):
 # Saves args and results as dict
 def save_results(results, args):
     # convert args to dict
-    args_dict = vars(args) + results
+    args_dict = vars(args)
+    args_dict.update(results)
 
     # construct the filename
     filename = f"{DATA_FOLDER}/argsAndResults_{args.num_robots}robots_{args.num_obstacles}obstacles_seed{args.seed}_{args.keyword_name}.json"
