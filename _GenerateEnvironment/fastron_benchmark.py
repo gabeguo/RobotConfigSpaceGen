@@ -102,10 +102,12 @@ def run_fastron(args):
     results.update(vars(args)) # update with args
 
     os.makedirs(RESULTS_FOLDER, exist_ok=True)
-    filename = '{}/fastronResults_{}_{}_{}.json'.format(\
+    filename = '{}/fastronResults_{}_{}_{}_{}_{}.json'.format(\
         RESULTS_FOLDER, 
         'forwardKinematics' if args.forward_kinematics_kernel else 'normalizedAngles',
         f'{args.num_training_samples}Samples',
+        f'{args.beta}Beta',
+        f'{args.g}Gamma',
         args.dataset_name)
     with open(filename, 'w') as f:
         json.dump(results, f, indent=4)
