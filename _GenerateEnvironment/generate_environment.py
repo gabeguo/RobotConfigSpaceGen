@@ -138,7 +138,7 @@ def load_environment(client_id, num_obstacles, obstacle_positions, obstacle_orie
 
 def write_collision_data(fields, data, args):
     assert len(fields) == len(data[0])
-    filename = f"{DATA_FOLDER}/collision_data_{args.num_robots}robots_{args.num_obstacles}obstacles_seed{args.seed}.csv"
+    filename = f"{DATA_FOLDER}/collision_data_{args.num_robots}robots_{args.num_obstacles}obstacles_seed{args.seed}_{args.keyword_name}.csv"
     with open(filename, 'w') as output:
         writer = csv.writer(output)
         writer.writerow(fields)
@@ -147,7 +147,7 @@ def write_collision_data(fields, data, args):
 
 def data_to_np(data, field_name, args):
     data = np.array(data)
-    filename = f"{DATA_FOLDER}/{field_name}_{args.num_robots}robots_{args.num_obstacles}obstacles_seed{args.seed}.npy"
+    filename = f"{DATA_FOLDER}/{field_name}_{args.num_robots}robots_{args.num_obstacles}obstacles_seed{args.seed}_{args.keyword_name}.npy"
     np.save(filename, data)
     return
 
@@ -171,7 +171,7 @@ def save_results(results, args):
     args_dict = vars(args) + results
 
     # construct the filename
-    filename = f"{DATA_FOLDER}/argsAndResults_{args.num_robots}robots_{args.num_obstacles}obstacles_seed{args.seed}.json"
+    filename = f"{DATA_FOLDER}/argsAndResults_{args.num_robots}robots_{args.num_obstacles}obstacles_seed{args.seed}_{args.keyword_name}.json"
     
     # write the JSON file
     with open(filename, 'w') as f:
@@ -388,6 +388,7 @@ def get_args():
     parser.add_argument('--max_obstacle_y', type=float, default=2.0)
     parser.add_argument('--min_obstacle_z', type=float, default=0.1)
     parser.add_argument('--max_obstacle_z', type=float, default=1.75)
+    parser.add_argument('--keyword_name', type=str, default='')
     parser.add_argument('--seed', type=int, default=0)
     
     args = parser.parse_args()
