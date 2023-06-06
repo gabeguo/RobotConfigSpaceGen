@@ -18,6 +18,12 @@ import os
 from PIL import Image
 from tqdm import tqdm
 
+import json
+import argparse
+
+MAX_JOINT_ANGLE = [theta * np.pi / 180 for theta in [170, 120, 170, 120, 170, 120, 175]]
+# joint limits: https://www.researchgate.net/figure/Joint-limits-of-KUKA-LBR-iiwa-14-R820-45_tbl1_339394448
+
 # Thanks ChatGPT
 def sample_points_inside_box(centers, length, width, height, num_points):
     center_indices = np.random.choice(range(len(centers)), size=len(centers), replace=True)
@@ -88,17 +94,17 @@ def generate_coordinates(n, min_distance_fixed, max_distance_fixed, min_distance
     return np.array(generated_points)  # Return only the new points
 
 
-def load_environment(client_id, NUM_OBSTACLES, obstacle_positions, obstacle_orientations, obstacle_scale, \
-                     NUM_ROBOTS, robot_positions, robot_orientations):
+def load_environment(client_id, num_obstacles, obstacle_positions, obstacle_orientations, obstacle_scale, \
+                     num_robots, robot_positions, robot_orientations):
     assert len(obstacle_positions) == len(obstacle_orientations)
 
     pyb.setAdditionalSearchPath(
         pybullet_data.getDataPath(), physicsClientId=client_id
     )
 
-    arm_id = [None for i in range(NUM_ROBOTS)]
+    arm_id = [None for i in range(num_robots)]
 
-    for i in range(NUM_ROBOTS):
+    for i in range(num_robots):
         arm_id[i] = pyb.loadURDF(
             "kuka_iiwa/model.urdf",
             basePosition=robot_positions[i],
@@ -120,74 +126,95 @@ def load_environment(client_id, NUM_OBSTACLES, obstacle_positions, obstacle_orie
 
     # add robots
     bodies = {
-        "robot{}".format(i) : arm_id[i] for i in range(NUM_ROBOTS)
+        "robot{}".format(i) : arm_id[i] for i in range(num_robots)
     }
     # add plane
     bodies["plane"] = planeId
     # also add obstacles
     bodies.update({
-        "obstacle{}".format(i): obstacle_ids[i] for i in range(NUM_OBSTACLES)
+        "obstacle{}".format(i): obstacle_ids[i] for i in range(num_obstacles)
     })
     return bodies
 
-def write_collision_data(fields, data):
+def write_collision_data(fields, data, args):
     assert len(fields) == len(data[0])
-    with open('collision_data.csv', 'w') as output:
+    filename = f"collision_data_{args.num_robots}robots_{args.num_obstacles}obstacles_seed{args.seed}.csv"
+    with open(filename, 'w') as output:
         writer = csv.writer(output)
         writer.writerow(fields)
         writer.writerows(data)
     return
 
-def configs_to_np(configs):
-    configs = np.array(configs)
-    np.save('configs.npy', configs)
+def data_to_np(data, field_name, args):
+    data = np.array(data)
+    filename = f"{field_name}_{args.num_robots}robots_{args.num_obstacles}obstacles_seed{args.seed}.npy"
+    np.save(filename, data)
     return
 
-def labels_to_np(labels):
+def configs_to_np(configs, args):
+    data_to_np(configs, 'configs', args)
+    return
+
+def labels_to_np(labels, args):
     labels = np.array([1 if y > 0 else -1 for y in labels])
-    np.save('labels.npy', labels)
+    data_to_np(labels, 'labels', args)
     return
 
-def link_pos_to_np(all_link_pos):
-    all_link_pos = np.array(all_link_pos)
-    np.save('link_positions.npy', all_link_pos)
+def link_pos_to_np(all_link_pos, args):
+    data_to_np(all_link_pos, 'linkPositions', args)
     return
 
-def main(NUM_ITERATIONS=20000, NUM_OBSTACLES=35, NUM_ROBOTS=3, obstacle_scale=0.1, SEED=0):
-    np.random.seed(SEED)
+# Thanks ChatGPT!
+# Saves args and results as dict
+def save_results(results, args):
+    # convert args to dict
+    args_dict = vars(args) + results
 
-    robot_positions = generate_coordinates(n=NUM_ROBOTS, \
-                        min_distance_fixed=0, max_distance_fixed=10, \
-                        min_distance_gen=0.5, max_distance_gen=5, \
+    # construct the filename
+    filename = f"argsAndResults_{args.num_robots}robots_{args.num_obstacles}obstacles_seed{args.seed}.json"
+    
+    # write the JSON file
+    with open(filename, 'w') as f:
+        json.dump(args_dict, f, indent=4)
+
+    return
+
+def main():
+    args = get_args()
+
+    np.random.seed(args.seed)
+
+    robot_positions = generate_coordinates(n=args.num_robots, \
+                        min_distance_fixed=0, max_distance_fixed=np.infty,
+                        min_distance_gen=args.min_robot_robot_distance, max_distance_gen=args.max_robot_robot_distance,
                         fixed_points=None, 
-                        x_range=(-1.5, 1.5), y_range=(-1.5, 1.5), z_range=None, z_fixed=0)
-    robot_orientations = 2 * np.pi * np.random.rand(NUM_ROBOTS, 3)
+                        x_range=(args.min_robot_x, args.max_robot_x), y_range=(args.min_robot_y, args.max_robot_y),
+                        z_range=None, z_fixed=0)
+    robot_orientations = 2 * np.pi * np.random.rand(args.num_robots, 3)
     robot_orientations[:,0:2] = 0
 
-    obstacle_positions = generate_coordinates(n=NUM_OBSTACLES, \
-                        min_distance_fixed=0.5, max_distance_fixed=1.25, \
-                        min_distance_gen=0.1, max_distance_gen=10, \
+    obstacle_positions = generate_coordinates(n=args.num_obstacles, \
+                        min_distance_fixed=args.min_robot_obstacle_distance, max_distance_fixed=args.max_robot_obstacle_distance, \
+                        min_distance_gen=args.min_obstacle_obstacle_distance, max_distance_gen=args.max_obstacle_obstacle_distance, \
                         fixed_points=robot_positions, 
-                        x_range=(-2, 2), y_range=(-2, 2), z_range=(0.1, 1.75), z_fixed=None)
-    obstacle_orientations = 2 * np.pi * np.random.rand(NUM_OBSTACLES, 3)
+                        x_range=(args.min_obstacle_x, args.max_obstacle_x), 
+                        y_range=(args.min_obstacle_y, args.max_obstacle_y), 
+                        z_range=(args.min_obstacle_z, args.max_obstacle_z), z_fixed=None)
+    obstacle_orientations = 2 * np.pi * np.random.rand(args.num_obstacles, 3)
 
     print(robot_positions)
     print(obstacle_positions)
 
-    assert NUM_OBSTACLES == len(obstacle_positions) and len(obstacle_positions) == len(obstacle_orientations)
+    assert args.num_obstacles== len(obstacle_positions) and len(obstacle_positions) == len(obstacle_orientations)
 
     # main simulation server
     sim_id = pyb.connect(pyb.DIRECT)
-    # Draw the x-axis
-    pyb.addUserDebugLine([0, 0, 0], [1, 0, 0], [1, 0, 0])  # Red line
-    # Draw the y-axis
-    pyb.addUserDebugLine([0, 0, 0], [0, 1, 0], [0, 1, 0])  # Green line
-    # Draw the z-axis
-    pyb.addUserDebugLine([0, 0, 0], [0, 0, 1], [0, 0, 1])  # Blue line
 
-    collision_bodies = load_environment(sim_id, \
-                                        NUM_OBSTACLES, obstacle_positions, obstacle_orientations, obstacle_scale,\
-                                        NUM_ROBOTS, robot_positions, robot_orientations)
+    collision_bodies = load_environment(client_id=sim_id,
+        num_obstacles=args.num_obstacles, obstacle_positions=obstacle_positions, obstacle_orientations=obstacle_orientations,
+        obstacle_scale=args.obstacle_scale,
+        num_robots=args.num_robots, 
+        robot_positions=robot_positions, robot_orientations=robot_orientations)
 
     for body in collision_bodies:
         #print(pyb.getCollisionShapeData(collision_bodies[body], -1, sim_id))
@@ -197,13 +224,13 @@ def main(NUM_ITERATIONS=20000, NUM_OBSTACLES=35, NUM_ROBOTS=3, obstacle_scale=0.
     # define bodies (and links) to use for shortest distance computations and
     # collision checking
 
-    obstacles = [NamedCollisionObject("obstacle{}".format(i)) for i in range(NUM_OBSTACLES)]
+    obstacles = [NamedCollisionObject("obstacle{}".format(i)) for i in range(args.num_obstacles)]
 
     robotlinks = [\
         [NamedCollisionObject("robot{}".format(i), "lbr_iiwa_link_{}".format(j)) \
                     for j in range(1, 7+1)] + \
         [NamedCollisionObject("robot{}".format(i), None)] \
-                    for i in range(NUM_ROBOTS)]
+                    for i in range(args.num_robots)]
 
     collision_objects = [the_link for the_robotlinks in robotlinks for the_link in the_robotlinks] \
         + obstacles + ['plane']
@@ -226,26 +253,23 @@ def main(NUM_ITERATIONS=20000, NUM_OBSTACLES=35, NUM_ROBOTS=3, obstacle_scale=0.
         collision_pairs
     )
 
-    COLLISION_DATA_LABELS = \
+    collision_data_labels = \
         ['robot{}_theta{}'.format(i, j) \
-            for i in range(NUM_ROBOTS) \
+            for i in range(args.num_robots) \
             for j in range(1, 7+1)] + \
         ['collision']
 
     _collision_data = []
-
-    MAX_JOINT_ANGLE = [theta * np.pi / 180 for theta in [170, 120, 170, 120, 170, 120, 175]]
-    # joint limits: https://www.researchgate.net/figure/Joint-limits-of-KUKA-LBR-iiwa-14-R820-45_tbl1_339394448
 
     # generate angles (since it is biased to generate them while also detecting if they collide)
     start = time.time()
 
     Q_trial_robot = [] # Q_trial_robot[i][j] = configuration of robot j on trial i
     normalized_configurations = list() # normalized_configurations[i][j] = Q_trial_robot[i][j], but normalized to [-1, +1]
-    for i in range(0, NUM_ITERATIONS):
+    for i in range(0, args.num_samples):
         Q_trial_robot.append(list())
         normalized_configurations.append(list())
-        for j in range(NUM_ROBOTS):
+        for j in range(args.num_robots):
             Q_trial_robot[i].append(list())
             normalized_configurations[i].append(list())
             for dof in range(7):
@@ -255,9 +279,9 @@ def main(NUM_ITERATIONS=20000, NUM_OBSTACLES=35, NUM_ROBOTS=3, obstacle_scale=0.
 
     end = time.time()
     elapsed = round(end - start, 3)
-    print('time elapsed in generating', NUM_ITERATIONS, 'configurations:', elapsed, 'seconds')
+    print('time elapsed in generating', args.num_samples, 'configurations:', elapsed, 'seconds')
 
-    assert len(Q_trial_robot) == NUM_ITERATIONS
+    assert len(Q_trial_robot) == args.num_samples
 
     # this contains NORMALIZED CONFIGURATIONS!
     Q = [[theta for robot_data in trial for theta in robot_data] for trial in normalized_configurations]
@@ -269,7 +293,7 @@ def main(NUM_ITERATIONS=20000, NUM_OBSTACLES=35, NUM_ROBOTS=3, obstacle_scale=0.
     # start detecting collisions
     start = time.time()
 
-    for i in tqdm(range(0, NUM_ITERATIONS)):
+    for i in tqdm(range(0, args.num_samples)):
         # compute shortest distances for a configuration
         distances = col_detector.compute_distances_multi_robot(Q_trial_robot[i], max_distance=0)
         in_col = (distances < 0).any()
@@ -290,16 +314,16 @@ def main(NUM_ITERATIONS=20000, NUM_OBSTACLES=35, NUM_ROBOTS=3, obstacle_scale=0.
 
     end = time.time()
     elapsed = round(end - start, 3)
-    print('time elapsed in checking', NUM_ITERATIONS, 'configurations for collision:', elapsed, 'seconds')
+    print('time elapsed in checking', args.num_samples, 'configurations for collision:', elapsed, 'seconds')
     # stop detecting collisions
 
-    results = {TIME_COST : elapsed, SAMPLE_SIZE : NUM_ITERATIONS}
+    results = {TIME_COST : elapsed, SAMPLE_SIZE : args.num_samples}
 
-    configs_to_np(all_configs)
-    labels_to_np(labels)
-    link_pos_to_np(all_link_pos)
-
-    write_collision_data(COLLISION_DATA_LABELS, _collision_data)
+    configs_to_np(all_configs, args)
+    labels_to_np(labels, args)
+    link_pos_to_np(all_link_pos, args)
+    save_results(results, args)
+    write_collision_data(collision_data_labels, _collision_data, args)
 
     ## GUI dummy demo of simulation starting point; does not move
 
@@ -332,7 +356,36 @@ def main(NUM_ITERATIONS=20000, NUM_OBSTACLES=35, NUM_ROBOTS=3, obstacle_scale=0.
     # pyb.disconnect(physicsClientId=gui_id)
     pyb.disconnect(physicsClientId=sim_id)
 
-    return results
+    return
+
+def get_args():
+    parser = argparse.ArgumentParser()
+    
+    parser.add_argument('--num_samples', type=int, default=100000)
+    parser.add_argument('--num_obstacles', type=int, default=25)
+    parser.add_argument('--num_robots', type=int, default=3)
+    parser.add_argument('--obstacle_scale', type=float, default=0.1)
+    parser.add_argument('--min_robot_robot_distance', type=float, default=0.5)
+    parser.add_argument('--max_robot_robot_distance', type=float, default=5.0)
+    parser.add_argument('--min_robot_obstacle_distance', type=float, default=0.5)
+    parser.add_argument('--max_robot_obstacle_distance', type=float, default=1.25)
+    parser.add_argument('--min_obstacle_obstacle_distance', type=float, default=0.1)
+    parser.add_argument('--max_obstacle_obstacle_distance', type=float, default=10.0)
+    parser.add_argument('--min_robot_x', type=float, default=-1.5)
+    parser.add_argument('--max_robot_x', type=float, default=1.5)
+    parser.add_argument('--min_robot_y', type=float, default=-1.5)
+    parser.add_argument('--max_robot_y', type=float, default=1.5)
+    parser.add_argument('--min_obstacle_x', type=float, default=-2.0)
+    parser.add_argument('--max_obstacle_x', type=float, default=2.0)
+    parser.add_argument('--min_obstacle_y', type=float, default=-2.0)
+    parser.add_argument('--max_obstacle_y', type=float, default=2.0)
+    parser.add_argument('--min_obstacle_z', type=float, default=0.1)
+    parser.add_argument('--max_obstacle_z', type=float, default=1.75)
+    parser.add_argument('--seed', type=int, default=0)
+    
+    args = parser.parse_args()
+
+    return args
 
 if __name__ == "__main__":
     main()
