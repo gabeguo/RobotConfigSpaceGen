@@ -27,13 +27,13 @@ from constants import *
 def run_fastron(args):
     # load data
     if args.forward_kinematics_kernel:
-        config_filename = 'linkPositions_{}.npy'.format(args.dataset_name)
+        config_filename = '{}/linkPositions_{}.npy'.format(DATA_FOLDER, args.dataset_name)
     else: # use normalized joint angles
-        config_filename = 'configs_{}.npy'.format(args.dataset_name)
+        config_filename = '{}/configs_{}.npy'.format(DATA_FOLDER, args.dataset_name)
     all_data = np.load(config_filename)
     print('min and max: {:.2f}, {:.2f}'.format(all_data.min(), all_data.max()))
 
-    y = np.load('labels_{}.npy'.format(args.dataset_name))
+    y = np.load('{}/labels_{}.npy'.format(DATA_FOLDER, args.dataset_name))
     y = np.reshape(y, (-1, 1)).astype(float)
 
     data_train = all_data[:args.num_training_samples]
