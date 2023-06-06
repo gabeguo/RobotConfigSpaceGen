@@ -43,6 +43,8 @@ def graph_results_by_metric(all_data, metric):
             metric_stds.append(curr_std)
         DOFs = 7 * np.array(POSSIBLE_NUM_ROBOTS)
         plt.errorbar(DOFs, metric_means, metric_stds, label=f'$\\beta$ = {beta}', marker=MARKERS[i], capsize=2)
+        for j in range(len(DOFs)):
+            plt.text(DOFs[j] + 2, metric_means[j], f'{metric_means[j]:.3f}', ha='right')
     plt.xlabel('DoF')
     plt.ylabel(metric.upper())
     plt.xticks(DOFs)
@@ -52,6 +54,7 @@ def graph_results_by_metric(all_data, metric):
     plt.show()
     os.makedirs(GRAPH_FOLDER_NAME, exist_ok=True)
     plt.savefig(fname=f'{GRAPH_FOLDER_NAME}/{metric}_by_dof.pdf')
+    plt.savefig(fname=f'{GRAPH_FOLDER_NAME}/{metric}_by_dof.png')
     plt.clf()
 
     return
