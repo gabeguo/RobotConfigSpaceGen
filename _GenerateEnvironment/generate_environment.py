@@ -138,7 +138,7 @@ def load_environment(client_id, num_obstacles, obstacle_positions, obstacle_orie
 
 def write_collision_data(fields, data, args):
     assert len(fields) == len(data[0])
-    filename = f"collision_data_{args.num_robots}robots_{args.num_obstacles}obstacles_seed{args.seed}.csv"
+    filename = f"{DATA_FOLDER}/collision_data_{args.num_robots}robots_{args.num_obstacles}obstacles_seed{args.seed}.csv"
     with open(filename, 'w') as output:
         writer = csv.writer(output)
         writer.writerow(fields)
@@ -147,7 +147,7 @@ def write_collision_data(fields, data, args):
 
 def data_to_np(data, field_name, args):
     data = np.array(data)
-    filename = f"{field_name}_{args.num_robots}robots_{args.num_obstacles}obstacles_seed{args.seed}.npy"
+    filename = f"{DATA_FOLDER}/{field_name}_{args.num_robots}robots_{args.num_obstacles}obstacles_seed{args.seed}.npy"
     np.save(filename, data)
     return
 
@@ -171,7 +171,7 @@ def save_results(results, args):
     args_dict = vars(args) + results
 
     # construct the filename
-    filename = f"argsAndResults_{args.num_robots}robots_{args.num_obstacles}obstacles_seed{args.seed}.json"
+    filename = f"{DATA_FOLDER}/argsAndResults_{args.num_robots}robots_{args.num_obstacles}obstacles_seed{args.seed}.json"
     
     # write the JSON file
     with open(filename, 'w') as f:
@@ -198,11 +198,11 @@ def take_pictures(args):
             viewMatrix=viewMatrix,
             projectionMatrix=projectionMatrix)
 
-        os.makedirs('graphs', exist_ok=True)
+        os.makedirs('workspace_vis', exist_ok=True)
 
         print(type(rgbImg))
         im = Image.fromarray(rgbImg)
-        im.save("graphs/{}robots_{}obstacles_seed{}_sample{}.png".format(\
+        im.save("workspace_vis/{}robots_{}obstacles_seed{}_sample{}.png".format(\
             args.num_robots, args.num_obstacles, args.seed, i)\
         )
     return
@@ -347,6 +347,7 @@ def main():
 
     results = {TIME_COST : elapsed, SAMPLE_SIZE : args.num_samples}
 
+    os.makedirs(DATA_FOLDER, exist_ok=True)
     configs_to_np(all_configs, args)
     labels_to_np(labels, args)
     link_pos_to_np(all_link_pos, args)

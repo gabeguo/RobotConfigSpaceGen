@@ -28,3 +28,5 @@ DUMMY = 'Majority Rule'
 MS_PER_SEC = 1000
 
 GRAPH_FOLDER_NAME = 'graphs'
+
+DATA_FOLDER = 'simulation_data'
