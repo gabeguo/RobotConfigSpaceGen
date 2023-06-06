@@ -3,6 +3,8 @@ PRECISION = 'precision'
 RECALL = 'recall'
 F1 = 'f1'
 ROC_AUC = 'roc_auc'
+TPR = 'tpr'
+TNR = 'tnr'
 
 TRAIN_TIME = 'train_time'
 TEST_TIME = 'test_time'
@@ -30,3 +32,9 @@ MS_PER_SEC = 1000
 GRAPH_FOLDER_NAME = 'graphs'
 
 DATA_FOLDER = 'simulation_data'
+RESULTS_FOLDER = 'approximation_results'
+
+TP_NAME = 'true positive'
+TN_NAME = 'true negative'
+FP_NAME = 'false positive'
+FN_NAME = 'false negative'

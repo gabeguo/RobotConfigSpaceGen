@@ -1,6 +1,7 @@
 import pyximport
 pyximport.install()
 
+import os
 import sys
 sys.path.append('../fastron_python')
 import numpy as np
@@ -89,6 +90,10 @@ def run_fastron(args):
         ACCURACY: acc,
         TPR: tpr,
         TNR: tnr,
+        TP_NAME: TP,
+        TN_NAME: TN,
+        FP_NAME: FP,
+        FN_NAME: FN, 
         TRAIN_TIME:elapsed_train,
         TEST_TIME:elapsed_test,
         TRAIN_SIZE:args.num_training_samples,
@@ -96,7 +101,8 @@ def run_fastron(args):
     }
     results.update(vars(args)) # update with args
 
-    filename = 'fastronResults_{}.json'.format(args.dataset_name)
+    os.makedirs(RESULTS_FOLDER, exist_ok=True)
+    filename = '{}/fastronResults_{}.json'.format(RESULTS_FOLDER, args.dataset_name)
     with open(filename, 'w') as f:
         json.dump(results, f, indent=4)
     return
