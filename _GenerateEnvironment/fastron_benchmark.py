@@ -37,10 +37,17 @@ def run_fastron(args):
     y = np.load('{}/labels_{}.npy'.format(DATA_FOLDER, args.dataset_name))
     y = np.reshape(y, (-1, 1)).astype(float)
 
+    # test on 25K, unless we don't have enough data (can't overlap with train set)
+    first_test_index = max(args.num_training_samples, len(all_data) - 25000)
     data_train = all_data[:args.num_training_samples]
-    data_test = all_data[args.num_training_samples:]
+    data_test = all_data[first_test_index:]
     y_train = y[:args.num_training_samples]
-    y_test = y[args.num_training_samples:]
+    y_test = y[first_test_index:]
+
+    # sanity check
+    print('inputs:', data_train[:-2])
+    print('mean of training data:', data_train.mean())
+    print('std of training data:', data_train.std())
 
     # Initialize PyFastron
     fastron = PyFastron(data_train) # where data.shape = (N, d)
