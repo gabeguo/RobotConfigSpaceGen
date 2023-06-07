@@ -45,7 +45,7 @@ def run_fastron(args):
     y_test = y[first_test_index:]
 
     # sanity check
-    print('inputs:', data_train[:-2])
+    print('inputs:', data_train[-2:])
     print('mean of training data:', data_train.mean())
     print('std of training data:', data_train.std())
 
