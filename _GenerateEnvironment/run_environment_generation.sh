@@ -36,8 +36,8 @@ do
     done
 done
 
-## Or is decreasing performance in high DoF due to undersampling (curse of dimensionality)?
-## 3) Hold DoF and collision density constant, adjust number of samples (can just sample a lot, and then take subset later)
+## Or is decreasing performance in high DoF due to undersampling: curse of dimensionality?
+## 3) Hold DoF and collision density constant, adjust number of samples: can just sample a lot, and then take subset later
 echo "experiment 3: adjust number of samples"
 for seed in {0..2}
 do
