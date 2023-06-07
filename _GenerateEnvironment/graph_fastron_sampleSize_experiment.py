@@ -24,8 +24,9 @@ def get_data_for_metric(all_data, metric, beta, num_samples):
     metric_vals = list()
     for json_dict in curr_experiment:
         metric_vals.append(json_dict[metric])
+    #print(metric_vals)
     avg_metric_val = np.mean(metric_vals)
-    sem_metric_val = np.std(metric_vals, ddof=1)
+    sem_metric_val = np.std(metric_vals, ddof=1) if len(metric_vals) > 1 else 0
     return avg_metric_val, sem_metric_val
 
 """
@@ -67,11 +68,12 @@ def collect_data():
     all_data = dict() # all_data[beta][num_samples] = list of JSON dicts that tried that beta and num_samples (only diff is seed)
     for beta in POSSIBLE_BETAS:
         for num_samples in POSSIBLE_NUM_SAMPLES:
-            pattern_str = f"fastronResults_forwardKinematics_{num_samples}Samples_{beta}Beta_5Gamma_3robots_25obstacles_seed(.*?)_.json"
+            pattern_str = f"fastronResults_forwardKinematics_{num_samples}Samples_{beta}Beta_5Gamma_3robots_25obstacles_seed(.*?)_1000000Samples.json"
             # Use the pattern string in the regex search
             pattern = re.compile(r"" + pattern_str)
             curr_data = list()
             for file in find_files('approximation_results', pattern):
+                print(file)
                 with open(file, 'r') as fin:
                     curr_data.append(json.load(fin))
             all_data[(beta, num_samples)] = curr_data
