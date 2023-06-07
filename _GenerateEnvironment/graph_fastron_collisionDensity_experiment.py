@@ -59,7 +59,7 @@ def graph_results_by_metric(all_data, metric):
 
     plt.xlabel('Collision Percentage')
     plt.ylabel(metric.upper())
-    plt.title(f'Fastron Performance: {metric.upper()} as a function of Collision Percentage')
+    plt.title(f'Fastron Performance: {metric.upper()} as a function of Collision Percentage\n21 DOF, 25K training samples, 25K testing samples')
     plt.grid()
     plt.legend()
     #plt.show()
