@@ -9,34 +9,34 @@
 
 #!/bin/bash
 
-## 1) Increasing DoF experiment: impact of # DoF on Fastron performance
-echo "experiment 1: increase DoF"
-for num_robots in {1..4}
-do
-    echo ""
-    echo "${num_robots} robots"
-    for seed in {0..2}
-    do
-        echo "seed ${seed}"
-        dataset_name="${num_robots}robots_25obstacles_seed${seed}_"
-        # try four Fastron settings per workspace
-        for beta in 1 500
-        do
-            for use_kernel in "" "--forward_kinematics_kernel"
-            do
-                echo "beta ${beta} use_kernel ${use_kernel}"
-                python fastron_benchmark.py $use_kernel \
-                    --num_training_samples 25000 \
-                    --dataset_name $dataset_name \
-                    --g 5 \
-                    --beta $beta \
-                    --maxUpdates 25000 \
-                    --maxSupportPoints 25000
-                # max updates is much larger than paper (5000)
-            done
-        done
-    done
-done
+# ## 1) Increasing DoF experiment: impact of # DoF on Fastron performance
+# echo "experiment 1: increase DoF"
+# for num_robots in {1..4}
+# do
+#     echo ""
+#     echo "${num_robots} robots"
+#     for seed in {0..2}
+#     do
+#         echo "seed ${seed}"
+#         dataset_name="${num_robots}robots_25obstacles_seed${seed}_"
+#         # try four Fastron settings per workspace
+#         for beta in 1 500
+#         do
+#             for use_kernel in "" "--forward_kinematics_kernel"
+#             do
+#                 echo "beta ${beta} use_kernel ${use_kernel}"
+#                 python fastron_benchmark.py $use_kernel \
+#                     --num_training_samples 25000 \
+#                     --dataset_name $dataset_name \
+#                     --g 5 \
+#                     --beta $beta \
+#                     --maxUpdates 25000 \
+#                     --maxSupportPoints 25000
+#                 # max updates is much larger than paper: 5000
+#             done
+#         done
+#     done
+# done
 
 # ## Is decreasing performance in high DoF due to changing collision density?
 # ## 2) Hold DoF constant, adjust collision density
@@ -66,30 +66,33 @@ done
 #     done
 # done
 
-# ## Or is decreasing performance in high DoF due to undersampling (curse of dimensionality)?
-# ## 3) Hold DoF and collision density constant, adjust number of samples (can just sample a lot, and then take subset later)
-# echo "experiment 3: adjust number of samples"
-# for seed in {0..2}
-# do
-#     dataset_name="3robots_25obstacles_seed${seed}_1000000Samples"
-#     for num_samples in 1000 10000 100000 500000 900000
-#     do
-#         # try four Fastron settings per workspace
-#         for beta in 1 500
-#         do
-#             for use_kernel in "" "--forward_kinematics_kernel"
-#             do
-#                 python fastron_benchmark.py $use_kernel \
-#                     --num_training_samples $num_samples \
-#                     --dataset_name $dataset_name \
-#                     --g 5 \
-#                     --beta $beta \
-#                     --maxUpdates 1000000 \
-#                     --maxSupportPoints $num_samples
-#             done
-#         done
-#     done
-# done
+## Or is decreasing performance in high DoF due to undersampling: curse of dimensionality?
+## 3) Hold DoF and collision density constant, adjust number of samples: can just sample a lot, and then take subset later
+echo "experiment 3: adjust number of samples"
+for seed in {0..2}
+do
+    dataset_name="3robots_25obstacles_seed${seed}_1000000Samples"
+    #1000 10000 20000 30000 40000 50000 60000 70000 80000 90000 100000
+    for num_samples in 20000 30000 40000 50000 60000 70000 80000 90000 200000
+    do
+        # try four Fastron settings per workspace
+        for beta in 1 500
+        do
+            for use_kernel in "" "--forward_kinematics_kernel"
+            do
+                echo ""
+                echo "${num_samples} samples, ${beta} beta, ${use_kernel} kernel"
+                python fastron_benchmark.py $use_kernel \
+                    --num_training_samples $num_samples \
+                    --dataset_name $dataset_name \
+                    --g 5 \
+                    --beta $beta \
+                    --maxUpdates 1000000 \
+                    --maxSupportPoints $num_samples
+            done
+        done
+    done
+done
 
 ## Possible arguments
 # --num_robots 4 \

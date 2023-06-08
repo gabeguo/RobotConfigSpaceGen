@@ -6,8 +6,9 @@ from constants import *
 import numpy as np
 
 POSSIBLE_BETAS = [1, 500]
-POSSIBLE_NUM_SAMPLES = [1000, 10000]#, 100000, 500000, 900000]
-MARKERS = ['o', 'x']
+POSSIBLE_NUM_SAMPLES = [1000, 10000, 100000]# 500000, 900000]
+POSSIBLE_KERNELS = ['normalizedAngles', 'forwardKinematics']
+MARKERS = ['o', 'x', '^', 's']
 
 # Thanks ChatGPT!
 def find_files(directory, pattern):
@@ -19,8 +20,8 @@ def find_files(directory, pattern):
 """
 For the given beta and num_samples, gets the mean and std of metric over all seeds
 """
-def get_data_for_metric(all_data, metric, beta, num_samples):
-    curr_experiment = all_data[(beta, num_samples)]
+def get_data_for_metric(all_data, metric, beta, kernel, num_samples):
+    curr_experiment = all_data[(beta, kernel, num_samples)]
     metric_vals = list()
     for json_dict in curr_experiment:
         metric_vals.append(json_dict[metric])
@@ -33,18 +34,21 @@ def get_data_for_metric(all_data, metric, beta, num_samples):
 Graphs results for given metric
 """
 def graph_results_by_metric(all_data, metric):
-    # one line per beta
+    # one line per beta-kernel combo
     for i in range(len(POSSIBLE_BETAS)):
         beta = POSSIBLE_BETAS[i]
-        metric_means = list()
-        metric_stds = list()
-        for num_samples in POSSIBLE_NUM_SAMPLES:
-            curr_mean, curr_std = get_data_for_metric(all_data, metric, beta, num_samples)
-            metric_means.append(curr_mean)
-            metric_stds.append(curr_std)
-        plt.errorbar(POSSIBLE_NUM_SAMPLES, metric_means, metric_stds, label=f'$\\beta$ = {beta}', marker=MARKERS[i], capsize=2)
-        for j in range(len(POSSIBLE_NUM_SAMPLES)):
-            plt.text(POSSIBLE_NUM_SAMPLES[j] + 2, metric_means[j], f'{metric_means[j]:.3f}', ha='right')
+        for i2 in range(len(POSSIBLE_KERNELS)):
+            kernel = POSSIBLE_KERNELS[i2]
+            metric_means = list()
+            metric_stds = list()
+            for num_samples in POSSIBLE_NUM_SAMPLES:
+                curr_mean, curr_std = get_data_for_metric(all_data, metric, beta, kernel, num_samples)
+                metric_means.append(curr_mean)
+                metric_stds.append(curr_std)
+            plt.errorbar(POSSIBLE_NUM_SAMPLES, metric_means, metric_stds, label=f'$\\beta$ = {beta}; kernel = {kernel}', 
+                         marker=MARKERS[i * len(POSSIBLE_BETAS) + i2], capsize=2)
+            # for j in range(len(POSSIBLE_NUM_SAMPLES)):
+            #     plt.text(POSSIBLE_NUM_SAMPLES[j] + 2, metric_means[j], f'{metric_means[j]:.3f}', ha='right')
     plt.xlabel('Number of Samples')
     plt.ylabel(metric.upper())
     plt.xticks(POSSIBLE_NUM_SAMPLES)
@@ -67,16 +71,17 @@ def graph_results(all_data):
 def collect_data():
     all_data = dict() # all_data[beta][num_samples] = list of JSON dicts that tried that beta and num_samples (only diff is seed)
     for beta in POSSIBLE_BETAS:
-        for num_samples in POSSIBLE_NUM_SAMPLES:
-            pattern_str = f"fastronResults_forwardKinematics_{num_samples}Samples_{beta}Beta_5Gamma_3robots_25obstacles_seed(.*?)_1000000Samples.json"
-            # Use the pattern string in the regex search
-            pattern = re.compile(r"" + pattern_str)
-            curr_data = list()
-            for file in find_files('approximation_results', pattern):
-                print(file)
-                with open(file, 'r') as fin:
-                    curr_data.append(json.load(fin))
-            all_data[(beta, num_samples)] = curr_data
+        for kernel in POSSIBLE_KERNELS:
+            for num_samples in POSSIBLE_NUM_SAMPLES:
+                pattern_str = f"fastronResults_{kernel}_{num_samples}Samples_{beta}Beta_5Gamma_3robots_25obstacles_seed(.*?)_1000000Samples.json"
+                # Use the pattern string in the regex search
+                pattern = re.compile(r"" + pattern_str)
+                curr_data = list()
+                for file in find_files('approximation_results', pattern):
+                    #print(file)
+                    with open(file, 'r') as fin:
+                        curr_data.append(json.load(fin))
+                all_data[(beta, kernel, num_samples)] = curr_data
     
     return all_data
 
