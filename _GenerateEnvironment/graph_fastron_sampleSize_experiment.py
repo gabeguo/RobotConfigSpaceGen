@@ -6,7 +6,7 @@ from constants import *
 import numpy as np
 
 POSSIBLE_BETAS = [1, 500]
-POSSIBLE_NUM_SAMPLES = [1000, 10000, 100000]# 500000, 900000]
+POSSIBLE_NUM_SAMPLES = [1000] + [i for i in range(10000, 100000+1, 10000)] + [200000]
 POSSIBLE_KERNELS = ['normalizedAngles', 'forwardKinematics']
 MARKERS = ['o', 'x', '^', 's']
 
@@ -52,7 +52,7 @@ def graph_results_by_metric(all_data, metric):
     plt.xlabel('Number of Samples')
     plt.ylabel(metric.upper())
     plt.xticks(POSSIBLE_NUM_SAMPLES)
-    plt.title(f'Fastron Performance: {metric.upper()} as a function of Number of Samples')
+    plt.title(f'Fastron Performance: {metric.upper()} as a function of Number of Training Samples\n25K Testing Samples, 21DOF')
     plt.grid()
     plt.legend()
     #plt.show()
