@@ -26,6 +26,7 @@ XGBOOST = 'XGBoost'
 KNN = 'KNN'
 DL = 'DL'
 DUMMY = 'Majority Rule'
+FASTRON = 'Fastron'
 
 MS_PER_SEC = 1000
 
