@@ -45,6 +45,8 @@ def run_fastron(args):
     y = np.reshape(y, (-1, 1)).astype(float) # -1, 1
     y_binary = np.where(y < 0, 0, y).astype(int) # 0, 1
 
+    # all_data = (all_data - all_data.mean()) / all_data.std()
+
     # test on 25K, unless we don't have enough data (can't overlap with train set)
     first_test_index = max(args.num_training_samples, len(all_data) - 25000)
     data_train = all_data[:args.num_training_samples]
@@ -58,7 +60,7 @@ def run_fastron(args):
     print('std of training data:', data_train.std())
 
     # Initialize Neural Network
-    dl_model = CSpaceNet(dof=data_train.shape[1], num_freq=4, sigma=2).cuda()
+    dl_model = CSpaceNet(dof=data_train.shape[1], num_freq=8, sigma=1).cuda()
 
     # Initialize PyFastron
     fastron = PyFastron(data_train) # where data.shape = (N, d)
@@ -70,7 +72,7 @@ def run_fastron(args):
     fastron.maxSupportPoints = args.maxSupportPoints
     fastron.beta = args.beta # from paper for high DOF: 500
 
-    for model_name, model in zip([FASTRON, DL], [fastron, dl_model]):
+    for model_name, model in zip([DL], [dl_model]):#zip([FASTRON, DL], [fastron, dl_model]):
         print('\n', model_name)
 
         # Train model
@@ -153,6 +155,8 @@ def train_deep_learning(model, X_train, Y_train, learning_rate=1e-3, batch_size=
 
     #print(model)
 
+    #X_train = (X_train - X_train.mean())/X_train.std()
+
     EPOCHS = 50
 
     best_val_loss = 1e6
@@ -167,7 +171,7 @@ def train_deep_learning(model, X_train, Y_train, learning_rate=1e-3, batch_size=
     X_train = X_train[:first_val_index]
     Y_train = Y_train[:first_val_index]
 
-    beta = 1.2
+    beta = 1
     biases = biases = torch.Tensor([beta if curr_y > 0 else 1 for curr_y in Y_train]).cuda()
 
     percent_collision = torch.sum(Y_train == 1) / len(Y_train)
@@ -230,6 +234,7 @@ def train_deep_learning(model, X_train, Y_train, learning_rate=1e-3, batch_size=
 
 def test_deep_learning(model, X_test):
     model = model.cpu()
+    #X_test = (X_test - X_test.mean()) / X_test.std()
     X_test = torch.FloatTensor(X_test)#.cuda()
     return [1 if y > 0 else -1 for y in model(X_test).flatten().tolist()]
     #return [int(y + 0.5) for y in model(X_test[:, :]).flatten().tolist()]
