@@ -62,9 +62,9 @@ def log_results(y_test, pred, elapsed_train, elapsed_test, args):
     # Format the date and time as a string in the format 'yy_mm_dd_hh_mm_ss'
     formatted_timestamp = now.strftime('%y_%m_%d_%H_%M_%S')
 
-    os.makedirs(RESULTS_FOLDER, exist_ok=True)
+    os.makedirs(args.results_folder, exist_ok=True)
     filename = '{}/{}_{}.json'.format(
-        RESULTS_FOLDER, args.model_name, formatted_timestamp)
+        args.results_folder, args.model_name, formatted_timestamp)
     with open(filename, 'w') as f:
         json.dump(results, f, indent=4)
 
@@ -243,6 +243,8 @@ def main():
     parser.add_argument('--batch_size', type=int, default=512)
     parser.add_argument('--train_percent', type=float, default=0.95)
     parser.add_argument('--epochs', type=int, default=50)
+    # where to log output
+    parser.add_argument('--results_folder', type=str, default='comparison_results')
 
     args = parser.parse_args()
 
