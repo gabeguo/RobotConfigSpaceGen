@@ -79,27 +79,19 @@ def run_model(args):
 
     y = np.load('{}/labels_{}.npy'.format(DATA_FOLDER, args.dataset_name))
     y = np.reshape(y, (-1, 1)).astype(float) # -1, 1
-    y_binary = np.where(y < 0, 0, y).astype(int) # 0, 1
 
-    # all_data = (all_data - all_data.mean()) / all_data.std()
-
-    # test on 25K, unless we don't have enough data (can't overlap with train set)
-    first_test_index = max(args.num_training_samples, len(all_data) - 25000)
+    # test on 10K, unless we don't have enough data (can't overlap with train set)
+    first_test_index = max(args.num_training_samples, len(all_data) - 1e4)
     data_train = all_data[:args.num_training_samples]
     data_test = all_data[first_test_index:]
     y_train = y[:args.num_training_samples]
     y_test = y[first_test_index:]
 
-    # sanity check
-    print('inputs:', data_train[-2:])
-    print('mean of training data:', data_train.mean())
-    print('std of training data:', data_train.std())
-
     # Initialize Neural Network
     if args.model_name == DL:
         model = CSpaceNet(dof=data_train.shape[1], num_freq=args.num_freq, sigma=args.sigma).cuda()
+    # Initialize PyFastron
     elif args.model_name == FASTRON:
-        # Initialize PyFastron
         model = PyFastron(data_train) # where data.shape = (N, d)
 
         model.y = y_train # where y.shape = (N,)
@@ -151,8 +143,6 @@ def run_model(args):
     return
 
 def train_deep_learning(model, X_train, Y_train, args):
-    #X_train = (X_train - X_train.mean())/X_train.std()
-
     best_val_loss = 1e6
     best_epoch = -1
 
@@ -165,8 +155,7 @@ def train_deep_learning(model, X_train, Y_train, args):
     X_train = X_train[:first_val_index]
     Y_train = Y_train[:first_val_index]
 
-    beta = 1
-    biases = torch.Tensor([beta if curr_y > 0 else 1 for curr_y in Y_train]).cuda()
+    biases = torch.Tensor([args.bias if curr_y > 0 else 1 for curr_y in Y_train]).cuda()
 
     percent_collision = torch.sum(Y_train == 1) / len(Y_train)
     print('percent collision:', percent_collision)
@@ -185,11 +174,9 @@ def train_deep_learning(model, X_train, Y_train, args):
         #print(indices)
         random.shuffle(indices)
         for idx in indices:
-            #print(idx)
             model.zero_grad()
 
             x = X_train[idx:idx+args.batch_size, :]
-            #print(x.shape)
             y = Y_train[idx:idx+args.batch_size]
 
             y_pred = model(x)
@@ -211,8 +198,8 @@ def train_deep_learning(model, X_train, Y_train, args):
             y = Y_val[idx:idx+args.batch_size]
             val_loss = criterion(model(x).flatten(), y.flatten())
             total_val_loss += val_loss
-        if i % 5 == 0:
-            print('\tvalidation loss epoch {}: {}'.format(i, val_loss / len(Y_val)))
+        if i % 20 == 0:
+            print('\tvalidation loss epoch {}: {%.3f}'.format(i, val_loss / len(Y_val)))
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             best_epoch = i
@@ -226,12 +213,13 @@ def train_deep_learning(model, X_train, Y_train, args):
     model.eval()
     return model
 
-def test_deep_learning(model, X_test):
-    model = model.cpu()
-    #X_test = (X_test - X_test.mean()) / X_test.std()
-    X_test = torch.FloatTensor(X_test)#.cuda()
+def test_deep_learning(model, X_test, use_cuda=False):
+    if use_cuda:
+        X_test = torch.FloatTensor(X_test).cuda()
+    else:
+        model = model.cpu()
+        X_test = torch.FloatTensor(X_test)
     return [1 if y > 0 else -1 for y in model(X_test).flatten().tolist()]
-    #return [int(y + 0.5) for y in model(X_test[:, :]).flatten().tolist()]
 
 def main():
     parser = argparse.ArgumentParser()
