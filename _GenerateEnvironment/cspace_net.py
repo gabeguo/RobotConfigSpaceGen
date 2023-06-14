@@ -45,7 +45,7 @@ class CSpaceNet(nn.Module):
 
         self.block1 = nn.Sequential(
             #nn.Linear(self.dof, 256),
-            nn.Linear(self.num_freq * 2 * self.dof, 256),
+            nn.Linear(self.num_freq * 2 * self.dof, 256) if self.num_freq > 0 else nn.Linear(self.dof, 256),
             nn.BatchNorm1d(num_features=256),
             nn.ReLU(),
             nn.Linear(256, 256),
@@ -58,7 +58,7 @@ class CSpaceNet(nn.Module):
 
         self.block2 = nn.Sequential(
             #nn.Linear(self.dof + 256, 256),
-            nn.Linear(self.num_freq * 2 * self.dof + 256, 256),
+            nn.Linear(self.num_freq * 2 * self.dof + 256, 256) if self.num_freq > 0 else nn.Linear(self.dof + 256, 256),
             nn.BatchNorm1d(num_features=256),
             nn.ReLU(),
             nn.Linear(256, 256),
@@ -76,11 +76,8 @@ class CSpaceNet(nn.Module):
         return on_device_net
 
     def forward(self, x):
-        positional_encoding = self.position_embedder(x)
+        if self.num_freq > 0:
+            positional_encoding = self.position_embedder(x)
         x_intermediate = self.block1(positional_encoding)
         x_output = self.block2(torch.cat((positional_encoding, x_intermediate), dim=1))
         return x_output
-    
-        # x_intermediate = self.block1(x)
-        # x_output = self.block2(torch.cat((x_intermediate, x), dim=1))
-        # return x_output
