@@ -25,7 +25,7 @@ results_folder='comparison_results'
 
 for seed in 0 1 2
 do
-    dataset_name='3robots_25obstacles_seed${seed}_'
+    dataset_name="3robots_25obstacles_seed${seed}_"
 
     # Fastron
     for support in 3000 10000 30000
