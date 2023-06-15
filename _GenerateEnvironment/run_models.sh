@@ -36,6 +36,7 @@ do
             do
                 for b in 1 500 1000
                 do
+                    echo "Fastron: support ${support}, updates ${updates}, g ${g}, b ${b}"
                     python compare_models.py --model_name 'Fastron' --forward_kinematics_kernel \
                         --num_training_samples $num_training_samples \
                         --dataset_name $dataset_name \
@@ -53,6 +54,7 @@ do
         do
             for sigma in 0.5 1 2
             do
+                echo "DL: freq ${freq}, b ${b}, sigma ${sigma}"
                 python compare_models.py --model_name 'DL' --forward_kinematics_kernel \
                     --num_training_samples $num_training_samples \
                     --dataset_name $dataset_name \
