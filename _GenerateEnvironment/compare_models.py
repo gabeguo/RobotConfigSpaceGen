@@ -81,7 +81,7 @@ def run_model(args):
     y = np.reshape(y, (-1, 1)).astype(float) # -1, 1
 
     # test on 10K, unless we don't have enough data (can't overlap with train set)
-    first_test_index = max(args.num_training_samples, len(all_data) - 1e4)
+    first_test_index = max(args.num_training_samples, len(all_data) - int(1e4))
     data_train = all_data[:args.num_training_samples]
     data_test = all_data[first_test_index:]
     y_train = y[:args.num_training_samples]
