@@ -135,7 +135,8 @@ def plot_pareto(df_mean_std, args):
     by_label = dict(zip(labels, handles))
     plt.legend(by_label.values(), by_label.keys())
 
-    plt.title(args.title)
+    title = args.title.replace('\\n', '\n')
+    plt.title(title)
 
     plt.show()
 
@@ -151,9 +152,9 @@ def plot_pareto(df_mean_std, args):
 
     # Save everything in dir
     os.makedirs(args.save_location, exist_ok=True)
-    plt.savefig(os.path.join(args.save_location, args.title + '.pdf'))
-    plt.savefig(os.path.join(args.save_location, args.title + '.png'))
-    pareto_df.to_csv(os.path.join(args.save_location, f'{args.title}.csv'), index=False)
+    plt.savefig(os.path.join(args.save_location, title + '.pdf'))
+    plt.savefig(os.path.join(args.save_location, title + '.png'))
+    pareto_df.to_csv(os.path.join(args.save_location, f'{title}.csv'), index=False)
 
     return
 
