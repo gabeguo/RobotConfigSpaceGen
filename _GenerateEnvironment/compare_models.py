@@ -80,8 +80,9 @@ def run_model(args):
     y = np.load('{}/labels_{}.npy'.format(DATA_FOLDER, args.dataset_name))
     y = np.reshape(y, (-1, 1)).astype(float) # -1, 1
 
-    # test on 10K, unless we don't have enough data (can't overlap with train set)
-    first_test_index = max(args.num_training_samples, len(all_data) - int(1e4))
+    # test on args.num_testing_samples, unless we don't have enough data (can't overlap with train set)
+    assert args.num_training_samples + args.num_testing_samples <= len(all_data)
+    first_test_index = max(args.num_training_samples, len(all_data) - args.num_testing_samples)
     data_train = all_data[:args.num_training_samples]
     data_test = all_data[first_test_index:]
     y_train = y[:args.num_training_samples]
@@ -186,7 +187,7 @@ def train_deep_learning(model, X_train, Y_train, args):
             total_loss += loss
             loss.backward()
             optimizer.step()
-        if i % 5 == 0:
+        if i % 20 == 0:
             print('loss in epoch {}: {}'.format(i, total_loss / len(Y_train)))
 
         # calculate validation loss
@@ -228,6 +229,7 @@ def main():
     parser.add_argument('--model_name', type=str, default=DL)
     # general experimental params
     parser.add_argument('--num_training_samples', type=int, default=30000)
+    parser.add_argument('--num_testing_samples', type=int, default=5000)
     parser.add_argument('--dataset_name', type=str, default="3robots_25obstacles_seed0_")
     parser.add_argument('--forward_kinematics_kernel', action='store_true')
     # fastron-specific params
