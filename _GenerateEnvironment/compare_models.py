@@ -199,7 +199,7 @@ def train_deep_learning(model, X_train, Y_train, args):
             val_loss = criterion(model(x).flatten(), y.flatten())
             total_val_loss += val_loss
         if i % 20 == 0:
-            print('\tvalidation loss epoch {}: {%.3f}'.format(i, val_loss / len(Y_val)))
+            print('\tvalidation loss epoch {}: {:.3f}'.format(i, val_loss / len(Y_val)))
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             best_epoch = i
