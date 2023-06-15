@@ -48,9 +48,9 @@ do
     done
 
     # DL
-    for freq in 0 4 8 12
+    for freq in 4 8 12
     do
-        for b in 1 1.5 2 5
+        for b in 1 2 5
         do
             for sigma in 0.5 1 2
             do
