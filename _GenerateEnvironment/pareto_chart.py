@@ -100,14 +100,16 @@ def plot_pareto(df_mean_std, args):
         y_stds = df_model[(args.y_metric, 'std')]
 
         # Create a scatter plot of the means of x_metric vs y_metric for this model_name
-        plt.scatter(x_means, y_means, color=CLF_TO_COLOR[model_name], marker=CLF_TO_MARKER[model_name], s=75, label=model_name)
+        plt.scatter(x_means, y_means, color=CLF_TO_COLOR[model_name], marker=CLF_TO_MARKER[model_name], s=35, label=model_name)
 
         # Use errorbars to show standard deviation
         plt.errorbar(x_means, y_means, xerr=x_stds, yerr=y_stds, linestyle='None', color=CLF_TO_COLOR[model_name], alpha=0.1)
 
     # Add labels
-    plt.xlabel(args.x_label)
-    plt.ylabel(args.y_label)
+    x_label = args.x_label if args.x_label else args.x_metric
+    y_label = args.y_label if args.y_label else args.y_metric
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
 
     pareto_x, pareto_y = calculate_pareto_frontier(df_mean_std[(args.x_metric, 'mean')], 
                                                    df_mean_std[(args.y_metric, 'mean')])
@@ -133,6 +135,8 @@ def plot_pareto(df_mean_std, args):
     by_label = dict(zip(labels, handles))
     plt.legend(by_label.values(), by_label.keys())
 
+    plt.title(args.title)
+
     plt.show()
 
     # Print Pareto optimal settings
@@ -144,6 +148,12 @@ def plot_pareto(df_mean_std, args):
     pd.set_option('display.max_rows', 30)
     pd.set_option('display.max_columns', 30)
     print(pareto_df)
+
+    # Save everything in dir
+    os.makedirs(args.save_location, exist_ok=True)
+    plt.savefig(os.path.join(args.save_location, args.title + '.pdf'))
+    plt.savefig(os.path.join(args.save_location, args.title + '.png'))
+    pareto_df.to_csv(os.path.join(args.save_location, f'{args.title}.csv'), index=False)
 
     return
 
@@ -180,6 +190,7 @@ if __name__ == "__main__":
     parser.add_argument('--unit_rate_y', action='store_true', help='Divide y by number of samples', default=False)
     parser.add_argument('--x_label', type=str, default=None)
     parser.add_argument('--y_label', type=str, default=None)
+    parser.add_argument('--title', type=str, default='meh')
     parser.add_argument("--seeds", nargs='+', type=int, default=[0])
     parser.add_argument("--save_location", type=str, default='pareto_charts')
 
