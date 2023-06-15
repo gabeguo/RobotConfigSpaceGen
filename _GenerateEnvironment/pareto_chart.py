@@ -14,7 +14,6 @@ COMPARISON_VARIABLES = {
     'model_name',
     'num_training_samples',
     'num_testing_samples',
-    'dataset_name',
     'forward_kinematics_kernel',
     'g',
     'beta',
@@ -42,6 +41,22 @@ def load_json_files(directory):
     return data
 
 # Thanks ChatGPT!
+# Function to calculate the Pareto frontier
+def calculate_pareto_frontier(x, y):
+    # Sort the points in ascending order of x
+    sorted_points = sorted(zip(x, y))
+    pareto_frontier = [sorted_points[0]]
+    
+    # For each point, if it is better than the last point on the frontier, add it to the frontier
+    for point in sorted_points[1:]:
+        if point[1] < pareto_frontier[-1][1]:
+            pareto_frontier.append(point)
+    
+    # Return the frontier as separate lists of x and y coordinates
+    return zip(*pareto_frontier)
+
+
+# Thanks ChatGPT!
 def load_json_files_pd(args):
     # Load all JSON files in the directory into a list of DataFrames
     dataframes = []
@@ -49,6 +64,19 @@ def load_json_files_pd(args):
         if filename.endswith(".json"):
             with open(os.path.join(args.data_directory, filename), 'r') as f:
                 data = json.load(f)
+                if get_seed_number(data['dataset_name']) not in args.seeds:
+                    continue
+                df = pd.json_normalize(data)
+                # transform data
+                if args.invert_x:
+                    df[args.x_metric] = 1 - df[args.x_metric]
+                if args.unit_rate_x:
+                    df[args.x_metric] /= df[TEST_SIZE]
+                if args.invert_y:
+                    df[args.y_metric] = 1 - df[args.y_metric]
+                if args.unit_rate_y:
+                    df[args.y_metric] /= df[TEST_SIZE]
+
                 dataframes.append(df)
 
     # Concatenate all the DataFrames into a single DataFrame
@@ -63,6 +91,54 @@ def load_json_files_pd(args):
     ).reset_index()
 
     print(df_mean_std)
+
+    # Create a scatter plot with a different color for each 'model_name'
+    for model_name in [DL, FASTRON]:
+        df_model = df_mean_std[df_mean_std['model_name'] == model_name]
+        
+        # Extract means and standard deviations for x_metric and y_metric
+        x_means = df_model[(args.x_metric, 'mean')]
+        x_stds = df_model[(args.x_metric, 'std')]
+        y_means = df_model[(args.y_metric, 'mean')]
+        y_stds = df_model[(args.y_metric, 'std')]
+
+        # Create a scatter plot of the means of x_metric vs y_metric for this model_name
+        plt.scatter(x_means, y_means, color=CLF_TO_COLOR[model_name], marker=CLF_TO_MARKER[model_name], s=75, label=model_name)
+
+        # Use errorbars to show standard deviation
+        plt.errorbar(x_means, y_means, xerr=x_stds, yerr=y_stds, linestyle='None', color=CLF_TO_COLOR[model_name])
+
+    # Add labels
+    plt.xlabel(args.x_label)
+    plt.ylabel(args.y_label)
+
+    pareto_x, pareto_y = calculate_pareto_frontier(df_mean_std[(args.x_metric, 'mean')], 
+                                                   df_mean_std[(args.y_metric, 'mean')])
+    pareto_x = list(pareto_x)
+    pareto_y = list(pareto_y)
+
+    # extend the line
+    pareto_x.insert(0, pareto_x[0])
+    pareto_y.insert(0, max(df_mean_std[(args.y_metric, 'mean')]))
+    pareto_x.append(max(df_mean_std[(args.x_metric, 'mean')]))
+    pareto_y.append(pareto_y[-1])
+
+    # Draw the Pareto frontier as a step plot
+    plt.step(pareto_x, pareto_y, color='black', where='post')
+
+    # Fill the area under the Pareto frontier
+    plt.fill_between(pareto_x, pareto_y, color='black', alpha=0.1, step='post')
+
+    plt.grid()
+
+    # Create a custom legend with unique labels - Thanks ChatGPT!
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    plt.legend(by_label.values(), by_label.keys())
+
+    plt.show()
+
+    return
 
 # Thanks ChatGPT!
 def get_seed_number(string):
@@ -94,6 +170,7 @@ def load_and_plot_points(the_data, x_y_pairs, args):
             y=[y], \
             label=clf_name, s=75, marker=CLF_TO_MARKER[clf_name], c=CLF_TO_COLOR[clf_name], zorder=2)
         x_y_pairs.append((x, y))
+    print(len(x_y_pairs))
     return
 
 def plot_pareto(args):
@@ -106,8 +183,9 @@ def plot_pareto(args):
     x_y_pairs = list()
 
     # get all the data points
-    load_and_plot_points(the_data, x_y_pairs, args)   
     load_json_files_pd(args) 
+
+    load_and_plot_points(the_data, x_y_pairs, args)   
 
     # draw pareto front
     x_y_pairs.sort()
