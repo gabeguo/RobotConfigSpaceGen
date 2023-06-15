@@ -238,7 +238,7 @@ def main():
     parser.add_argument('--maxUpdates', type=int, default=100000)
     parser.add_argument('--maxSupportPoints', type=int, default=20000)
     # dl-specific params
-    parser.add_argument('--bias', type=int, default=1)
+    parser.add_argument('--bias', type=float, default=1)
     parser.add_argument('--num_freq', type=int, default=8)
     parser.add_argument('--sigma', type=float, default=1)
     parser.add_argument('--lr', type=float, default=1e-3)
