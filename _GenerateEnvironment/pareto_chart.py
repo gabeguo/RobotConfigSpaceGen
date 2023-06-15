@@ -138,7 +138,11 @@ def plot_pareto(df_mean_std, args):
     title = args.title.replace('\\n', '\n')
     plt.title(title)
 
-    plt.show()
+    os.makedirs(args.save_location, exist_ok=True)
+    title = title.replace('\n', '_')
+    plt.savefig(os.path.join(args.save_location, title + '.pdf'))
+    plt.savefig(os.path.join(args.save_location, title + '.png'))
+    #plt.show()
 
     # Print Pareto optimal settings
     pareto_indices = []
@@ -150,10 +154,6 @@ def plot_pareto(df_mean_std, args):
     pd.set_option('display.max_columns', 30)
     print(pareto_df)
 
-    # Save everything in dir
-    os.makedirs(args.save_location, exist_ok=True)
-    plt.savefig(os.path.join(args.save_location, title + '.pdf'))
-    plt.savefig(os.path.join(args.save_location, title + '.png'))
     pareto_df.to_csv(os.path.join(args.save_location, f'{title}.csv'), index=False)
 
     return
