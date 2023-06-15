@@ -76,8 +76,7 @@ class CSpaceNet(nn.Module):
         return on_device_net
 
     def forward(self, x):
-        if self.num_freq > 0:
-            positional_encoding = self.position_embedder(x)
+        positional_encoding = self.position_embedder(x) if self.num_freq > 0 else x
         x_intermediate = self.block1(positional_encoding)
         x_output = self.block2(torch.cat((positional_encoding, x_intermediate), dim=1))
         return x_output
