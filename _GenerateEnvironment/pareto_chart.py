@@ -121,10 +121,16 @@ def plot_pareto(df_mean_std, args):
     pareto_x = list(pareto_x)
     pareto_y = list(pareto_y)
 
+    # set axis limits
+    ymin, ymax = plt.ylim()
+    plt.ylim(ymin, min(ymax, 1))
+    xmin, xmax = plt.xlim()
+    plt.xlim(max(xmin, -0.01), xmax)
+
     # extend the line
     pareto_x.insert(0, pareto_x[0])
-    pareto_y.insert(0, max(df_mean_std[(args.y_metric, 'mean')] + df_mean_std[(args.y_metric, 'std')].fillna(0, inplace=False)))
-    pareto_x.append(max(df_mean_std[(args.x_metric, 'mean')] + df_mean_std[(args.x_metric, 'std')].fillna(0, inplace=False)))
+    pareto_y.insert(0, ymax)#pareto_y.insert(0, max(df_mean_std[(args.y_metric, 'mean')] + df_mean_std[(args.y_metric, 'std')].fillna(0, inplace=False)))
+    pareto_x.append(xmax)#pareto_x.append(max(df_mean_std[(args.x_metric, 'mean')] + df_mean_std[(args.x_metric, 'std')].fillna(0, inplace=False)))
     pareto_y.append(pareto_y[-1])
 
     # Draw the Pareto frontier as a step plot
