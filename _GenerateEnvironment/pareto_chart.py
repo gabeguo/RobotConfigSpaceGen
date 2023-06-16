@@ -86,6 +86,9 @@ def load_json_files_pd(args):
         }
     ).reset_index()
 
+    title = args.title.replace('\\n', '\n')
+    df_mean_std.to_csv(os.path.join(args.save_location, f'Full Data_{title}.csv'), index=False)
+
     return df_mean_std
 
 def plot_pareto(df_mean_std, args):
