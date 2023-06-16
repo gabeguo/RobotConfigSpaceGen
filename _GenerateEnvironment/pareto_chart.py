@@ -86,8 +86,10 @@ def load_json_files_pd(args):
         }
     ).reset_index()
 
-    title = args.title.replace('\\n', '\n')
+    title = args.title.replace('\\n', '_')
     df_mean_std.to_csv(os.path.join(args.save_location, f'Full Data_{title}.csv'), index=False)
+    # print(df_mean_std[(df_mean_std['model_name'] == DL)][['model_name', 'bias', 'num_freq']])
+    # print(df_mean_std[(df_mean_std['model_name'] == FASTRON)][['g', 'beta', 'maxUpdates', 'maxSupportPoints']])
 
     return df_mean_std
 
@@ -141,7 +143,6 @@ def plot_pareto(df_mean_std, args):
     title = args.title.replace('\\n', '\n')
     plt.title(title)
 
-    os.makedirs(args.save_location, exist_ok=True)
     title = title.replace('\n', '_')
     plt.savefig(os.path.join(args.save_location, title + '.pdf'))
     plt.savefig(os.path.join(args.save_location, title + '.png'))
@@ -155,7 +156,7 @@ def plot_pareto(df_mean_std, args):
     pareto_df = df_mean_std.loc[pareto_indices]
     pd.set_option('display.max_rows', 30)
     pd.set_option('display.max_columns', 30)
-    print(pareto_df)
+    print('Pareto optimal models:\n', pareto_df)
 
     pareto_df.to_csv(os.path.join(args.save_location, f'{title}.csv'), index=False)
 
@@ -200,5 +201,7 @@ if __name__ == "__main__":
 
     # Execute the parse_args() method
     args = parser.parse_args()
+
+    os.makedirs(args.save_location, exist_ok=True)
 
     main(args)
