@@ -204,13 +204,13 @@ def train_deep_learning(model, X_train, Y_train, args):
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             best_epoch = i
-            torch.save(model.state_dict(), 'best_model.pth')
+            torch.save(model.state_dict(), f'{args.results_folder}/best_model.pth')
         
         scheduler.step()
 
     print('best epoch: {}'.format(best_epoch))
 
-    model.load_state_dict(torch.load('best_model.pth'))
+    model.load_state_dict(torch.load(f'{args.results_folder}/best_model.pth'))
     model.eval()
     return model
 
@@ -249,6 +249,8 @@ def main():
     parser.add_argument('--results_folder', type=str, default='comparison_results')
 
     args = parser.parse_args()
+
+    os.makedirs(args.results_folder, exist_ok=True)
 
     run_model(args)
 
