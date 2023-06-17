@@ -4,6 +4,7 @@ results_folder='dof_experiment_results'
 
 for num_robots in 1 2 3 4
 do
+    echo "${num_robots} robots"
     for seed in 0 1 2
     do
         dataset_name="${num_robots}robots_25obstacles_seed${seed}_"
