@@ -111,13 +111,14 @@ def load_environment(client_id, num_obstacles, obstacle_positions, obstacle_orie
             baseOrientation=pyb.getQuaternionFromEuler(robot_orientations[i]),
             useFixedBase=True,
             physicsClientId=client_id,
-            globalScaling=1
+            globalScaling=1,
+            flags=pyb.URDF_USE_IMPLICIT_CYLINDER
         )
 
     cubeShape = pyb.createCollisionShape(shapeType=pyb.GEOM_BOX, halfExtents=[obstacle_scale for i in range(3)])
     sphereShape = pyb.createCollisionShape(shapeType=pyb.GEOM_SPHERE, radius=obstacle_scale)
     #cylinderShape = pyb.createCollisionShape(shapeType=pyb.GEOM_CYLINDER, radius=obstacle_scale, height=0.1)
-    possibleShapes = [cubeShape, sphereShape]#, cylinderShape]
+    possibleShapes = [cubeShape, sphereShape]
     obstacle_ids = [pyb.createMultiBody(baseMass=0, baseCollisionShapeIndex=possibleShapes[i%len(possibleShapes)], \
                                         basePosition=obstacle_positions[i], \
                                         baseOrientation=pyb.getQuaternionFromEuler(obstacle_orientations[i])) \
@@ -208,88 +209,7 @@ def take_pictures(args):
         )
     return
 
-# Thanks ChatGPT!
-# Assume object is centered at 0, 0, 0
-def getRobotBoundingBoxShapes(robot_id):
-    bounding_box_shapes = list()
-    for jointIndex in range(pyb.getNumJoints(robot_id)):
-        # Get the collision shape data for the joint
-        shapeData = pyb.getCollisionShapeData(robot_id, jointIndex)
-        # Check if the shape is a mesh
-        if shapeData[0][2][0] == pyb.GEOM_MESH:
-            # The second item of the shape data contains the dimensions of the bounding box of the mesh
-            dimensions = shapeData[0][2][1]
-            print(f"Joint {jointIndex} is a mesh with bounding box dimensions {dimensions}")
 
-            # approximate it as a box (bounding box)
-            box_points = [(-dimensions[0]/2, -dimensions[1]/2, -dimensions[2]/2),
-                        (-dimensions[0]/2, -dimensions[1]/2, dimensions[2]/2),
-                        (-dimensions[0]/2, dimensions[1]/2, -dimensions[2]/2),
-                        (-dimensions[0]/2, dimensions[1]/2, dimensions[2]/2),
-                        (dimensions[0]/2, -dimensions[1]/2, -dimensions[2]/2),
-                        (dimensions[0]/2, -dimensions[1]/2, dimensions[2]/2),
-                        (dimensions[0]/2, dimensions[1]/2, -dimensions[2]/2),
-                        (dimensions[0]/2, dimensions[1]/2, dimensions[2]/2)]
-            bounding_box_shapes.append(box_points)
-    return bounding_box_shapes
-
-# Thanks ChatGPT!
-# Assume object is centered at 0, 0, 0
-def getObstacleBoundingBoxShape(boxId):
-    box_shape_data = pyb.getCollisionShapeData(boxId, -1)
-    box_dimensions = box_shape_data[0][2][1] # TODO: check that this is bounding box
-    # Create a set of points for the box
-    obstacle_points = [(-box_dimensions[0]/2, -box_dimensions[1]/2, -box_dimensions[2]/2),
-                    (-box_dimensions[0]/2, -box_dimensions[1]/2, box_dimensions[2]/2),
-                    (-box_dimensions[0]/2, box_dimensions[1]/2, -box_dimensions[2]/2),
-                    (-box_dimensions[0]/2, box_dimensions[1]/2, box_dimensions[2]/2),
-                    (box_dimensions[0]/2, -box_dimensions[1]/2, -box_dimensions[2]/2),
-                    (box_dimensions[0]/2, -box_dimensions[1]/2, box_dimensions[2]/2),
-                    (box_dimensions[0]/2, box_dimensions[1]/2, -box_dimensions[2]/2),
-                    (box_dimensions[0]/2, box_dimensions[1]/2, box_dimensions[2]/2)]
-    return obstacle_points
-
-# Thanks ChatGPT!
-"""
-Returns: robotIds, robotBoundingBoxShapes, obstacleIds, obstacleBoundingBoxShapes
-"""
-def getBoundingBoxShapes(collision_bodies):
-    robotBoundingBoxShapes = list() # list of list of lists (dim 0: robot number; dim 1: joint number; dim 2: individual bounding box corner)
-    obstacleBoundingBoxShapes = list() # list of lists (dim 0: obstacle number; dim 1: individual bounding box corner)
-    robotIds = list()
-    obstacleIds = list()
-    for body_name in sorted(collision_bodies):
-        if 'robot' in body_name: # robot
-            robot_id = collision_bodies[body_name]
-            robotBoundingBoxShapes.append(getRobotBoundingBoxShapes(robot_id))
-            robotIds.append(robot_id)
-        else: # obstacle
-            boxId = collision_bodies[body_name]
-            obstacleBoundingBoxShapes.append(getObstacleBoundingBoxShape(boxId))
-            obstacleIds.append(boxId)
-    return robotIds, robotBoundingBoxShapes, obstacleIds, obstacleBoundingBoxShapes
-
-
-
-
-from scipy.spatial.transform import Rotation as R
-
-# Thanks ChatGPT!
-# Function to apply pose transformation
-def apply_transform(points, pose):
-    pos, orn = pose
-    rotation = R.from_quat([orn[0], orn[1], orn[2], orn[3]])
-
-    # Apply rotation and translation to each point
-    transformed_points = []
-    for point in points:
-        transformed_points.append(rotation.apply(point) + pos)
-
-    return transformed_points
-
-import sys
-sys.path.append('openGJK/examples/cython')
-import openGJK as opengjk
 
 def main():
     args = get_args()
@@ -378,7 +298,7 @@ def main():
 
     Q_trial_robot = [] # Q_trial_robot[i][j] = configuration of robot j on trial i
     normalized_configurations = list() # normalized_configurations[i][j] = Q_trial_robot[i][j], but normalized to [-1, +1]
-    for i in range(0, args.num_samples):
+    for i in tqdm(range(0, args.num_samples)):
         Q_trial_robot.append(list())
         normalized_configurations.append(list())
         for j in range(args.num_robots):
@@ -429,50 +349,7 @@ def main():
     elapsed = round(end - start, 3)
     print('time elapsed in checking', args.num_samples, 'configurations for collision:', elapsed, 'seconds')
     # stop detecting collisions
-
-
-
-
-
-
-
-
-    # TODO: separate forward kinematics pass
-    # TODO: separate GJK bounding box computation from collision detection
-
-    # Get information about all the items
-    robotIds, robot_bounding_boxes, obstacleIds, obstacle_bounding_boxes = getBoundingBoxShapes(collision_bodies)
-
-    # GJK collision detection
-    for i in tqdm(range(0, args.num_samples)):
-
-        for robot_id, the_robot in zip(robotIds, robot_bounding_boxes):
-            assert isinstance(the_robot, list)
-            for jointIndex, the_link in enumerate(the_robot):
-                assert isinstance(the_link, list)
-                linkState = pyb.getLinkState(robot_id, jointIndex)
-                linkPose = linkState[0], linkState[1] # TODO: verify
-                link_points = apply_transform(the_link, linkPose)
-
-                for obstacle_id, the_obstacle in zip(obstacleIds, obstacle_bounding_boxes):
-                    obstacleState = pyb.getBasePositionAndOrientation(obstacle_id)
-                    obstaclePose = obstacleState[0], obstacleState[1]
-
-                    # Apply the pose transformation to the points
-                    obstacle_points = apply_transform(obstacle_points, obstaclePose)
-
-                    # Run the GJK algorithm
-                    distance = opengjk.pygjk(link_points, obstacle_points) # TODO: verify that these are np arrays
-
-                    if distance > 0:
-                        print(f"Collision detected between joint {jointIndex} and box {boxId}")
-
-
-
-
-
-
-
+    
     results = {TIME_COST : elapsed, SAMPLE_SIZE : args.num_samples}
 
     os.makedirs(DATA_FOLDER, exist_ok=True)
