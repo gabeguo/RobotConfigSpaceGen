@@ -4,6 +4,7 @@ results_folder='obstacles_experiment_results'
 
 for num_obstacles in {10..60..10}
 do
+    echo "${num_obstacles} obstacles"
     for seed in 0 1 2
     do
         for environment_type in "colliding" "separate"
