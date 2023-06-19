@@ -1,7 +1,7 @@
 results_folder='trainSize_experiment_results'
 # use forward kinematics kernel!
 
-for num_training_samples in 100 1000 5000 10000 20000 30000 40000 50000 60000 70000 80000 90000 100000
+for num_training_samples in 100 1000 5000 10000 20000 40000 60000 80000 100000
 do
     echo "${num_training_samples} samples"
     for seed in 0 1 2
@@ -9,22 +9,18 @@ do
         dataset_name="3robots_25obstacles_seed${seed}_1000000Samples"
 
         # Fastron
-        for support in 3000 10000 30000
+        updates=50000
+        support=50000
+        for g in 0.5 1 5 10
         do
-            for updates in 5000 30000
+            for b in 1 10 500 1000
             do
-                for g in 1 5 10
-                do
-                    for b in 1 500 1000
-                    do
-                        echo "Fastron: support ${support}, updates ${updates}, g ${g}, b ${b}"
-                        python compare_models.py --model_name 'Fastron' --forward_kinematics_kernel \
-                            --num_training_samples $num_training_samples \
-                            --dataset_name $dataset_name \
-                            --g $g --beta $b --maxUpdates $updates --maxSupportPoints $support \
-                            --results_folder $results_folder
-                    done
-                done
+                echo "Fastron: support ${support}, updates ${updates}, g ${g}, b ${b}"
+                python compare_models.py --model_name 'Fastron' --forward_kinematics_kernel \
+                    --num_training_samples $num_training_samples \
+                    --dataset_name $dataset_name \
+                    --g $g --beta $b --maxUpdates $updates --maxSupportPoints $support \
+                    --results_folder $results_folder
             done
         done
 
