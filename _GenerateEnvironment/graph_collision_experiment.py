@@ -80,8 +80,8 @@ def plot_results(df, args):
     plt.legend()
     plt.grid()
 
-    plt.savefig(f'Collision Density vs {args.metric}.pdf')
-    plt.savefig(f'Collision Density vs {args.metric}.png')
+    plt.savefig(f'{args.save_location}/Collision Density vs {args.metric}.pdf')
+    plt.savefig(f'{args.save_location}/Collision Density vs {args.metric}.png')
     #plt.show()
 
 # Thanks ChatGPT!
