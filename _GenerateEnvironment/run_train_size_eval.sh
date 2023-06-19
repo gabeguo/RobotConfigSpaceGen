@@ -11,7 +11,7 @@ do
         # Fastron
         updates=50000
         support=50000
-        for g in 0.5 1 5 10
+        for g in 1 2 5 10
         do
             for b in 1 10 500 1000
             do
