@@ -83,7 +83,7 @@ def plot_results(df, args):
         error_bars=plt.errorbar(unique_x_values_list, y_medians, y_iqrs, linestyle='--', elinewidth=1, capsize=1.5,
                      color=CLF_TO_MEAN_COLOR[model_name], marker=CLF_TO_MEAN_MARKER[model_name], label=f'{model_name}: Median Performance')
         error_bars[-1][0].set_linestyle('--')
-    plt.ylim(plt.ylim()[0], 1.0)
+    plt.ylim(plt.ylim()[0], 1.05)
     plt.xlabel('Collision Density')
     plt.ylabel(args.metric.capitalize())
     plt.legend()
