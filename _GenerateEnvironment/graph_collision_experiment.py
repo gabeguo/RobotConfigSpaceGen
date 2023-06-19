@@ -40,8 +40,6 @@ def load_json_files_pd(args):
                 df[COLLISION_DENSITY_KEY] = (df[TP_NAME] + df[FN_NAME]) / (df[TP_NAME] + df[TN_NAME] + df[FP_NAME] + df[FN_NAME])
 
                 # transform data
-                if args.invert_metric:
-                    df[args.metric] = 1 - df[args.metric]
                 if args.unit_rate_metric:
                     df[args.metric] /= df[TEST_SIZE]
 
@@ -55,6 +53,9 @@ def load_json_files_pd(args):
     return df
 
 def plot_results(df, args):
+    y_values = df[args.metric].tolist()
+    all_y_medians = list()
+    all_y_iqrs = list()
     for model_name in [DL, FASTRON]:
         df_model = df[df['model_name'] == model_name]
         
@@ -63,14 +64,15 @@ def plot_results(df, args):
         unique_x_values_list.sort()
         assert len(unique_x_values_list) == 36 # number of distinct collision densities
 
-        y_maxes = list()
+        y_best = list()
         y_medians = list()
         y_iqrs = list()
         for x_val in unique_x_values_list:
             all_rows_with_x_val = df_model[df_model[COLLISION_DENSITY_KEY] == x_val]
             
-            maximum_metric_val = all_rows_with_x_val[args.metric].max()
-            y_maxes.append(maximum_metric_val)
+            best_metric_val = all_rows_with_x_val[args.metric].min() \
+                if args.invert_metric else all_rows_with_x_val[args.metric].max()
+            y_best.append(best_metric_val)
 
             median_metric_val = all_rows_with_x_val[args.metric].median()
             y_medians.append(median_metric_val)
@@ -78,19 +80,32 @@ def plot_results(df, args):
             iqr_metric_val = stats.iqr(all_rows_with_x_val[args.metric].tolist())
             y_iqrs.append(iqr_metric_val)
 
-        plt.plot(unique_x_values_list, y_maxes, 
+        plt.plot(unique_x_values_list, y_best, 
                  color=CLF_TO_MAX_COLOR[model_name], marker=CLF_TO_MAX_MARKER[model_name], label=f'{model_name}: Best Hyperparameters')
         error_bars=plt.errorbar(unique_x_values_list, y_medians, y_iqrs, linestyle='--', elinewidth=1, capsize=1.5,
                      color=CLF_TO_MEAN_COLOR[model_name], marker=CLF_TO_MEAN_MARKER[model_name], label=f'{model_name}: Median Performance')
         error_bars[-1][0].set_linestyle('--')
-    plt.ylim(plt.ylim()[0], 1.05)
+
+        all_y_medians.extend(y_medians)
+        all_y_iqrs.extend(y_iqrs)
+    ymin = min(y_values)
+    ymax = min(max(y_values), 
+               max([curr_y_val + curr_y_err \
+                    for curr_y_val, curr_y_err \
+                        in zip(all_y_medians, all_y_iqrs)]))
+    yspan = ymax - ymin
+    plt.ylim(ymin - yspan * 0.05 , ymax + yspan * 0.05)
     plt.xlabel('Collision Density')
-    plt.ylabel(args.metric.capitalize())
+    metric_name = args.metric.capitalize() if len(args.metric) >= 5 else args.metric.upper()
+    if args.ylabel:
+        plt.ylabel(args.ylabel)
+    else:
+        plt.ylabel(metric_name)
     plt.legend()
     plt.grid()
-    plt.title(f'Collision Density vs {args.metric.capitalize()}:\n{DOF} DoF, {NUM_TRAIN_SAMPLES} samples')
-    plt.savefig(f'{args.save_location}/Collision Density vs {args.metric}_{DOF} DoF.pdf')
-    plt.savefig(f'{args.save_location}/Collision Density vs {args.metric}_{DOF} DoF.png')
+    plt.title(f'Collision Density vs {metric_name}:\n{DOF} DoF, {NUM_TRAIN_SAMPLES} samples')
+    plt.savefig(f'{args.save_location}/Collision Density vs {metric_name}_{DOF} DoF.pdf')
+    plt.savefig(f'{args.save_location}/Collision Density vs {metric_name}_{DOF} DoF.png')
     #plt.show()
 
 # Thanks ChatGPT!
@@ -119,8 +134,9 @@ if __name__ == "__main__":
     # Add the arguments
     parser.add_argument("--data_directory", type=str, default='obstacles_experiment_results')
     parser.add_argument("--metric", type=str, default='accuracy')
-    parser.add_argument('--invert_metric', action='store_true', help='1 - metric instead of metric', default=False)
+    parser.add_argument('--invert_metric', action='store_true', help='min metric is best value', default=False)
     parser.add_argument('--unit_rate_metric', action='store_true', help='Divide metric by number of samples', default=False)
+    parser.add_argument("--ylabel", type=str, default=None)
     parser.add_argument("--seeds", nargs='+', type=int, default=[0, 1, 2])
     parser.add_argument("--save_location", type=str, default='graphs')
 
