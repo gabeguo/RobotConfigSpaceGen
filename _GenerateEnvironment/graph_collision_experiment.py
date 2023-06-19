@@ -16,6 +16,8 @@ COLLISION_DENSITY_KEY = 'collision_density'
 
 # Thanks ChatGPT!
 def load_json_files_pd(args):
+    global DOF
+    DOF = None
     # Load all JSON files in the directory into a list of DataFrames
     dataframes = []
     for filename in os.listdir(args.data_directory):
@@ -27,6 +29,8 @@ def load_json_files_pd(args):
                 df = pd.json_normalize(data)
                 # get DoF
                 df[DOF_KEY] = df['dataset_name'].str.extract('(\d+)').astype(int)
+                assert DOF is None or DOF == df[DOF_KEY]
+                DOF = df[DOF_KEY]
                 # get collision density
                 df[COLLISION_DENSITY_KEY] = (df[TP_NAME] + df[FN_NAME]) / (df[TP_NAME] + df[TN_NAME] + df[FP_NAME] + df[FN_NAME])
 
@@ -79,9 +83,9 @@ def plot_results(df, args):
     plt.ylabel(args.metric.capitalize())
     plt.legend()
     plt.grid()
-
-    plt.savefig(f'{args.save_location}/Collision Density vs {args.metric}.pdf')
-    plt.savefig(f'{args.save_location}/Collision Density vs {args.metric}.png')
+    plt.title(f'{args.save_location}/Collision Density vs {args.metric}: {DOF} DoF')
+    plt.savefig(f'{args.save_location}/Collision Density vs {args.metric}_{DOF} DoF.pdf')
+    plt.savefig(f'{args.save_location}/Collision Density vs {args.metric}_{DOF} DoF.png')
     #plt.show()
 
 # Thanks ChatGPT!
