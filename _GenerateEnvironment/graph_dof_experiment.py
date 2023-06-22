@@ -110,12 +110,16 @@ def plot_results(df, args):
 
         all_y_medians.extend(y_medians)
         all_y_iqrs.extend(y_iqrs)
-    ymin = min(y_values)
+    ymin = max(min(y_values),
+               min([curr_y_val - curr_y_err \
+                    for curr_y_val, curr_y_err \
+                        in zip(all_y_medians, all_y_iqrs)]))
     ymax = min(max(y_values), 
                max([curr_y_val + curr_y_err \
                     for curr_y_val, curr_y_err \
                         in zip(all_y_medians, all_y_iqrs)]))
     yspan = ymax - ymin
+    print(ymin, ymax)
     plt.ylim(ymin - yspan * 0.05 , ymax + yspan * 0.05)
     plt.xlabel('DoF')
     plt.xticks(unique_x_values_list)
