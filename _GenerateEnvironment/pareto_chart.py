@@ -7,6 +7,9 @@ import argparse
 import re
 import pandas as pd
 
+import matplotlib
+matplotlib.use('Agg')
+
 # Iff these are the same between two runs, we say they use the same model
 COMPARISON_VARIABLES = {
     'model_name',
@@ -123,7 +126,10 @@ def plot_pareto(df_mean_std, args):
 
     # set axis limits
     ymin, ymax = plt.ylim()
-    plt.ylim(ymin, min(ymax, 1))
+    if ymax <= 1:
+        plt.ylim(ymin, min(ymax, 1))
+    else:
+        plt.ylim(ymin, ymax)
     xmin, xmax = plt.xlim()
     plt.xlim(max(xmin, -0.01), xmax)
 
