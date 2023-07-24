@@ -28,6 +28,7 @@ COMPARISON_VARIABLES = {
 }
 CLF_TO_MARKER = {DL: 'o', FASTRON: 'x'}
 CLF_TO_COLOR = {DL: '#228822', FASTRON: '#882222'}
+FULL_MODEL_NAME = {DL: 'DeepCollide', FASTRON: 'Fastron FK'}
 
 # Thanks ChatGPT!
 def load_json_files(directory):
@@ -108,7 +109,7 @@ def plot_pareto(df_mean_std, args):
         y_stds = df_model[(args.y_metric, 'std')]
 
         # Create a scatter plot of the means of x_metric vs y_metric for this model_name
-        plt.scatter(x_means, y_means, color=CLF_TO_COLOR[model_name], marker=CLF_TO_MARKER[model_name], s=35, label=model_name)
+        plt.scatter(x_means, y_means, color=CLF_TO_COLOR[model_name], marker=CLF_TO_MARKER[model_name], s=35, label=FULL_MODEL_NAME[model_name])
 
         # Use errorbars to show standard deviation
         plt.errorbar(x_means, y_means, xerr=x_stds, yerr=y_stds, linestyle='None', color=CLF_TO_COLOR[model_name], alpha=0.1)
