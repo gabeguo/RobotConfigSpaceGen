@@ -120,7 +120,7 @@ def plot_results(df, args):
     yspan = ymax - ymin
     print(ymin, ymax)
     plt.ylim(ymin - yspan * 0.05 , ymax + yspan * 0.05)
-    plt.xlabel('DoF')
+    plt.xlabel('Number of Train Samples')
     #plt.xticks(unique_x_values_list)
     metric_name = args.metric.capitalize() if len(args.metric) >= 5 else args.metric.upper()
     if args.ylabel:
