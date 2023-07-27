@@ -83,7 +83,7 @@ def plot_results(df, args):
         unique_x_values_list = df_model['num_training_samples'].unique().tolist()
         unique_x_values_list.sort()
         print(unique_x_values_list)
-        assert len(unique_x_values_list) == 9 # number of distinct DoF
+        assert len(unique_x_values_list) == 9 # number of distinct training set sizes
 
         y_best = list()
         y_medians = list()
