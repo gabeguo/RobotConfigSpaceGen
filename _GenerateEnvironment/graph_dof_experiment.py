@@ -91,7 +91,7 @@ def plot_results(df, args):
         unique_x_values_list = df_model[DOF_KEY].unique().tolist()
         unique_x_values_list.sort()
         print(unique_x_values_list)
-        assert len(unique_x_values_list) == 4 # number of distinct DoF
+        assert len(unique_x_values_list) == 6 # number of distinct DoF
 
         y_best = list()
         y_medians = list()
