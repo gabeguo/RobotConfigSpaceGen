@@ -2,7 +2,8 @@ num_training_samples=30000
 results_folder='dof_experiment_results'
 # use forward kinematics kernel!
 
-for num_robots in 1 2 3 4
+#for num_robots in 1 2 3 4 5 6
+for num_robots in 5 6
 do
     echo "${num_robots} robots"
     for seed in 0 1 2
