@@ -1,0 +1,17 @@
+python graph_dof_experiment.py --metric accuracy --ylabel 'Accuracy' --save_location 'dof_graphs'
+python graph_dof_experiment.py --metric tpr --ylabel 'True Positive Rate' --save_location 'dof_graphs'
+python graph_dof_experiment.py --metric tnr --ylabel 'True Negative Rate' --save_location 'dof_graphs'
+python graph_dof_experiment.py --metric train_time --invert_metric --ylabel 'Train Time (s)' --save_location 'dof_graphs'
+python graph_dof_experiment.py --metric test_time --invert_metric --unit_rate_metric --ylabel 'Time per Inference (s)' --save_location 'dof_graphs'
+
+python graph_collision_experiment.py --metric accuracy --ylabel 'Accuracy' --save_location 'collision_graphs'
+python graph_collision_experiment.py --metric tpr --ylabel 'True Positive Rate' --save_location 'collision_graphs'
+python graph_collision_experiment.py --metric tnr --ylabel 'True Negative Rate' --save_location 'collision_graphs'
+python graph_collision_experiment.py --metric train_time --invert_metric --ylabel 'Train Time (s)' --save_location 'collision_graphs'
+python graph_collision_experiment.py --metric test_time --invert_metric --unit_rate_metric --ylabel 'Time per Inference (s)' --save_location 'collision_graphs'
+
+python graph_train_size_experiment.py --metric accuracy --ylabel 'Accuracy' --save_location 'train_size_graphs'
+python graph_train_size_experiment.py --metric tpr --ylabel 'True Positive Rate' --save_location 'train_size_graphs'
+python graph_train_size_experiment.py --metric tnr --ylabel 'True Negative Rate' --save_location 'train_size_graphs'
+python graph_train_size_experiment.py --metric train_time --invert_metric --ylabel 'Train Time (s)' --save_location 'train_size_graphs'
+python graph_train_size_experiment.py --metric test_time --invert_metric --unit_rate_metric --ylabel 'Time per Inference (s)' --save_location 'train_size_graphs'
