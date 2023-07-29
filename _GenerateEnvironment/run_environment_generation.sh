@@ -1,16 +1,17 @@
 # #!/bin/bash
 
-# ## 1) Increasing DoF experiment: impact of # DoF on Fastron performance
-# echo "experiment 1: increase DoF"
-# for num_robots in {1..4}
-# do
-#     for seed in {0..2}
-#     do
-#         python generate_environment.py --num_robots $num_robots --seed $seed \
-#         --num_obstacles 25 \
-#         --num_samples 50000
-#     done
-# done
+## 1) Increasing DoF experiment: impact of # DoF on Fastron performance
+echo "experiment 1: increase DoF"
+#for num_robots in {1..6}
+for num_robots in 5 6
+do
+    for seed in {0..2}
+    do
+        python generate_environment.py --num_robots $num_robots --seed $seed \
+        --num_obstacles 25 \
+        --num_samples 50000
+    done
+done
 
 # ## Is decreasing performance in high DoF due to changing collision density?
 # ## 2) Hold DoF constant, adjust collision density
@@ -36,16 +37,17 @@
 #     done
 # done
 
-## Or is decreasing performance in high DoF due to undersampling: curse of dimensionality?
-## 3) Hold DoF and collision density constant, adjust number of samples: can just sample a lot, and then take subset later
-echo "experiment 3: adjust number of samples"
-for seed in {0..2}
-do
-    python generate_environment.py --num_samples 1000000 --seed $seed \
-    --num_obstacles 25 \
-    --num_robots 3 \
-    --keyword_name '$1000000Samples'
-done
+# ## Or is decreasing performance in high DoF due to undersampling: curse of dimensionality?
+# ## 3) Hold DoF and collision density constant, adjust number of samples: can just sample a lot, and then take subset later
+# echo "experiment 3: adjust number of samples"
+# for seed in {0..2}
+# do
+#     python generate_environment.py --num_samples 1000000 --seed $seed \
+#     --num_obstacles 25 \
+#     --num_robots 3 \
+#     --keyword_name '1000000Samples'
+# done
+
 
 ## Possible arguments
 # --num_robots 4 \
