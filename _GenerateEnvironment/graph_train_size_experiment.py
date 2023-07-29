@@ -13,6 +13,7 @@ CLF_TO_MEAN_MARKER = {DL: '^', FASTRON: 'v'}
 CLF_TO_MAX_COLOR = {DL: (0.1, 0.8, 0.1, 1.0), FASTRON: (0.8, 0.1, 0.1, 1.0)}
 CLF_TO_MEAN_COLOR = {DL: (0.2, 0.7, 0.2, 0.5), FASTRON: (0.7, 0.2, 0.2, 0.5)}
 COLLISION_DENSITY_KEY = 'collision_density'
+FULL_MODEL_NAME = {DL: 'DeepCollide', FASTRON: 'Fastron FK'}
 
 # for each model being evaluated at certain DoF, 
 # results are averaged over all seeds/environments with that DoF
@@ -102,9 +103,9 @@ def plot_results(df, args):
             y_iqrs.append(iqr_metric_val)
 
         plt.plot(unique_x_values_list, y_best, 
-                 color=CLF_TO_MAX_COLOR[model_name], marker=CLF_TO_MAX_MARKER[model_name], label=f'{model_name}: Best Hyperparameters')
+                 color=CLF_TO_MAX_COLOR[model_name], marker=CLF_TO_MAX_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Best Hyperparameters')
         error_bars=plt.errorbar(unique_x_values_list, y_medians, y_iqrs, linestyle='--', elinewidth=1, capsize=1.5,
-                     color=CLF_TO_MEAN_COLOR[model_name], marker=CLF_TO_MEAN_MARKER[model_name], label=f'{model_name}: Median Performance')
+                     color=CLF_TO_MEAN_COLOR[model_name], marker=CLF_TO_MEAN_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Median Performance')
         error_bars[-1][0].set_linestyle('--')
 
         all_y_medians.extend(y_medians)

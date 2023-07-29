@@ -32,6 +32,8 @@ COMPARISON_VARIABLES = {
     'epochs'
 }
 
+FULL_MODEL_NAME = {DL: 'DeepCollide', FASTRON: 'Fastron FK'}
+
 # Thanks ChatGPT!
 def load_json_files_pd(args):
     global DOF, NUM_TRAIN_SAMPLES, NUM_TEST_SAMPLES
@@ -108,9 +110,9 @@ def plot_results(df, args):
             y_iqrs.append(iqr_metric_val)
 
         plt.plot(unique_x_values_list, y_best, 
-                 color=CLF_TO_MAX_COLOR[model_name], marker=CLF_TO_MAX_MARKER[model_name], label=f'{model_name}: Best Hyperparameters')
+                 color=CLF_TO_MAX_COLOR[model_name], marker=CLF_TO_MAX_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Best Hyperparameters')
         error_bars=plt.errorbar(unique_x_values_list, y_medians, y_iqrs, linestyle='--', elinewidth=1, capsize=1.5,
-                     color=CLF_TO_MEAN_COLOR[model_name], marker=CLF_TO_MEAN_MARKER[model_name], label=f'{model_name}: Median Performance')
+                     color=CLF_TO_MEAN_COLOR[model_name], marker=CLF_TO_MEAN_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Median Performance')
         error_bars[-1][0].set_linestyle('--')
 
         all_y_medians.extend(y_medians)
