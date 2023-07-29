@@ -16,9 +16,10 @@ COLLISION_DENSITY_KEY = 'collision_density'
 
 # Thanks ChatGPT!
 def load_json_files_pd(args):
-    global DOF, NUM_TRAIN_SAMPLES
+    global DOF, NUM_TRAIN_SAMPLES, NUM_TEST_SAMPLES
     DOF = None
     NUM_TRAIN_SAMPLES = None
+    NUM_TEST_SAMPLES = None
     # Load all JSON files in the directory into a list of DataFrames
     dataframes = []
     for filename in os.listdir(args.data_directory):
@@ -36,6 +37,11 @@ def load_json_files_pd(args):
                 curr_num_train_samples = df['num_training_samples'].astype(int).unique().tolist()[0]
                 assert NUM_TRAIN_SAMPLES is None or NUM_TRAIN_SAMPLES == curr_num_train_samples
                 NUM_TRAIN_SAMPLES = curr_num_train_samples
+                # get num test samples
+                curr_num_test_samples = df['num_testing_samples'].astype(int).unique().tolist()[0]
+                assert NUM_TEST_SAMPLES is None or NUM_TEST_SAMPLES == curr_num_test_samples
+                NUM_TEST_SAMPLES = curr_num_test_samples
+
                 # get collision density
                 df[COLLISION_DENSITY_KEY] = (df[TP_NAME] + df[FN_NAME]) / (df[TP_NAME] + df[TN_NAME] + df[FP_NAME] + df[FN_NAME])
 
@@ -103,7 +109,7 @@ def plot_results(df, args):
         plt.ylabel(metric_name)
     plt.legend()
     plt.grid()
-    plt.title(f'Collision Density vs {metric_name}:\n{DOF} DoF, {NUM_TRAIN_SAMPLES} samples')
+    plt.title(f'Collision Density vs {metric_name}:\n{DOF} DoF, {NUM_TRAIN_SAMPLES} train, {NUM_TEST_SAMPLES} test')
     plt.savefig(f'{args.save_location}/Collision Density vs {metric_name}_{DOF} DoF.pdf')
     plt.savefig(f'{args.save_location}/Collision Density vs {metric_name}_{DOF} DoF.png')
     #plt.show()
