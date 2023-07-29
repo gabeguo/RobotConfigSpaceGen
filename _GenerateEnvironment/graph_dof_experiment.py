@@ -56,7 +56,6 @@ def load_json_files_pd(args):
                 # get num test samples
                 curr_num_test_samples = df['num_testing_samples'].astype(int).unique().tolist()[0]
                 assert NUM_TEST_SAMPLES is None or NUM_TEST_SAMPLES == curr_num_test_samples
-                assert df[TEST_SIZE] == df['num_testing_samples']
                 NUM_TEST_SAMPLES = curr_num_test_samples
 
                 # transform data
