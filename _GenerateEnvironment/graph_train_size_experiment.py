@@ -70,7 +70,11 @@ def load_json_files_pd(args):
     # Group by the comparison variables and compute the mean and std of args.metric
     df_mean_std = df.groupby(list(COMPARISON_VARIABLES)).agg(
         {
-            args.metric: ['mean', 'std']
+            args.metric: ['mean', 'std'], # mean and std over all ENVIRONMENTS; models still separate
+            TP_NAME: ['mean', 'std'],
+            TN_NAME: ['mean', 'std'],
+            FP_NAME: ['mean', 'std'],
+            FN_NAME: ['mean', 'std'],
         }
     ).reset_index()
 
@@ -93,6 +97,7 @@ def plot_results(df, args):
         y_best = list()
         y_medians = list()
         y_iqrs = list()
+        baselines = list()
         for x_val in unique_x_values_list:
             all_rows_with_x_val = df_model[df_model['num_training_samples'] == x_val]
             
@@ -106,6 +111,32 @@ def plot_results(df, args):
             iqr_metric_val = stats.iqr(all_rows_with_x_val[(args.metric, 'mean')].tolist())
             y_iqrs.append(iqr_metric_val)
 
+            # graph baselines
+            if args.metric.lower() in [ACCURACY.lower(), TPR.lower(), TNR.lower()]:
+                tp = all_rows_with_x_val[(TP_NAME, 'mean')]
+                tn = all_rows_with_x_val[(TN_NAME, 'mean')]
+                fp = all_rows_with_x_val[(FP_NAME, 'mean')]
+                fn = all_rows_with_x_val[(FN_NAME, 'mean')]
+
+                number_collisions = (tp + fn).round().unique()
+                number_free = (tn + fp).round().unique()
+
+                print(f'\taverage number of collisions: {number_collisions}')
+                assert len(number_collisions) == 1
+                number_collisions = number_collisions[0]
+                assert len(number_free) == 1
+                number_free = number_free[0]
+                assert number_collisions + number_free == NUM_TEST_SAMPLES
+
+                if args.metric.lower() == ACCURACY.lower():
+                    numerator = max(number_collisions, number_free)
+                    value = numerator / (number_collisions + number_free) # majority rule accuracy
+                elif args.metric.lower() == TPR.lower():
+                    value = number_collisions / (number_collisions + number_free) # random guess collision proportion
+                elif args.metric.lower() == TNR.lower():
+                    value = number_free / (number_collisions + number_free) # random guess free proportion
+                baselines.append(value)
+
         plt.plot(unique_x_values_list, y_best, 
                  color=CLF_TO_MAX_COLOR[model_name], marker=CLF_TO_MAX_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Best Hyperparameters')
         error_bars=plt.errorbar(unique_x_values_list, y_medians, y_iqrs, linestyle='--', elinewidth=1, capsize=1.5,
@@ -114,6 +145,12 @@ def plot_results(df, args):
 
         all_y_medians.extend(y_medians)
         all_y_iqrs.extend(y_iqrs)
+    
+    if args.metric.lower() in [ACCURACY.lower(), TPR.lower(), TNR.lower()]:
+        # plot baseline (should be same for both models)
+        plt.plot(unique_x_values_list, baselines, color=(0.5, 0.5, 0.5, 0.5), 
+                label='Majority Rule (Baseline)' if args.metric.lower() == ACCURACY.lower() else 'Distribution-Aware Guess (Baseline)')
+
     ymin = max(min(y_values),
                min([curr_y_val - curr_y_err \
                     for curr_y_val, curr_y_err \
