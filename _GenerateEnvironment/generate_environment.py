@@ -322,6 +322,8 @@ def main():
 
     all_link_pos = list()
 
+    extra_fk_query_time = 0
+
     # start detecting collisions
     start = time.time()
 
@@ -336,6 +338,7 @@ def main():
         labels.append(1 if in_col else -1)
 
         # this computes forward kinematics!
+        fk_start = time.time()
         all_link_pos.append(list())
         for body_name in sorted(collision_bodies):
             if 'robot' not in body_name:
@@ -344,13 +347,15 @@ def main():
             for link_id in range(0, 7):
                 link_pos = pyb.getLinkState(robot_id, link_id)[0]
                 all_link_pos[i].extend(link_pos)
+        extra_fk_query_time += (time.time() - fk_start)
 
     end = time.time()
     elapsed = round(end - start, 3)
     print('time elapsed in checking', args.num_samples, 'configurations for collision:', elapsed, 'seconds')
+    print('extra fk query time:', round(extra_fk_query_time, 3), 'seconds')
     # stop detecting collisions
     
-    results = {TIME_COST : elapsed, SAMPLE_SIZE : args.num_samples}
+    results = {TIME_COST : elapsed, FK_QUERY_TIME: extra_fk_query_time, SAMPLE_SIZE : args.num_samples}
 
     os.makedirs(DATA_FOLDER, exist_ok=True)
     configs_to_np(all_configs, args)
