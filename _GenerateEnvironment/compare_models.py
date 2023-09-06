@@ -72,8 +72,8 @@ def log_results(y_test, pred, elapsed_train, elapsed_test, args):
     results.update(vars(args)) # update with args
     if args.time_layers:
         distinct_layers = [(str(key), take_time_dict[key]) for key in take_time_dict]
-        results[LAYER_BY_LAYER_TIME] = {f"{distinct_layers[i][0]}_{i}":distinct_layers[i][1] \
-                                        for i in range(len(distinct_layers))} # update with layer-by-layer time
+        for i in range(len(distinct_layers)):
+            results[f"{distinct_layers[i][0]}_{i}"] = distinct_layers[i][1]
 
     now = datetime.now()
     # Format the date and time as a string in the format 'yy_mm_dd_hh_mm_ss'
