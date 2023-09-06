@@ -40,3 +40,5 @@ TP_NAME = 'true positive'
 TN_NAME = 'true negative'
 FP_NAME = 'false positive'
 FN_NAME = 'false negative'
+
+LAYER_BY_LAYER_TIME = 'layer by layer time'

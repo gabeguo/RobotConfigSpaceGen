@@ -23,6 +23,19 @@ import torch.nn as nn
 import random
 from datetime import datetime
 
+# Thanks https://discuss.pytorch.org/t/time-measurement-of-each-layer/145810/2
+
+take_time_dict = {}
+
+def take_time_pre(layer_name,module, input):
+    take_time_dict[layer_name] = time.time() 
+
+def take_time(layer_name,module, input, output):
+    take_time_dict[layer_name] =  time.time() - take_time_dict[layer_name]
+    ## for TensorBoard you should use writter
+
+from functools import partial
+
 def log_results(y_test, pred, elapsed_train, elapsed_test, args):
     pred = np.array(pred).astype(int)
     cm = confusion_matrix(y_true=y_test.astype(int).flatten(), y_pred=pred.astype(int).flatten())
@@ -57,6 +70,10 @@ def log_results(y_test, pred, elapsed_train, elapsed_test, args):
         TEST_SIZE:y_test.flatten().shape[0],
     }
     results.update(vars(args)) # update with args
+    if args.time_layers:
+        distinct_layers = [(str(key), take_time_dict[key]) for key in take_time_dict]
+        results[LAYER_BY_LAYER_TIME] = {f"{distinct_layers[i][0]}_{i}":distinct_layers[i][1] \
+                                        for i in range(len(distinct_layers))} # update with layer-by-layer time
 
     now = datetime.now()
     # Format the date and time as a string in the format 'yy_mm_dd_hh_mm_ss'
@@ -91,6 +108,15 @@ def run_model(args):
     # Initialize Neural Network
     if args.model_name == DL:
         model = CSpaceNet(dof=data_train.shape[1], num_freq=args.num_freq, sigma=args.sigma).cuda()
+        if args.time_layers:
+            for layer in model.children():
+                if isinstance(layer, nn.Sequential):
+                    for sub_layer in layer.children():
+                        sub_layer.register_forward_pre_hook( partial(take_time_pre, sub_layer) )
+                        sub_layer.register_forward_hook( partial(take_time, sub_layer) )
+                else:
+                    layer.register_forward_pre_hook( partial(take_time_pre, layer) )
+                    layer.register_forward_hook( partial(take_time, layer) )
     # Initialize PyFastron
     elif args.model_name == FASTRON:
         model = PyFastron(data_train) # where data.shape = (N, d)
@@ -127,6 +153,14 @@ def run_model(args):
     end = time.time()
     elapsed_test = end - start
     print('time elapsed in testing on {} points for {} dof: {:.3f} seconds'.format(len(data_test), data_test.shape[1]  / (3 if args.forward_kinematics_kernel else 1), elapsed_test))
+
+    if args.model_name == DL and args.time_layers:
+        print('network layer-by-layer times:')
+        time_sum = 0
+        for item in take_time_dict:
+            print('\t', item, round(take_time_dict[item], 5))
+            time_sum += take_time_dict[item]
+        print('total time from network:', time_sum)
 
     # Get metrics
     log_results(y_test=y_test, pred=pred, elapsed_train=elapsed_train, elapsed_test=elapsed_test, args=args)
@@ -245,6 +279,8 @@ def main():
     parser.add_argument('--batch_size', type=int, default=512)
     parser.add_argument('--train_percent', type=float, default=0.95)
     parser.add_argument('--epochs', type=int, default=50)
+    # timing parameters
+    parser.add_argument('--time_layers', action='store_true')
     # where to log output
     parser.add_argument('--results_folder', type=str, default='comparison_results')
 
