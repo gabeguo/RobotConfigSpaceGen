@@ -21,6 +21,10 @@ CUDA_VISIBLE_DEVIECS=x bash run_dof_eval.sh
 
 CUDA_VISIBLE_DEVICES=x bash run_num_obstacles_eval.sh
 
+## To get train size results:
+
+CUDA_VISIBLE_DEVICES=x bash run_train_size_eval.sh
+
 ## To graph DoF, train size, and collision density:
 
 bash graph_experiments.sh
