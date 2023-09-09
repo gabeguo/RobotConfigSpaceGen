@@ -34,6 +34,9 @@ COMPARISON_VARIABLES = {
     'epochs'
 }
 
+import matplotlib
+matplotlib.use('Agg')
+
 # Thanks ChatGPT!
 def load_json_files_pd(args):
     global DOF, COLLISION_DENSITY, NUM_TEST_SAMPLES
@@ -121,7 +124,7 @@ def plot_results(df, args):
                 number_collisions = (tp + fn).round().unique()
                 number_free = (tn + fp).round().unique()
 
-                print(f'\taverage number of collisions: {number_collisions}')
+                #print(f'\taverage number of collisions: {number_collisions}')
                 assert len(number_collisions) == 1
                 number_collisions = number_collisions[0]
                 assert len(number_free) == 1
@@ -139,7 +142,7 @@ def plot_results(df, args):
 
         plt.plot(unique_x_values_list, y_best, 
                  color=CLF_TO_MAX_COLOR[model_name], marker=CLF_TO_MAX_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Best Hyperparameters')
-        error_bars=plt.errorbar(unique_x_values_list, y_medians, y_iqrs, linestyle='--', elinewidth=1, capsize=1.5,
+        error_bars=plt.errorbar(unique_x_values_list, y_medians, y_iqrs, linestyle='--', elinewidth=2, capsize=4,
                      color=CLF_TO_MEAN_COLOR[model_name], marker=CLF_TO_MEAN_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Median Performance')
         error_bars[-1][0].set_linestyle('--')
 

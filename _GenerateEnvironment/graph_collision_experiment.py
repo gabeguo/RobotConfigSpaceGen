@@ -8,6 +8,9 @@ import re
 import pandas as pd
 import scipy.stats as stats
 
+import matplotlib
+matplotlib.use('Agg')
+
 CLF_TO_MAX_MARKER = {DL: 'o', FASTRON: 'x'}
 CLF_TO_MEAN_MARKER = {DL: '^', FASTRON: 'v'}
 CLF_TO_MAX_COLOR = {DL: (0.1, 0.8, 0.1, 1.0), FASTRON: (0.8, 0.1, 0.1, 1.0)}
@@ -99,7 +102,7 @@ def plot_results(df, args):
                 number_collisions = (tp + fn).round().unique()
                 number_free = (tn + fp).round().unique()
 
-                print(f'\taverage number of collisions at {x_val} collision density: {number_collisions}')
+                #print(f'\taverage number of collisions at {x_val} collision density: {number_collisions}')
                 assert len(number_collisions) == 1
                 number_collisions = number_collisions[0]
                 assert len(number_free) == 1
@@ -117,7 +120,7 @@ def plot_results(df, args):
 
         plt.plot(unique_x_values_list, y_best, 
                  color=CLF_TO_MAX_COLOR[model_name], marker=CLF_TO_MAX_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Best Hyperparameters')
-        error_bars=plt.errorbar(unique_x_values_list, y_medians, y_iqrs, linestyle='--', elinewidth=1, capsize=1.5,
+        error_bars=plt.errorbar(unique_x_values_list, y_medians, y_iqrs, linestyle='--', elinewidth=1.5, capsize=2,
                      color=CLF_TO_MEAN_COLOR[model_name], marker=CLF_TO_MEAN_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Median Performance')
         error_bars[-1][0].set_linestyle('--')
 
