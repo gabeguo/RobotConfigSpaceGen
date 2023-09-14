@@ -59,4 +59,4 @@ We used a custom collision detection function [from Adam Heins](https://github.c
 
     bash check_collision_detection_consistency.sh
 
-Spoiler: *They are consistent.* The main difference is that PyBullet checks floor collisions, while we don't, since our focus is on obstacles (we can customize Adam Heins's method to detect specific objects). Also, PyBullet seems to return a few false positives: in a very small number of cases (~1%), it says there was a collision, but it says that the colliding objects are separated by some small distance (~1% of cube width), which would mean that there is no collision. 
+Spoiler: *They are consistent.* The main difference is that PyBullet checks floor collisions, while we don't, since our focus is on obstacles (we can customize Adam Heins's method to detect specific objects). Also, PyBullet seems to return a few false positives: in a very small number of cases (~1%), it says there was a collision (while Adam's said there wasn't), but it says that the colliding objects are separated by some small distance (~1% of cube width), which would mean that there is no collision. 
