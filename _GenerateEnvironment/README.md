@@ -50,3 +50,13 @@ Section IX: "Impact of Sample Size"
 Sections VI-IX (the previous commands generate the data, but do not make the super awesome plots)
 
     bash graph_experiments.sh
+    
+---
+
+## Miscellaneous (Unnecessary)
+
+We used a custom collision detection function [from Adam Heins](https://github.com/adamheins/pyb_utils), instead of the standard performCollisionDetection() with getContactPoints() in PyBullet. So, we have a script to measure their consistency.
+
+    bash check_collision_detection_consistency.sh
+
+Spoiler: *They are consistent.* The main difference is that PyBullet checks floor collisions, while we don't, since our focus is on obstacles (we can customize Adam Heins's method to detect specific objects). Also, PyBullet seems to return a few false positives: in a very small number of cases (~1%), it says there was a collision, but it says that the colliding objects are separated by some small distance (~1% of cube width), which would mean that there is no collision. 
