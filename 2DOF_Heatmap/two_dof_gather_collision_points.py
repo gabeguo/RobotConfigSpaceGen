@@ -40,7 +40,7 @@ def load_environment(client_id):
         "teddy_vhacd.urdf", [0.25, -0.5, 0], \
         baseOrientation=pyb.getQuaternionFromEuler([np.pi * 2/3, np.pi * 4/5, np.pi * 5/8]), \
         useFixedBase=True, globalScaling=5, physicsClientId=client_id
-    )
+    ) # TODO: Teddy seems not to have an impact
 
     # store body indices in a dict with more convenient key names
     bodies = {
@@ -75,7 +75,7 @@ def main():
     link2 = NamedCollisionObject("robot", "link_2")
     collision_objects = [cube1, cube2, cube3, link1, link2]
     collision_pairs = [(link2, cube1), (link2, cube2), (link2, cube3),\
-        (link2, cube1), (link2, cube2), (link2, cube3)]
+                        (link1, cube1), (link1, cube2), (link1, cube3)]
 
     col_detector = CollisionDetector(
         sim_id,
