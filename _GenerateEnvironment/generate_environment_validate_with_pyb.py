@@ -7,7 +7,8 @@ Based on my tests, it achieves 100% agreement (yay!), except for the two ignored
 (2) Some PyBullet collision queries actually return positive distance, which the official manual
     says means it's separated. So, if PyBullet said there was a collision with positive distance,
     I considered it to be free space. Also, this distance was negligible (~1% of the cube width).
-Basically, PyBullet returned some false positives. 
+    Cases where this happened in disagreement with Adam's code are ~1%.
+Basically, PyBullet returned a very few false positives. 
 But, we know that both models are operating the same way on the same underlying environment.
 I'd say Adam's method is more precise, and it's more tunable.
 """
