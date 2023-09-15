@@ -40,6 +40,7 @@ def load_environment(client_id):
     )
     cube3_id = pyb.createCollisionShape(shapeType=pyb.GEOM_BOX, halfExtents=[0.1, 0.1, 0.1], physicsClientId=client_id)
     cube3_id = pyb.createMultiBody(baseCollisionShapeIndex=cube3_id, baseMass=0, basePosition=[0.25, -0.5, 0], physicsClientId=client_id)
+    
     # cube3_id = pyb.loadURDF(
     #     "teddy_vhacd.urdf", [0.25, -0.5, 0], \
     #     baseOrientation=pyb.getQuaternionFromEuler([np.pi * 2/3, np.pi * 4/5, np.pi * 5/8]), \
