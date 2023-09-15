@@ -104,6 +104,11 @@ def plot_results(df, args):
         for x_val in unique_x_values_list:
             all_rows_with_x_val = df_model[df_model['num_training_samples'] == x_val]
             
+            if model_name == FASTRON:
+                assert len(all_rows_with_x_val) == 16
+            else:
+                assert len(all_rows_with_x_val) == 27
+            
             best_metric_val = all_rows_with_x_val[(args.metric, 'mean')].min() \
                 if args.invert_metric else all_rows_with_x_val[(args.metric, 'mean')].max()
             y_best.append(best_metric_val)

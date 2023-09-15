@@ -8,6 +8,8 @@ import re
 import pandas as pd
 import scipy.stats as stats
 
+from tqdm import tqdm
+
 import matplotlib
 matplotlib.use('Agg')
 
@@ -27,7 +29,7 @@ def load_json_files_pd(args):
     NUM_TEST_SAMPLES = None
     # Load all JSON files in the directory into a list of DataFrames
     dataframes = []
-    for filename in os.listdir(args.data_directory):
+    for filename in tqdm(os.listdir(args.data_directory)):
         if filename.endswith(".json"):
             with open(os.path.join(args.data_directory, filename), 'r') as f:
                 data = json.load(f)
@@ -81,7 +83,12 @@ def plot_results(df, args):
         baselines = list()
         for x_val in unique_x_values_list:
             all_rows_with_x_val = df_model[df_model[COLLISION_DENSITY_KEY] == x_val]
-            
+
+            if model_name == DL:
+                assert len(all_rows_with_x_val) == 27
+            else:
+                assert len(all_rows_with_x_val) == 54
+                        
             best_metric_val = all_rows_with_x_val[args.metric].min() \
                 if args.invert_metric else all_rows_with_x_val[args.metric].max()
             y_best.append(best_metric_val)
