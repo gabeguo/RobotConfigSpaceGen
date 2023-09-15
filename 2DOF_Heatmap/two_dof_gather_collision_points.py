@@ -26,21 +26,25 @@ def load_environment(client_id):
         physicsClientId=client_id,
         globalScaling=1
     )
-    cube1_id = pyb.loadURDF(
-        "r2d2.urdf", [0.1, 0.75, 0.1], \
-        baseOrientation=pyb.getQuaternionFromEuler([np.pi / 4, np.pi / 3, np.pi / 5]), \
-        useFixedBase=True, globalScaling=1, physicsClientId=client_id
-    )
+    # cube1_id = pyb.loadURDF(
+    #     "r2d2.urdf", [0.1, 0.75, 0.1], \
+    #     baseOrientation=pyb.getQuaternionFromEuler([np.pi / 4, np.pi / 3, np.pi / 5]), \
+    #     useFixedBase=True, globalScaling=1, physicsClientId=client_id
+    # )
+    cube1_id = pyb.createCollisionShape(shapeType=pyb.GEOM_SPHERE, radius=0.1, physicsClientId=client_id)
+    cube1_id = pyb.createMultiBody(baseCollisionShapeIndex=cube1_id, baseMass=0, basePosition=[0.1, 0.75, 0.1], physicsClientId=client_id)
     cube2_id = pyb.loadURDF(
         "duck_vhacd.urdf", [-0.9, -0.45, -0.1], \
         baseOrientation=pyb.getQuaternionFromEuler([np.pi / 6, np.pi / 7, np.pi / 9]), \
         useFixedBase=True, globalScaling=5, physicsClientId=client_id
     )
-    cube3_id = pyb.loadURDF(
-        "teddy_vhacd.urdf", [0.25, -0.5, 0], \
-        baseOrientation=pyb.getQuaternionFromEuler([np.pi * 2/3, np.pi * 4/5, np.pi * 5/8]), \
-        useFixedBase=True, globalScaling=5, physicsClientId=client_id
-    ) # TODO: Teddy seems not to have an impact
+    cube3_id = pyb.createCollisionShape(shapeType=pyb.GEOM_BOX, halfExtents=[0.1, 0.1, 0.1], physicsClientId=client_id)
+    cube3_id = pyb.createMultiBody(baseCollisionShapeIndex=cube3_id, baseMass=0, basePosition=[0.25, -0.5, 0], physicsClientId=client_id)
+    # cube3_id = pyb.loadURDF(
+    #     "teddy_vhacd.urdf", [0.25, -0.5, 0], \
+    #     baseOrientation=pyb.getQuaternionFromEuler([np.pi * 2/3, np.pi * 4/5, np.pi * 5/8]), \
+    #     useFixedBase=True, globalScaling=5, physicsClientId=client_id
+    # ) # TODO: Teddy seems not to have an impact
 
     # store body indices in a dict with more convenient key names
     bodies = {
