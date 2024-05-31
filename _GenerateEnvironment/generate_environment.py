@@ -329,20 +329,21 @@ def main():
     print('plane id:', collision_bodies['plane'])
     plane_id = collision_bodies['plane']
 
+    desired_max_distance = max(args.max_robot_robot_distance, args.max_robot_obstacle_distance)
+
     # start detecting collisions
     start = time.time()
 
     for i in tqdm(range(0, args.num_samples)):
         # calculate fk query
         start_time_fk = time.time()
-        col_detector.set_multi_robot_positions(Q_trial_robot[i], 
-            max_distance=max(args.max_robot_robot_distance, args.max_robot_obstacle_distance))
+        col_detector.set_multi_robot_positions(Q_trial_robot[i])
         total_fk_query_time += (time.time() - start_time_fk)
 
         # compute shortest distances for a configuration
         start_time_dist = time.time()
         distances = col_detector.compute_multi_robot_distances_after_moving(Q_trial_robot[i], 
-            max_distance=max(args.max_robot_robot_distance, args.max_robot_obstacle_distance))
+            max_distance=desired_max_distance)
         the_distance = np.min(distances)
         total_distance_calculation_time += (time.time() - start_time_dist)
 
