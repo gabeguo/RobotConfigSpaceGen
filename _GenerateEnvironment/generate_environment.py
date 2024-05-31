@@ -289,7 +289,7 @@ def main():
         ['robot{}_theta{}'.format(i, j) \
             for i in range(args.num_robots) \
             for j in range(1, 7+1)] + \
-        ['collision']
+        ['distance', 'collision']
 
     _collision_data = []
 
@@ -322,23 +322,47 @@ def main():
 
     all_link_pos = list()
 
-    extra_fk_query_time = 0
+    total_distance_calculation_time = 0
+    total_collision_detection_time = 0
+    total_fk_query_time = 0
+
+    print('plane id:', collision_bodies['plane'])
+    plane_id = collision_bodies['plane']
 
     # start detecting collisions
     start = time.time()
 
     for i in tqdm(range(0, args.num_samples)):
-        # compute shortest distances for a configuration
-        distances = col_detector.compute_distances_multi_robot(Q_trial_robot[i], max_distance=0)
-        in_col = (distances < 0).any()
+        # calculate fk query
+        start_time_fk = time.time()
+        col_detector.set_multi_robot_positions(Q_trial_robot[i], 
+            max_distance=max(args.max_robot_robot_distance, args.max_robot_obstacle_distance))
+        total_fk_query_time += (time.time() - start_time_fk)
 
+        # compute shortest distances for a configuration
+        start_time_dist = time.time()
+        distances = col_detector.compute_multi_robot_distances_after_moving(Q_trial_robot[i], 
+            max_distance=max(args.max_robot_robot_distance, args.max_robot_obstacle_distance))
+        the_distance = np.min(distances)
+        total_distance_calculation_time += (time.time() - start_time_dist)
+
+        # check collision
+        start_time_collision = time.time()
+        pyb.performCollisionDetection(physicsClientId=sim_id)
+        all_contact_points = [cp for cp in pyb.getContactPoints() \
+                              if cp[1] != plane_id and cp[2] != plane_id and cp[8] < 0]
+        # cp[1] is first collision object, cp[2] is second collision object
+        # cp[8] is collision distance, where NEGATIVE value indicates penetration (pos value is separation)
+        in_col = len(all_contact_points) > 0
+        total_collision_detection_time += (time.time() - start_time_collision)
+
+        # add data
+        Q[i].append(the_distance)
         Q[i].append(int(in_col))
         _collision_data.append(Q[i])
-
         labels.append(1 if in_col else -1)
 
-        # this computes forward kinematics!
-        fk_start = time.time()
+        # this queries forward kinematics for data logging
         all_link_pos.append(list())
         for body_name in sorted(collision_bodies):
             if 'robot' not in body_name:
@@ -347,15 +371,18 @@ def main():
             for link_id in range(0, 7):
                 link_pos = pyb.getLinkState(robot_id, link_id)[0]
                 all_link_pos[i].extend(link_pos)
-        extra_fk_query_time += (time.time() - fk_start)
 
     end = time.time()
     elapsed = round(end - start, 3)
-    print('time elapsed in checking', args.num_samples, 'configurations for collision:', elapsed, 'seconds')
-    print('extra fk query time:', round(extra_fk_query_time, 3), 'seconds')
-    # stop detecting collisions
-    
-    results = {TIME_COST : elapsed, FK_QUERY_TIME: extra_fk_query_time, SAMPLE_SIZE : args.num_samples}
+    print('total time elapsed in checking', args.num_samples, 'configurations for collision:', total_collision_detection_time, 'seconds')
+    print('total time elapsed in calculating', args.num_samples, 'configurations for distance:', total_distance_calculation_time, 'seconds')
+    print('total time elapsed in querying', args.num_samples, 'configurations forward kinematics:', total_fk_query_time, 'seconds')
+
+    results = {TIME_COST : elapsed, 
+               FK_QUERY_TIME: total_fk_query_time, 
+               COLLISION_TIME : total_collision_detection_time,
+               DISTANCE_TIME : total_distance_calculation_time,
+               SAMPLE_SIZE : args.num_samples}
 
     os.makedirs(DATA_FOLDER, exist_ok=True)
     configs_to_np(all_configs, args)
