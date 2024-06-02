@@ -149,7 +149,7 @@ def run_model(args):
         print(model.G.shape)
         print(model.N)
     else:    
-        pred = test_deep_learning(model, X_test=data_test)
+        pred = test_deep_learning(model, X_test=data_test, use_cuda=args.use_cuda)
     end = time.time()
     elapsed_test = end - start
     print('time elapsed in testing on {} points for {} dof: {:.3f} seconds'.format(len(data_test), data_test.shape[1]  / (3 if args.forward_kinematics_kernel else 1), elapsed_test))
@@ -279,6 +279,7 @@ def main():
     parser.add_argument('--batch_size', type=int, default=512)
     parser.add_argument('--train_percent', type=float, default=0.95)
     parser.add_argument('--epochs', type=int, default=50)
+    parser.add_argument('--use_cuda', action='store_true')
     # timing parameters
     parser.add_argument('--time_layers', action='store_true')
     # where to log output

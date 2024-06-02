@@ -54,13 +54,17 @@ do
         do
             for sigma in 0.5 1 2
             do
-                echo "DL: freq ${freq}, b ${b}, sigma ${sigma}"
-                python compare_models.py --model_name 'DL' --forward_kinematics_kernel \
-                    --num_training_samples $num_training_samples \
-                    --dataset_name $dataset_name \
-                    --bias $b --num_freq $freq --sigma $sigma \
-                    --lr 1e-3 --batch_size 512 --train_percent 0.95 --epochs 50 \
-                    --results_folder $results_folder
+                for gpu_flag in '' '--use_cuda'
+                do
+                    echo "DL ${gpu_flag}: freq ${freq}, b ${b}, sigma ${sigma}"
+                    python compare_models.py --model_name "DL${gpu_flag}" --forward_kinematics_kernel \
+                        --num_training_samples $num_training_samples \
+                        --dataset_name $dataset_name \
+                        --bias $b --num_freq $freq --sigma $sigma \
+                        --lr 1e-3 --batch_size 512 --train_percent 0.95 --epochs 50 \
+                        --results_folder $results_folder \
+                        $gpu_flag
+                done
             done
         done
     done
