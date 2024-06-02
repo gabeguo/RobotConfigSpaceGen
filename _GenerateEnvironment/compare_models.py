@@ -106,7 +106,7 @@ def run_model(args):
     y_test = y[first_test_index:]
 
     # Initialize Neural Network
-    if args.model_name == DL:
+    if DL in args.model_name:
         model = CSpaceNet(dof=data_train.shape[1], num_freq=args.num_freq, sigma=args.sigma).cuda()
         if args.time_layers:
             for layer in model.children():
