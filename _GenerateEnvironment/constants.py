@@ -13,7 +13,9 @@ TEST_SIZE = 'test_size'
 TOTAL_TIME = 'total_time'
 
 SIMULATION_TIME = TIME_COST = 'simulation_time'
-FK_QUERY_TIME = 'fk_query_time (inculded in simulation_time already)'
+COLLISION_TIME = 'collision_detection_time'
+DISTANCE_TIME = 'distance_calculation_time'
+FK_QUERY_TIME = 'fk_query_time'
 SAMPLE_SIZE = 'num_points'
 
 PERCENT_COLLISION = 'collision_ratio'

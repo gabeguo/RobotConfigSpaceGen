@@ -77,25 +77,16 @@ class CollisionDetector:
             self.col_id, bodies, named_collision_pairs
         )
 
-    # GABE METHOD
-    def compute_distances_multi_robot(self, Q, max_distance=1.0):
-        """Compute closest distances for a given configuration.
-
-        Parameters:
-          Q: Tuple of Iterables representing the desired configurations for the robots.
-             Q[i] is applied directly to PyBullet body with index bodies["robot{}".format(i)].
-          max_distance: Bodies farther apart than this distance are not queried
-             by PyBullet, the return value for the distance between such bodies
-             will be max_distance.
-
-        Returns: A NumPy array of distances, one per pair of collision objects.
-        """
+    def set_multi_robot_positions(self, Q):
         # put the robot in the given configuration
         for robot_num in range(len(self.robot_ids)):
             robot_id = self.robot_ids[robot_num]
             for i in range(pyb.getNumJoints(robot_id, physicsClientId=self.col_id)):
                 pyb.resetJointState(robot_id, i, Q[robot_num][i], physicsClientId=self.col_id)
-
+        
+        return
+    
+    def compute_multi_robot_distances_after_moving(self, Q, max_distance=1.0):
         # compute shortest distances between all object pairs
         distances = []
         for a, b in self.indexed_collision_pairs:
@@ -117,7 +108,21 @@ class CollisionDetector:
 
         return np.array(distances)
 
+    # GABE METHOD
+    def compute_distances_multi_robot(self, Q, max_distance=1.0):
+        """Compute closest distances for a given configuration.
 
+        Parameters:
+          Q: Tuple of Iterables representing the desired configurations for the robots.
+             Q[i] is applied directly to PyBullet body with index bodies["robot{}".format(i)].
+          max_distance: Bodies farther apart than this distance are not queried
+             by PyBullet, the return value for the distance between such bodies
+             will be max_distance.
+
+        Returns: A NumPy array of distances, one per pair of collision objects.
+        """
+        self.set_multi_robot_positions(Q)
+        return self.compute_multi_robot_distances_after_moving(Q, max_distance=max_distance)
 
     def compute_distances(self, q, max_distance=1.0):
         """Compute closest distances for a given configuration.
