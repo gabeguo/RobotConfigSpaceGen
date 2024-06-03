@@ -26,9 +26,10 @@ COMPARISON_VARIABLES = {
     'train_percent',
     'epochs'
 }
-CLF_TO_MARKER = {DL: 'o', FASTRON: 'x'}
-CLF_TO_COLOR = {DL: '#228822', FASTRON: '#882222'}
-FULL_MODEL_NAME = {DL: 'DeepCollide', FASTRON: 'Fastron FK'}
+DL_CUDA = f'{DL}--use_cuda'
+CLF_TO_MARKER = {DL: 'o', FASTRON: 'x', DL_CUDA: '*'}
+CLF_TO_COLOR = {DL: '#228822', FASTRON: '#882222', DL_CUDA: '#222288'}
+FULL_MODEL_NAME = {DL: 'DeepCollide', FASTRON: 'Fastron FK', DL_CUDA: 'DeepCollide (GPU)'}
 
 # Thanks ChatGPT!
 def load_json_files(directory):
@@ -99,7 +100,10 @@ def load_json_files_pd(args):
 
 def plot_pareto(df_mean_std, args):
     # Create a scatter plot with a different color for each 'model_name'
-    for model_name in [DL, FASTRON]:
+    possible_models = [DL, FASTRON]
+    if args.include_gpu:
+        possible_models.append(DL_CUDA)
+    for model_name in possible_models:
         df_model = df_mean_std[df_mean_std['model_name'] == model_name]
         
         # Extract means and standard deviations for x_metric and y_metric
@@ -125,9 +129,12 @@ def plot_pareto(df_mean_std, args):
     pareto_x = list(pareto_x)
     pareto_y = list(pareto_y)
 
+    if args.log_scale:
+        plt.yscale('log')
+        
     # set axis limits
     ymin, ymax = plt.ylim()
-    if ymax <= 1:
+    if ymax <= 1.5:
         plt.ylim(ymin, min(ymax, 1))
     else:
         plt.ylim(ymin, ymax)
@@ -208,6 +215,8 @@ if __name__ == "__main__":
     parser.add_argument('--unit_rate_y', action='store_true', help='Divide y by number of samples', default=False)
     parser.add_argument('--x_label', type=str, default=None)
     parser.add_argument('--y_label', type=str, default=None)
+    parser.add_argument('--include_gpu', action='store_true')
+    parser.add_argument('--log_scale', action='store_true')
     parser.add_argument('--title', type=str, default='meh')
     parser.add_argument("--seeds", nargs='+', type=int, default=[0])
     parser.add_argument("--save_location", type=str, default='pareto_charts')
