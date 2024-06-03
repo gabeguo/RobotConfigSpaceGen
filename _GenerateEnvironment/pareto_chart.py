@@ -59,6 +59,8 @@ def calculate_pareto_frontier(x, y):
 
 # Thanks ChatGPT!
 def load_json_files_pd(args):
+    all_baseline_col_detection_times = set()
+
     # Load all JSON files in the directory into a list of DataFrames
     dataframes = []
     for filename in os.listdir(args.data_directory):
@@ -80,6 +82,21 @@ def load_json_files_pd(args):
 
                 dataframes.append(df)
 
+                assert data['dataset_name'] in ["3robots_25obstacles_seed0_",
+                                                "3robots_25obstacles_seed1_",
+                                                "3robots_25obstacles_seed2_"]
+                baseline_simulation_data_path = f"{args.data_directory}/../simulation_data/argsAndResults_{data['dataset_name']}.json"
+                with open(baseline_simulation_data_path, 'r') as f_sim:
+                    baseline_simulation_data = json.load(f_sim)
+                    the_baseline_col_time = baseline_simulation_data[COLLISION_TIME]
+                    if args.unit_rate_y:
+                        the_baseline_col_time /= baseline_simulation_data[SAMPLE_SIZE]
+                    all_baseline_col_detection_times.add(
+                        the_baseline_col_time
+                    )
+    assert len(all_baseline_col_detection_times) == 3
+    print(all_baseline_col_detection_times)
+
     # Concatenate all the DataFrames into a single DataFrame
     df = pd.concat(dataframes, ignore_index=True)
 
@@ -96,9 +113,9 @@ def load_json_files_pd(args):
     # print(df_mean_std[(df_mean_std['model_name'] == DL)][['model_name', 'bias', 'num_freq']])
     # print(df_mean_std[(df_mean_std['model_name'] == FASTRON)][['g', 'beta', 'maxUpdates', 'maxSupportPoints']])
 
-    return df_mean_std
+    return df_mean_std, list(all_baseline_col_detection_times)
 
-def plot_pareto(df_mean_std, args):
+def plot_pareto(df_mean_std, baseline_times, args):
     # Create a scatter plot with a different color for each 'model_name'
     possible_models = [DL, FASTRON]
     if args.include_gpu:
@@ -118,6 +135,11 @@ def plot_pareto(df_mean_std, args):
         # Use errorbars to show standard deviation
         plt.errorbar(x_means, y_means, xerr=x_stds, yerr=y_stds, linestyle='None', color=CLF_TO_COLOR[model_name], alpha=0.1)
 
+    if args.y_metric == 'test_time':
+        the_baseline_time = np.mean(baseline_times)
+        plt.axhline(y=the_baseline_time, color='purple', alpha=0.9,
+                    linestyle = '--', label='GJK (PyBullet)')
+
     # Add labels
     x_label = args.x_label if args.x_label else args.x_metric
     y_label = args.y_label if args.y_label else args.y_metric
@@ -131,7 +153,7 @@ def plot_pareto(df_mean_std, args):
 
     if args.log_scale:
         plt.yscale('log')
-        
+
     # set axis limits
     ymin, ymax = plt.ylim()
     if ymax <= 1.5:
@@ -195,9 +217,9 @@ def main(args):
     plt.rcParams.update({'font.size': 11})
 
     # get all the data points
-    df_mean_std = load_json_files_pd(args) 
+    df_mean_std, baseline_times = load_json_files_pd(args) 
     # plot pareto frontier
-    plot_pareto(df_mean_std, args)
+    plot_pareto(df_mean_std, baseline_times, args)
 
     return
 
