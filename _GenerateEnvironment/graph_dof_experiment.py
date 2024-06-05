@@ -47,6 +47,7 @@ def load_json_files_pd(args):
     NUM_TEST_SAMPLES = None
     # Load all JSON files in the directory into a list of DataFrames
     dataframes = []
+    baseline_by_dof = {7:set(), 14:set(), 21:set(), 28:set(), 35:set(), 42:set()}
     for filename in os.listdir(args.data_directory):
         if filename.endswith(".json"):
             with open(os.path.join(args.data_directory, filename), 'r') as f:
@@ -70,6 +71,17 @@ def load_json_files_pd(args):
                     df[args.metric] /= df[TEST_SIZE]
 
                 dataframes.append(df)
+
+                # get PyBullet baseline
+                baseline_simulation_data_path = f"{args.data_directory}/../simulation_data/argsAndResults_{data['dataset_name']}.json"
+                assert os.path.exists(baseline_simulation_data_path)
+                with open(baseline_simulation_data_path, 'r') as f_sim:
+                    baseline_simulation_data = json.load(f_sim)
+                    the_baseline_col_time = baseline_simulation_data[COLLISION_TIME]
+                    if args.unit_rate_metric:
+                        the_baseline_col_time /= baseline_simulation_data[SAMPLE_SIZE]
+                    assert len(df[DOF_KEY]) == 1
+                    baseline_by_dof[df[DOF_KEY][0]].add(the_baseline_col_time)
     #print(len(dataframes))
     # Concatenate all the DataFrames into a single DataFrame
     df = pd.concat(dataframes, ignore_index=True)
@@ -86,10 +98,15 @@ def load_json_files_pd(args):
         }
     ).reset_index()
 
+    # sanity check baseline_by_dof
+    assert len(baseline_by_dof) == 6
+    for the_curr_dof in baseline_by_dof:
+        assert len(baseline_by_dof[the_curr_dof]) == 3, f"{len(baseline_by_dof[the_curr_dof])}, {baseline_by_dof[the_curr_dof]}"
+        baseline_by_dof[the_curr_dof] = np.mean(list(baseline_by_dof[the_curr_dof]))
     # Group by the comparison variables and compute the mean and std of args.metric
-    return df_mean_std
+    return df_mean_std, baseline_by_dof
 
-def plot_results(df, args):
+def plot_results(df, baseline_by_dof, args):
     y_values = df[(args.metric, 'mean')].tolist()
     all_y_medians = list()
     all_y_lowers = list()
@@ -180,6 +197,12 @@ def plot_results(df, args):
         plt.plot(unique_x_values_list, baselines, color=(0.5, 0.5, 0.5, 0.5), 
                 label='Majority Rule (Baseline)' if args.metric.lower() == ACCURACY.lower() else 'Distribution-Aware Guess (Baseline)')
 
+    if args.metric.lower() == TEST_TIME.lower():
+        available_dofs = [curr_dof for curr_dof in baseline_by_dof]
+        baseline_col_det_times = [baseline_by_dof[curr_dof] for curr_dof in available_dofs]
+        plt.plot(available_dofs, baseline_col_det_times,
+                 color='purple', linestyle='-.', alpha=0.5, label='GJK (PyBullet)')
+
     ymin = min(min(all_y_lowers), min(all_y_best))
     ymax = max(max(all_y_uppers), max(all_y_best))
     if args.include_gpu:
@@ -215,9 +238,9 @@ def main(args):
     plt.rcParams.update({'font.size': 11})
 
     # get all the data points
-    df_mean_std = load_json_files_pd(args) 
+    df_mean_std, baseline_by_dof = load_json_files_pd(args) 
     # plot pareto frontier
-    plot_results(df_mean_std, args)
+    plot_results(df_mean_std, baseline_by_dof, args)
 
     return
 
