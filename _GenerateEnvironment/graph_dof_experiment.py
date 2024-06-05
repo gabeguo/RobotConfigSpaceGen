@@ -94,6 +94,7 @@ def plot_results(df, args):
     all_y_medians = list()
     all_y_lowers = list()
     all_y_uppers = list()
+    all_y_best = list()
     # all_y_iqrs = list()
     all_model_names = [DL, DL_CUDA, FASTRON] if args.include_gpu else [DL, FASTRON]
     for model_name in all_model_names:
@@ -171,6 +172,7 @@ def plot_results(df, args):
         all_y_medians.extend(y_medians)
         all_y_lowers.extend(y_lowers)
         all_y_uppers.extend(y_uppers)
+        all_y_best.extend(y_best)
         # all_y_iqrs.extend(y_iqrs)
 
     if args.metric.lower() in [ACCURACY.lower(), TPR.lower(), TNR.lower()]:
@@ -178,13 +180,14 @@ def plot_results(df, args):
         plt.plot(unique_x_values_list, baselines, color=(0.5, 0.5, 0.5, 0.5), 
                 label='Majority Rule (Baseline)' if args.metric.lower() == ACCURACY.lower() else 'Distribution-Aware Guess (Baseline)')
 
-    ymin = min(y_values)
-    ymax = max(y_values)
+    ymin = min(min(all_y_lowers), min(all_y_best))
+    ymax = max(max(all_y_uppers), max(all_y_best))
     if args.include_gpu:
         plt.yscale('log')
     yspan = ymax - ymin
     print(ymin, ymax)
-    plt.ylim(max(ymin - yspan * 0.05, 0), ymax + yspan * 0.05)
+    plt.ylim(ymin - yspan * 0.05, ymax + yspan * 0.05)
+    # plt.ylim(max(ymin - yspan * 0.05, 0), ymax + yspan * 0.05)
     plt.xlabel('DoF')
     plt.xticks(unique_x_values_list)
     metric_name = args.metric.capitalize() if len(args.metric) >= 5 else args.metric.upper()
