@@ -13,7 +13,7 @@ matplotlib.use('Agg')
 
 DL_CUDA = f"{DL}--use_cuda"
 
-CLF_TO_MAX_MARKER = {DL: 'o', FASTRON: 'x', DL_CUDA: '*'}
+CLF_TO_MAX_MARKER = {DL: 'o', FASTRON: 'x', DL_CUDA: 's'}
 CLF_TO_MEAN_MARKER = {DL: '^', FASTRON: 'v', DL_CUDA: 'D'}
 CLF_TO_MAX_COLOR = {DL: (0.1, 0.8, 0.1, 1.0), FASTRON: (0.8, 0.1, 0.1, 1.0), DL_CUDA: (0.1, 0.1, 0.8, 1.0)}
 CLF_TO_MEAN_COLOR = {DL: (0.2, 0.7, 0.2, 0.5), FASTRON: (0.7, 0.2, 0.2, 0.5), DL_CUDA: (0.2, 0.2, 0.7, 0.5)}
@@ -92,8 +92,10 @@ def load_json_files_pd(args):
 def plot_results(df, args):
     y_values = df[(args.metric, 'mean')].tolist()
     all_y_medians = list()
-    all_y_iqrs = list()
-    all_model_names = [DL, FASTRON, DL_CUDA] if args.include_gpu else [DL, FASTRON]
+    all_y_lowers = list()
+    all_y_uppers = list()
+    # all_y_iqrs = list()
+    all_model_names = [DL, DL_CUDA, FASTRON] if args.include_gpu else [DL, FASTRON]
     for model_name in all_model_names:
         df_model = df[df['model_name'] == model_name]
         
@@ -105,7 +107,9 @@ def plot_results(df, args):
 
         y_best = list()
         y_medians = list()
-        y_iqrs = list()
+        y_lowers = list()
+        y_uppers = list()
+        # y_iqrs = list()
         baselines = list()
         for x_val in unique_x_values_list:
             all_rows_with_x_val = df_model[df_model[DOF_KEY] == x_val]
@@ -122,8 +126,12 @@ def plot_results(df, args):
             median_metric_val = all_rows_with_x_val[(args.metric, 'mean')].median()
             y_medians.append(median_metric_val)
 
-            iqr_metric_val = stats.iqr(all_rows_with_x_val[(args.metric, 'mean')].tolist())
-            y_iqrs.append(iqr_metric_val)
+            lower_bound = np.percentile(all_rows_with_x_val[(args.metric, 'mean')], q=25)
+            upper_bound = np.percentile(all_rows_with_x_val[(args.metric, 'mean')], q=75)
+            # iqr_metric_val = stats.iqr(all_rows_with_x_val[(args.metric, 'mean')].tolist())
+            # y_iqrs.append(iqr_metric_val)
+            y_lowers.append(lower_bound)
+            y_uppers.append(upper_bound)
 
             if args.metric.lower() in [ACCURACY.lower(), TPR.lower(), TNR.lower()]:
                 tp = all_rows_with_x_val[(TP_NAME, 'mean')]
@@ -152,26 +160,26 @@ def plot_results(df, args):
 
         plt.plot(unique_x_values_list, y_best, 
                  color=CLF_TO_MAX_COLOR[model_name], marker=CLF_TO_MAX_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Best Hyperparameters')
-        error_bars=plt.errorbar(unique_x_values_list, y_medians, y_iqrs, linestyle='--', elinewidth=2, capsize=4,
+        y_errors = np.stack((np.array(y_medians) - np.array(y_lowers), 
+                             np.array(y_uppers) - np.array(y_medians)), 
+                             axis=0)
+        assert y_errors.shape == (2, len(y_lowers))
+        error_bars=plt.errorbar(unique_x_values_list, y_medians, y_errors, linestyle='--', elinewidth=2, capsize=4,
                      color=CLF_TO_MEAN_COLOR[model_name], marker=CLF_TO_MEAN_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Median Performance')
         error_bars[-1][0].set_linestyle('--')
 
         all_y_medians.extend(y_medians)
-        all_y_iqrs.extend(y_iqrs)
+        all_y_lowers.extend(y_lowers)
+        all_y_uppers.extend(y_uppers)
+        # all_y_iqrs.extend(y_iqrs)
 
     if args.metric.lower() in [ACCURACY.lower(), TPR.lower(), TNR.lower()]:
         # plot baseline (should be same for both models)
         plt.plot(unique_x_values_list, baselines, color=(0.5, 0.5, 0.5, 0.5), 
                 label='Majority Rule (Baseline)' if args.metric.lower() == ACCURACY.lower() else 'Distribution-Aware Guess (Baseline)')
 
-    ymin = max(min(y_values),
-               min([curr_y_val - curr_y_err \
-                    for curr_y_val, curr_y_err \
-                        in zip(all_y_medians, all_y_iqrs)]))
-    ymax = min(max(y_values), 
-               max([curr_y_val + curr_y_err \
-                    for curr_y_val, curr_y_err \
-                        in zip(all_y_medians, all_y_iqrs)]))
+    ymin = min(y_values)
+    ymax = max(y_values)
     if args.include_gpu:
         plt.yscale('log')
     yspan = ymax - ymin
