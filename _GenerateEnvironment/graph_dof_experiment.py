@@ -11,10 +11,12 @@ import scipy.stats as stats
 import matplotlib
 matplotlib.use('Agg')
 
-CLF_TO_MAX_MARKER = {DL: 'o', FASTRON: 'x'}
-CLF_TO_MEAN_MARKER = {DL: '^', FASTRON: 'v'}
-CLF_TO_MAX_COLOR = {DL: (0.1, 0.8, 0.1, 1.0), FASTRON: (0.8, 0.1, 0.1, 1.0)}
-CLF_TO_MEAN_COLOR = {DL: (0.2, 0.7, 0.2, 0.5), FASTRON: (0.7, 0.2, 0.2, 0.5)}
+DL_CUDA = f"{DL}--use_cuda"
+
+CLF_TO_MAX_MARKER = {DL: 'o', FASTRON: 'x', DL_CUDA: '*'}
+CLF_TO_MEAN_MARKER = {DL: '^', FASTRON: 'v', DL_CUDA: 'D'}
+CLF_TO_MAX_COLOR = {DL: (0.1, 0.8, 0.1, 1.0), FASTRON: (0.8, 0.1, 0.1, 1.0), DL_CUDA: (0.1, 0.1, 0.8, 1.0)}
+CLF_TO_MEAN_COLOR = {DL: (0.2, 0.7, 0.2, 0.5), FASTRON: (0.7, 0.2, 0.2, 0.5), DL_CUDA: (0.2, 0.2, 0.7, 0.5)}
 
 # for each model being evaluated at certain DoF, 
 # results are averaged over all seeds/environments with that DoF
@@ -35,7 +37,7 @@ COMPARISON_VARIABLES = {
     'epochs'
 }
 
-FULL_MODEL_NAME = {DL: 'DeepCollide', FASTRON: 'Fastron FK'}
+FULL_MODEL_NAME = {DL: 'DeepCollide', FASTRON: 'Fastron FK', DL_CUDA: 'DeepCollide (GPU)'}
 
 # Thanks ChatGPT!
 def load_json_files_pd(args):
@@ -91,7 +93,8 @@ def plot_results(df, args):
     y_values = df[(args.metric, 'mean')].tolist()
     all_y_medians = list()
     all_y_iqrs = list()
-    for model_name in [DL, FASTRON]:
+    all_model_names = [DL, FASTRON, DL_CUDA] if args.include_gpu else [DL, FASTRON]
+    for model_name in all_model_names:
         df_model = df[df['model_name'] == model_name]
         
         # Extract maxes, means, and standard deviations for x_metric and y_metric
@@ -169,9 +172,11 @@ def plot_results(df, args):
                max([curr_y_val + curr_y_err \
                     for curr_y_val, curr_y_err \
                         in zip(all_y_medians, all_y_iqrs)]))
+    if args.include_gpu:
+        plt.yscale('log')
     yspan = ymax - ymin
     print(ymin, ymax)
-    plt.ylim(ymin - yspan * 0.05 , ymax + yspan * 0.05)
+    plt.ylim(max(ymin - yspan * 0.05, 0), ymax + yspan * 0.05)
     plt.xlabel('DoF')
     plt.xticks(unique_x_values_list)
     metric_name = args.metric.capitalize() if len(args.metric) >= 5 else args.metric.upper()
@@ -217,6 +222,7 @@ if __name__ == "__main__":
     parser.add_argument("--ylabel", type=str, default=None)
     parser.add_argument("--seeds", nargs='+', type=int, default=[0, 1, 2])
     parser.add_argument("--save_location", type=str, default='graphs')
+    parser.add_argument('--include_gpu', action='store_true')
 
     # Execute the parse_args() method
     args = parser.parse_args()
