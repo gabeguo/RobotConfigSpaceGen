@@ -13,13 +13,15 @@ from tqdm import tqdm
 import matplotlib
 matplotlib.use('Agg')
 
-CLF_TO_MAX_MARKER = {DL: 'o', FASTRON: 'x'}
-CLF_TO_MEAN_MARKER = {DL: '^', FASTRON: 'v'}
-CLF_TO_MAX_COLOR = {DL: (0.1, 0.8, 0.1, 1.0), FASTRON: (0.8, 0.1, 0.1, 1.0)}
-CLF_TO_MEAN_COLOR = {DL: (0.2, 0.7, 0.2, 0.5), FASTRON: (0.7, 0.2, 0.2, 0.5)}
+DL_CUDA = f"{DL}--use_cuda"
+
+CLF_TO_MAX_MARKER = {DL: 'o', FASTRON: 'x', DL_CUDA: 's'}
+CLF_TO_MEAN_MARKER = {DL: '^', FASTRON: 'v', DL_CUDA: 'D'}
+CLF_TO_MAX_COLOR = {DL: (0.1, 0.8, 0.1, 1.0), FASTRON: (0.8, 0.1, 0.1, 1.0), DL_CUDA: (0.1, 0.1, 0.8, 1.0)}
+CLF_TO_MEAN_COLOR = {DL: (0.2, 0.7, 0.2, 0.5), FASTRON: (0.7, 0.2, 0.2, 0.5), DL_CUDA: (0.2, 0.2, 0.7, 0.5)}
 COLLISION_DENSITY_KEY = 'collision_density'
 
-FULL_MODEL_NAME = {DL: 'DeepCollide', FASTRON: 'Fastron FK'}
+FULL_MODEL_NAME = {DL: 'DeepCollide', FASTRON: 'Fastron FK', DL_CUDA: 'DeepCollide (GPU)'}
 
 # Thanks ChatGPT!
 def load_json_files_pd(args):
@@ -68,8 +70,11 @@ def load_json_files_pd(args):
 def plot_results(df, args):
     y_values = df[args.metric].tolist()
     all_y_medians = list()
-    all_y_iqrs = list()
-    for model_name in [DL, FASTRON]:
+    all_y_lowers = list()
+    all_y_uppers = list()
+    all_y_best = list()
+    all_model_names = [DL, DL_CUDA, FASTRON] if args.include_gpu else [DL, FASTRON]
+    for model_name in all_model_names:
         df_model = df[df['model_name'] == model_name]
         
         # Extract maxes, means, and standard deviations for x_metric and y_metric
@@ -79,12 +84,13 @@ def plot_results(df, args):
 
         y_best = list()
         y_medians = list()
-        y_iqrs = list()
+        y_uppers = list()
+        y_lowers = list()
         baselines = list()
         for x_val in unique_x_values_list:
             all_rows_with_x_val = df_model[df_model[COLLISION_DENSITY_KEY] == x_val]
 
-            if model_name == DL:
+            if DL in model_name:
                 assert len(all_rows_with_x_val) == 27
             else:
                 assert len(all_rows_with_x_val) == 54
@@ -96,8 +102,10 @@ def plot_results(df, args):
             median_metric_val = all_rows_with_x_val[args.metric].median()
             y_medians.append(median_metric_val)
 
-            iqr_metric_val = stats.iqr(all_rows_with_x_val[args.metric].tolist())
-            y_iqrs.append(iqr_metric_val)
+            lower_bound = np.percentile(all_rows_with_x_val[args.metric], q=25)
+            upper_bound = np.percentile(all_rows_with_x_val[args.metric], q=75)
+            y_lowers.append(lower_bound)
+            y_uppers.append(upper_bound)
 
             # get baseline
             if args.metric.lower() in [ACCURACY.lower(), TPR.lower(), TNR.lower()]:
@@ -127,23 +135,28 @@ def plot_results(df, args):
 
         plt.plot(unique_x_values_list, y_best, 
                  color=CLF_TO_MAX_COLOR[model_name], marker=CLF_TO_MAX_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Best Hyperparameters')
-        error_bars=plt.errorbar(unique_x_values_list, y_medians, y_iqrs, linestyle='--', elinewidth=1.5, capsize=2,
+        y_errors = np.stack((np.array(y_medians) - np.array(y_lowers), 
+                             np.array(y_uppers) - np.array(y_medians)), 
+                             axis=0)
+        assert y_errors.shape == (2, len(y_lowers))
+        error_bars=plt.errorbar(unique_x_values_list, y_medians, y_errors, linestyle='--', elinewidth=2, capsize=4,
                      color=CLF_TO_MEAN_COLOR[model_name], marker=CLF_TO_MEAN_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Median Performance')
         error_bars[-1][0].set_linestyle('--')
 
         all_y_medians.extend(y_medians)
-        all_y_iqrs.extend(y_iqrs)
+        all_y_lowers.extend(y_lowers)
+        all_y_uppers.extend(y_uppers)
+        all_y_best.extend(y_best)
     
     if args.metric.lower() in [ACCURACY.lower(), TPR.lower(), TNR.lower()]:
         # plot baseline (should be same for both models)
         plt.plot(unique_x_values_list, baselines, color=(0.5, 0.5, 0.5, 0.5), 
                 label='Majority Rule (Baseline)' if args.metric.lower() == ACCURACY.lower() else 'Distribution-Aware Guess (Baseline)')
     
-    ymin = min(y_values)
-    ymax = min(max(y_values), 
-               max([curr_y_val + curr_y_err \
-                    for curr_y_val, curr_y_err \
-                        in zip(all_y_medians, all_y_iqrs)]))
+    ymin = min(min(all_y_lowers), min(all_y_best))
+    ymax = max(max(all_y_uppers), max(all_y_best))
+    if args.include_gpu:
+        plt.yscale('log')
     yspan = ymax - ymin
     plt.ylim(ymin - yspan * 0.05 , ymax + yspan * 0.05)
     plt.xlabel('Collision Density')
@@ -190,6 +203,7 @@ if __name__ == "__main__":
     parser.add_argument("--ylabel", type=str, default=None)
     parser.add_argument("--seeds", nargs='+', type=int, default=[0, 1, 2])
     parser.add_argument("--save_location", type=str, default='graphs')
+    parser.add_argument('--include_gpu', action='store_true')
 
     # Execute the parse_args() method
     args = parser.parse_args()
