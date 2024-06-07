@@ -201,7 +201,7 @@ def plot_results(df, baseline_by_dof, args):
         available_dofs = [curr_dof for curr_dof in baseline_by_dof]
         baseline_col_det_times = [baseline_by_dof[curr_dof] for curr_dof in available_dofs]
         plt.plot(available_dofs, baseline_col_det_times,
-                 color='purple', linestyle='-.', alpha=0.5, label='GJK (PyBullet)')
+                 color='purple', linestyle='-.', marker='p', alpha=0.5, label='GJK (PyBullet)')
 
     ymin = min(min(all_y_lowers), min(all_y_best))
     ymax = max(max(all_y_uppers), max(all_y_best))
