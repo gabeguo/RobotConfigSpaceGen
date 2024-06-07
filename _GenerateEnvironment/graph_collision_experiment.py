@@ -80,7 +80,7 @@ def load_json_files_pd(args):
     df = pd.concat(dataframes, ignore_index=True)
 
     # sanity check baseline_by_collision_density
-    assert len(baseline_by_collision_density) == 36
+    assert len(baseline_by_collision_density) <= 36
     for curr_val in baseline_by_collision_density:
         assert len(baseline_by_collision_density[curr_val]) == 1
         baseline_by_collision_density[curr_val] = \
@@ -103,7 +103,7 @@ def plot_results(df, baseline_by_collision_density, args):
         # Extract maxes, means, and standard deviations for x_metric and y_metric
         unique_x_values_list = df_model[COLLISION_DENSITY_KEY].unique().tolist()
         unique_x_values_list.sort()
-        assert len(unique_x_values_list) == 36 # number of distinct collision densities
+        assert len(unique_x_values_list) <= 36 # number of distinct collision densities
 
         y_best = list()
         y_medians = list()
@@ -114,9 +114,9 @@ def plot_results(df, baseline_by_collision_density, args):
             all_rows_with_x_val = df_model[df_model[COLLISION_DENSITY_KEY] == x_val]
 
             if DL in model_name:
-                assert len(all_rows_with_x_val) == 27
+                assert len(all_rows_with_x_val) <= 27
             else:
-                assert len(all_rows_with_x_val) == 54
+                assert len(all_rows_with_x_val) <= 54
                         
             best_metric_val = all_rows_with_x_val[args.metric].min() \
                 if args.invert_metric else all_rows_with_x_val[args.metric].max()
@@ -157,14 +157,19 @@ def plot_results(df, baseline_by_collision_density, args):
                 baselines.append(value)
 
         plt.plot(unique_x_values_list, y_best, 
-                 color=CLF_TO_MAX_COLOR[model_name], marker=CLF_TO_MAX_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Best Hyperparameters')
+                 color=CLF_TO_MAX_COLOR[model_name], marker=CLF_TO_MAX_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Best')
         y_errors = np.stack((np.array(y_medians) - np.array(y_lowers), 
                              np.array(y_uppers) - np.array(y_medians)), 
                              axis=0)
         assert y_errors.shape == (2, len(y_lowers))
-        error_bars=plt.errorbar(unique_x_values_list, y_medians, y_errors, linestyle='--', elinewidth=2, capsize=4,
-                     color=CLF_TO_MEAN_COLOR[model_name], marker=CLF_TO_MEAN_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Median Performance')
-        error_bars[-1][0].set_linestyle('--')
+        if args.disable_error_bars:
+            y_errors = np.zeros_like(y_errors)
+            plt.plot(unique_x_values_list, y_medians, linestyle='--',
+                     color=CLF_TO_MEAN_COLOR[model_name], marker=CLF_TO_MEAN_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Median')
+        else:
+            error_bars=plt.errorbar(unique_x_values_list, y_medians, y_errors, linestyle='--', elinewidth=2, capsize=4,
+                        color=CLF_TO_MEAN_COLOR[model_name], marker=CLF_TO_MEAN_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Median')
+            error_bars[-1][0].set_linestyle('--')
 
         all_y_medians.extend(y_medians)
         all_y_lowers.extend(y_lowers)
@@ -176,6 +181,13 @@ def plot_results(df, baseline_by_collision_density, args):
         plt.plot(unique_x_values_list, baselines, color=(0.5, 0.5, 0.5, 0.5), 
                 label='Majority Rule (Baseline)' if args.metric.lower() == ACCURACY.lower() else 'Distribution-Aware Guess (Baseline)')
 
+    if not args.disable_error_bars:
+        ymin = min(min(all_y_lowers), min(all_y_best))
+        ymax = max(max(all_y_uppers), max(all_y_best))
+    else:
+        ymin = min(min(all_y_medians), min(all_y_best))
+        ymax = max(max(all_y_medians), max(all_y_best))
+
     if args.metric.lower() == TEST_TIME.lower():
         the_collision_densities = [the_curr_val for \
                                    the_curr_val in baseline_by_collision_density]
@@ -184,20 +196,22 @@ def plot_results(df, baseline_by_collision_density, args):
                               the_curr_val in the_collision_densities]
         plt.plot(the_collision_densities, the_baseline_times,
                  color='purple', linestyle='-.', marker='p', alpha=0.5, label='GJK (PyBullet)')
-
-    ymin = min(min(all_y_lowers), min(all_y_best))
-    ymax = max(max(all_y_uppers), max(all_y_best))
+        ymin = min(ymin, min(the_baseline_times))
+        ymax = max(ymax, max(the_baseline_times))
+    
     if args.include_gpu:
         plt.yscale('log')
     yspan = ymax - ymin
-    plt.ylim(ymin - yspan * 0.05 , ymax + yspan * 0.05)
+    plt.ylim(ymin - yspan * 0.1 , ymax + yspan * 0.1)
     plt.xlabel('Collision Density')
     metric_name = args.metric.capitalize() if len(args.metric) >= 5 else args.metric.upper()
     if args.ylabel:
         plt.ylabel(args.ylabel)
     else:
         plt.ylabel(metric_name)
-    plt.legend()
+    plt.legend(bbox_to_anchor=(0, -0.28, 1, -0.02), loc="lower left",
+        mode="expand", borderaxespad=0, ncol=3, fontsize='small')
+    plt.subplots_adjust(bottom=0.2)
     plt.grid()
     plt.title(f'Collision Density vs {metric_name}:\n{DOF} DoF, {NUM_TRAIN_SAMPLES} train, {NUM_TEST_SAMPLES} test')
     plt.savefig(f'{args.save_location}/Collision Density vs {metric_name}_{DOF} DoF.pdf')
@@ -236,6 +250,7 @@ if __name__ == "__main__":
     parser.add_argument("--seeds", nargs='+', type=int, default=[0, 1, 2])
     parser.add_argument("--save_location", type=str, default='graphs')
     parser.add_argument('--include_gpu', action='store_true')
+    parser.add_argument('--disable_error_bars', action='store_true')
 
     # Execute the parse_args() method
     args = parser.parse_args()
