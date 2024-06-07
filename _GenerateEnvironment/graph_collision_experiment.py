@@ -80,7 +80,7 @@ def load_json_files_pd(args):
     df = pd.concat(dataframes, ignore_index=True)
 
     # sanity check baseline_by_collision_density
-    assert len(baseline_by_collision_density) <= 36
+    assert len(baseline_by_collision_density) == 36
     for curr_val in baseline_by_collision_density:
         assert len(baseline_by_collision_density[curr_val]) == 1
         baseline_by_collision_density[curr_val] = \
@@ -103,7 +103,7 @@ def plot_results(df, baseline_by_collision_density, args):
         # Extract maxes, means, and standard deviations for x_metric and y_metric
         unique_x_values_list = df_model[COLLISION_DENSITY_KEY].unique().tolist()
         unique_x_values_list.sort()
-        assert len(unique_x_values_list) <= 36 # number of distinct collision densities
+        assert len(unique_x_values_list) == 36 # number of distinct collision densities
 
         y_best = list()
         y_medians = list()
@@ -114,9 +114,9 @@ def plot_results(df, baseline_by_collision_density, args):
             all_rows_with_x_val = df_model[df_model[COLLISION_DENSITY_KEY] == x_val]
 
             if DL in model_name:
-                assert len(all_rows_with_x_val) <= 27
+                assert len(all_rows_with_x_val) == 27
             else:
-                assert len(all_rows_with_x_val) <= 54
+                assert len(all_rows_with_x_val) == 54
                         
             best_metric_val = all_rows_with_x_val[args.metric].min() \
                 if args.invert_metric else all_rows_with_x_val[args.metric].max()
