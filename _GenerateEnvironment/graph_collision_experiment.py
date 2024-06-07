@@ -31,6 +31,7 @@ def load_json_files_pd(args):
     NUM_TEST_SAMPLES = None
     # Load all JSON files in the directory into a list of DataFrames
     dataframes = []
+    baseline_by_collision_density = dict()
     for filename in tqdm(os.listdir(args.data_directory)):
         if filename.endswith(".json"):
             with open(os.path.join(args.data_directory, filename), 'r') as f:
@@ -59,15 +60,37 @@ def load_json_files_pd(args):
                     df[args.metric] /= df[TEST_SIZE]
 
                 dataframes.append(df)
+
+                # get PyBullet baseline
+                baseline_simulation_data_path = f"{args.data_directory}/../simulation_data/argsAndResults_{data['dataset_name']}.json"
+                assert os.path.exists(baseline_simulation_data_path)
+                with open(baseline_simulation_data_path, 'r') as f_sim:
+                    baseline_simulation_data = json.load(f_sim)
+                    the_baseline_col_time = baseline_simulation_data[COLLISION_TIME]
+                    if args.unit_rate_metric:
+                        the_baseline_col_time /= baseline_simulation_data[SAMPLE_SIZE]
+                    assert len(df[COLLISION_DENSITY_KEY]) == 1
+                    curr_collision_density = df[COLLISION_DENSITY_KEY][0]
+                    if curr_collision_density not in baseline_by_collision_density:
+                        baseline_by_collision_density[curr_collision_density] = set()
+                    baseline_by_collision_density[curr_collision_density].add(the_baseline_col_time)
+
     #print(len(dataframes))
     # Concatenate all the DataFrames into a single DataFrame
     df = pd.concat(dataframes, ignore_index=True)
 
-    #print(df[COLLISION_DENSITY_KEY].unique().tolist())
-    # Group by the comparison variables and compute the mean and std of args.x_metric and args.y_metric
-    return df
+    # sanity check baseline_by_collision_density
+    assert len(baseline_by_collision_density) == 36
+    for curr_val in baseline_by_collision_density:
+        assert len(baseline_by_collision_density[curr_val]) == 1
+        baseline_by_collision_density[curr_val] = \
+            np.mean(list(baseline_by_collision_density[curr_val]))
 
-def plot_results(df, args):
+    #print(df[COLLISION_DENSITY_KEY].unique().tolist())
+    # Group by the comparison variables
+    return df, baseline_by_collision_density
+
+def plot_results(df, baseline_by_collision_density, args):
     y_values = df[args.metric].tolist()
     all_y_medians = list()
     all_y_lowers = list()
@@ -152,7 +175,16 @@ def plot_results(df, args):
         # plot baseline (should be same for both models)
         plt.plot(unique_x_values_list, baselines, color=(0.5, 0.5, 0.5, 0.5), 
                 label='Majority Rule (Baseline)' if args.metric.lower() == ACCURACY.lower() else 'Distribution-Aware Guess (Baseline)')
-    
+
+    if args.metric.lower() == TEST_TIME.lower():
+        the_collision_densities = [the_curr_val for \
+                                   the_curr_val in baseline_by_collision_density]
+        the_collision_densities.sort()
+        the_baseline_times = [baseline_by_collision_density[the_curr_val] for \
+                              the_curr_val in the_collision_densities]
+        plt.plot(the_collision_densities, the_baseline_times,
+                 color='purple', linestyle='-.', marker='p', alpha=0.5, label='GJK (PyBullet)')
+
     ymin = min(min(all_y_lowers), min(all_y_best))
     ymax = max(max(all_y_uppers), max(all_y_best))
     if args.include_gpu:
@@ -185,9 +217,9 @@ def main(args):
     plt.rcParams.update({'font.size': 11})
 
     # get all the data points
-    df_mean_std = load_json_files_pd(args) 
+    df_mean_std, baseline = load_json_files_pd(args) 
     # plot pareto frontier
-    plot_results(df_mean_std, args)
+    plot_results(df_mean_std, baseline, args)
 
     return
 
