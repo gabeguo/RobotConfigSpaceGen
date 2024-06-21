@@ -7,13 +7,7 @@ import argparse
 import re
 import pandas as pd
 import scipy.stats as stats
-
-CLF_TO_MAX_MARKER = {DL: 'o', FASTRON: 'x'}
-CLF_TO_MEAN_MARKER = {DL: '^', FASTRON: 'v'}
-CLF_TO_MAX_COLOR = {DL: (0.1, 0.8, 0.1, 1.0), FASTRON: (0.8, 0.1, 0.1, 1.0)}
-CLF_TO_MEAN_COLOR = {DL: (0.2, 0.7, 0.2, 0.5), FASTRON: (0.7, 0.2, 0.2, 0.5)}
-COLLISION_DENSITY_KEY = 'collision_density'
-FULL_MODEL_NAME = {DL: 'DeepCollide', FASTRON: 'Fastron FK'}
+from common_functions import plot_results
 
 # for each model being evaluated at certain DoF, 
 # results are averaged over all seeds/environments with that DoF
@@ -37,10 +31,14 @@ COMPARISON_VARIABLES = {
 import matplotlib
 matplotlib.use('Agg')
 
+# TODO: refactor
 # Thanks ChatGPT!
 def load_json_files_pd(args):
     global DOF, COLLISION_DENSITY, NUM_TEST_SAMPLES
     DOF, COLLISION_DENSITY, NUM_TEST_SAMPLES = None, None, None
+
+    baseline_by_num_train_samples = dict()
+
     # Load all JSON files in the directory into a list of DataFrames
     dataframes = []
     for filename in os.listdir(args.data_directory):
@@ -65,6 +63,26 @@ def load_json_files_pd(args):
                     df[args.metric] /= df[TEST_SIZE]
 
                 dataframes.append(df)
+
+                # get PyBullet baseline
+                baseline_simulation_data_path = f"{args.data_directory}/../simulation_data/argsAndResults_{data['dataset_name']}.json"
+                assert os.path.exists(baseline_simulation_data_path)
+                with open(baseline_simulation_data_path, 'r') as f_sim:
+                    baseline_simulation_data = json.load(f_sim)
+                    the_baseline_col_time = baseline_simulation_data[COLLISION_TIME]
+                    if args.unit_rate_metric:
+                        the_baseline_col_time /= baseline_simulation_data[SAMPLE_SIZE]
+                    assert len(df['num_training_samples']) == 1
+                    curr_num_train_samples = df['num_training_samples'][0]
+                    if curr_num_train_samples not in baseline_by_num_train_samples:
+                        baseline_by_num_train_samples[curr_num_train_samples] = set()
+                    baseline_by_num_train_samples[curr_num_train_samples].add(the_baseline_col_time)
+
+    for curr_val in baseline_by_num_train_samples:
+        assert len(baseline_by_num_train_samples[curr_val]) == 3
+        baseline_by_num_train_samples[curr_val] = \
+            np.mean(list(baseline_by_num_train_samples[curr_val]))
+
     #print(len(dataframes))
     # Concatenate all the DataFrames into a single DataFrame
     df = pd.concat(dataframes, ignore_index=True)
@@ -82,94 +100,9 @@ def load_json_files_pd(args):
     ).reset_index()
 
     # Group by the comparison variables and compute the mean and std of args.metric
-    return df_mean_std
+    return df_mean_std, baseline_by_num_train_samples
 
-def plot_results(df, args):
-    y_values = df[(args.metric, 'mean')].tolist()
-    all_y_medians = list()
-    all_y_iqrs = list()
-    for model_name in [DL, FASTRON]:
-        df_model = df[df['model_name'] == model_name]
-        
-        # Extract maxes, means, and standard deviations for x_metric and y_metric
-        unique_x_values_list = df_model['num_training_samples'].unique().tolist()
-        unique_x_values_list.sort()
-        print(unique_x_values_list)
-        assert len(unique_x_values_list) == 9 # number of distinct training set sizes
-
-        y_best = list()
-        y_medians = list()
-        y_iqrs = list()
-        baselines = list()
-        for x_val in unique_x_values_list:
-            all_rows_with_x_val = df_model[df_model['num_training_samples'] == x_val]
-            
-            if model_name == FASTRON:
-                assert len(all_rows_with_x_val) == 16
-            else:
-                assert len(all_rows_with_x_val) == 27
-            
-            best_metric_val = all_rows_with_x_val[(args.metric, 'mean')].min() \
-                if args.invert_metric else all_rows_with_x_val[(args.metric, 'mean')].max()
-            y_best.append(best_metric_val)
-
-            median_metric_val = all_rows_with_x_val[(args.metric, 'mean')].median()
-            y_medians.append(median_metric_val)
-
-            iqr_metric_val = stats.iqr(all_rows_with_x_val[(args.metric, 'mean')].tolist())
-            y_iqrs.append(iqr_metric_val)
-
-            # graph baselines
-            if args.metric.lower() in [ACCURACY.lower(), TPR.lower(), TNR.lower()]:
-                tp = all_rows_with_x_val[(TP_NAME, 'mean')]
-                tn = all_rows_with_x_val[(TN_NAME, 'mean')]
-                fp = all_rows_with_x_val[(FP_NAME, 'mean')]
-                fn = all_rows_with_x_val[(FN_NAME, 'mean')]
-
-                number_collisions = (tp + fn).round().unique()
-                number_free = (tn + fp).round().unique()
-
-                #print(f'\taverage number of collisions: {number_collisions}')
-                assert len(number_collisions) == 1
-                number_collisions = number_collisions[0]
-                assert len(number_free) == 1
-                number_free = number_free[0]
-                assert number_collisions + number_free == NUM_TEST_SAMPLES
-
-                if args.metric.lower() == ACCURACY.lower():
-                    numerator = max(number_collisions, number_free)
-                    value = numerator / (number_collisions + number_free) # majority rule accuracy
-                elif args.metric.lower() == TPR.lower():
-                    value = number_collisions / (number_collisions + number_free) # random guess collision proportion
-                elif args.metric.lower() == TNR.lower():
-                    value = number_free / (number_collisions + number_free) # random guess free proportion
-                baselines.append(value)
-
-        plt.plot(unique_x_values_list, y_best, 
-                 color=CLF_TO_MAX_COLOR[model_name], marker=CLF_TO_MAX_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Best Hyperparameters')
-        error_bars=plt.errorbar(unique_x_values_list, y_medians, y_iqrs, linestyle='--', elinewidth=2, capsize=4,
-                     color=CLF_TO_MEAN_COLOR[model_name], marker=CLF_TO_MEAN_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Median Performance')
-        error_bars[-1][0].set_linestyle('--')
-
-        all_y_medians.extend(y_medians)
-        all_y_iqrs.extend(y_iqrs)
-    
-    if args.metric.lower() in [ACCURACY.lower(), TPR.lower(), TNR.lower()]:
-        # plot baseline (should be same for both models)
-        plt.plot(unique_x_values_list, baselines, color=(0.5, 0.5, 0.5, 0.5), 
-                label='Majority Rule (Baseline)' if args.metric.lower() == ACCURACY.lower() else 'Distribution-Aware Guess (Baseline)')
-
-    ymin = max(min(y_values),
-               min([curr_y_val - curr_y_err \
-                    for curr_y_val, curr_y_err \
-                        in zip(all_y_medians, all_y_iqrs)]))
-    ymax = min(max(y_values), 
-               max([curr_y_val + curr_y_err \
-                    for curr_y_val, curr_y_err \
-                        in zip(all_y_medians, all_y_iqrs)]))
-    yspan = ymax - ymin
-    print(ymin, ymax)
-    plt.ylim(ymin - yspan * 0.05 , ymax + yspan * 0.05)
+def label_plot(args):
     plt.xlabel('Number of Train Samples')
     #plt.xticks(unique_x_values_list)
     metric_name = args.metric.capitalize() if len(args.metric) >= 5 else args.metric.upper()
@@ -183,6 +116,7 @@ def plot_results(df, args):
     plt.savefig(f'{args.save_location}/Train Samples vs {metric_name}.pdf')
     plt.savefig(f'{args.save_location}/Train Samples vs {metric_name}.png')
     #plt.show()
+    return
 
 # Thanks ChatGPT!
 def get_seed_number(string):
@@ -197,9 +131,12 @@ def main(args):
     plt.rcParams.update({'font.size': 11})
 
     # get all the data points
-    df_mean_std = load_json_files_pd(args) 
+    df_mean_std, baseline = load_json_files_pd(args) 
     # plot pareto frontier
-    plot_results(df_mean_std, args)
+    plot_results(df=df_mean_std, baseline_by_level=baseline, y_values=df_mean_std[(args.metric, 'mean')].tolist(), 
+                 the_metric_key='num_training_samples', num_test_samples=NUM_TEST_SAMPLES, 
+                 expected_unique_x_val_length=9, args=args)
+    label_plot(args)
 
     return
 
@@ -215,6 +152,8 @@ if __name__ == "__main__":
     parser.add_argument("--ylabel", type=str, default=None)
     parser.add_argument("--seeds", nargs='+', type=int, default=[0, 1, 2])
     parser.add_argument("--save_location", type=str, default='graphs')
+    parser.add_argument("--disable_error_bars", action='store_true')
+    parser.add_argument("--include_gpu", action='store_true')
 
     # Execute the parse_args() method
     args = parser.parse_args()

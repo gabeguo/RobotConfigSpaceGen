@@ -8,15 +8,10 @@ import re
 import pandas as pd
 import scipy.stats as stats
 
+from common_functions import plot_results
+
 import matplotlib
 matplotlib.use('Agg')
-
-DL_CUDA = f"{DL}--use_cuda"
-
-CLF_TO_MAX_MARKER = {DL: 'o', FASTRON: 'x', DL_CUDA: 's'}
-CLF_TO_MEAN_MARKER = {DL: '^', FASTRON: 'v', DL_CUDA: 'D'}
-CLF_TO_MAX_COLOR = {DL: (0.1, 0.8, 0.1, 1.0), FASTRON: (0.8, 0.1, 0.1, 1.0), DL_CUDA: (0.1, 0.1, 0.8, 1.0)}
-CLF_TO_MEAN_COLOR = {DL: (0.2, 0.7, 0.2, 0.5), FASTRON: (0.7, 0.2, 0.2, 0.5), DL_CUDA: (0.2, 0.2, 0.7, 0.5)}
 
 # for each model being evaluated at certain DoF, 
 # results are averaged over all seeds/environments with that DoF
@@ -37,7 +32,7 @@ COMPARISON_VARIABLES = {
     'epochs'
 }
 
-FULL_MODEL_NAME = {DL: 'DeepCollide', FASTRON: 'Fastron FK', DL_CUDA: 'DeepCollide (GPU)'}
+FULL_MODEL_NAME = {DL: 'DeepCollide (Sequential)', FASTRON: 'Fastron FK', DL_CUDA: 'DeepCollide (Parallel)'}
 
 # Thanks ChatGPT!
 def load_json_files_pd(args):
@@ -106,125 +101,9 @@ def load_json_files_pd(args):
     # Group by the comparison variables and compute the mean and std of args.metric
     return df_mean_std, baseline_by_dof
 
-def plot_results(df, baseline_by_dof, args):
-    y_values = df[(args.metric, 'mean')].tolist()
-    all_y_medians = list()
-    all_y_lowers = list()
-    all_y_uppers = list()
-    all_y_best = list()
-    # all_y_iqrs = list()
-    all_model_names = [DL, DL_CUDA, FASTRON] if args.include_gpu else [DL, FASTRON]
-    for model_name in all_model_names:
-        df_model = df[df['model_name'] == model_name]
-        
-        # Extract maxes, means, and standard deviations for x_metric and y_metric
-        unique_x_values_list = df_model[DOF_KEY].unique().tolist()
-        unique_x_values_list.sort()
-        print(unique_x_values_list)
-        assert len(unique_x_values_list) == 6 # number of distinct DoF
-
-        y_best = list()
-        y_medians = list()
-        y_lowers = list()
-        y_uppers = list()
-        # y_iqrs = list()
-        baselines = list()
-        for x_val in unique_x_values_list:
-            all_rows_with_x_val = df_model[df_model[DOF_KEY] == x_val]
-
-            if model_name == FASTRON:
-                assert len(all_rows_with_x_val) == 54
-            else:
-                assert len(all_rows_with_x_val) == 27
-            
-            best_metric_val = all_rows_with_x_val[(args.metric, 'mean')].min() \
-                if args.invert_metric else all_rows_with_x_val[(args.metric, 'mean')].max()
-            y_best.append(best_metric_val)
-
-            median_metric_val = all_rows_with_x_val[(args.metric, 'mean')].median()
-            y_medians.append(median_metric_val)
-
-            lower_bound = np.percentile(all_rows_with_x_val[(args.metric, 'mean')], q=25)
-            upper_bound = np.percentile(all_rows_with_x_val[(args.metric, 'mean')], q=75)
-            # iqr_metric_val = stats.iqr(all_rows_with_x_val[(args.metric, 'mean')].tolist())
-            # y_iqrs.append(iqr_metric_val)
-            y_lowers.append(lower_bound)
-            y_uppers.append(upper_bound)
-
-            if args.metric.lower() in [ACCURACY.lower(), TPR.lower(), TNR.lower()]:
-                tp = all_rows_with_x_val[(TP_NAME, 'mean')]
-                tn = all_rows_with_x_val[(TN_NAME, 'mean')]
-                fp = all_rows_with_x_val[(FP_NAME, 'mean')]
-                fn = all_rows_with_x_val[(FN_NAME, 'mean')]
-
-                number_collisions = (tp + fn).round().unique()
-                number_free = (tn + fp).round().unique()
-
-                print(f'\taverage number of collisions for {x_val} DoF: {number_collisions}')
-                assert len(number_collisions) == 1
-                number_collisions = number_collisions[0]
-                assert len(number_free) == 1
-                number_free = number_free[0]
-                assert number_collisions + number_free == NUM_TEST_SAMPLES
-
-                if args.metric.lower() == ACCURACY.lower():
-                    numerator = max(number_collisions, number_free)
-                    value = numerator / (number_collisions + number_free) # majority rule accuracy
-                elif args.metric.lower() == TPR.lower():
-                    value = number_collisions / (number_collisions + number_free) # random guess collision proportion
-                elif args.metric.lower() == TNR.lower():
-                    value = number_free / (number_collisions + number_free) # random guess free proportion
-                baselines.append(value)
-
-        plt.plot(unique_x_values_list, y_best, 
-                 color=CLF_TO_MAX_COLOR[model_name], marker=CLF_TO_MAX_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Best')
-        y_errors = np.stack((np.array(y_medians) - np.array(y_lowers), 
-                             np.array(y_uppers) - np.array(y_medians)), 
-                             axis=0)
-        assert y_errors.shape == (2, len(y_lowers))
-        if args.disable_error_bars:
-            y_errors = np.zeros_like(y_errors)
-            plt.plot(unique_x_values_list, y_medians, linestyle='--',
-                     color=CLF_TO_MEAN_COLOR[model_name], marker=CLF_TO_MEAN_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Median')
-        else:
-            error_bars=plt.errorbar(unique_x_values_list, y_medians, y_errors, linestyle='--', elinewidth=2, capsize=4,
-                     color=CLF_TO_MEAN_COLOR[model_name], marker=CLF_TO_MEAN_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Median')
-            error_bars[-1][0].set_linestyle('--')
-
-        all_y_medians.extend(y_medians)
-        all_y_lowers.extend(y_lowers)
-        all_y_uppers.extend(y_uppers)
-        all_y_best.extend(y_best)
-        # all_y_iqrs.extend(y_iqrs)
-
-    if args.metric.lower() in [ACCURACY.lower(), TPR.lower(), TNR.lower()]:
-        # plot baseline (should be same for both models)
-        plt.plot(unique_x_values_list, baselines, color=(0.5, 0.5, 0.5, 0.5), 
-                label='Majority Rule (Baseline)' if args.metric.lower() == ACCURACY.lower() else 'Distribution-Aware Guess (Baseline)')
-
-    if not args.disable_error_bars:
-        ymin = min(min(all_y_lowers), min(all_y_best))
-        ymax = max(max(all_y_uppers), max(all_y_best))
-    else:
-        ymin = min(min(all_y_medians), min(all_y_best))
-        ymax = max(max(all_y_medians), max(all_y_best))
-
-    if args.metric.lower() == TEST_TIME.lower():
-        available_dofs = [curr_dof for curr_dof in baseline_by_dof]
-        baseline_col_det_times = [baseline_by_dof[curr_dof] for curr_dof in available_dofs]
-        plt.plot(available_dofs, baseline_col_det_times,
-                 color='purple', linestyle='-.', marker='p', alpha=0.5, label='GJK (PyBullet)')
-        ymin = min(ymin, min(baseline_col_det_times))
-        ymax = max(ymax, max(baseline_col_det_times))
-
-    if args.include_gpu:
-        plt.yscale('log')
-    yspan = ymax - ymin
-    print(ymin, ymax)
-    plt.ylim(ymin - yspan * 0.1, ymax + yspan * 0.1)
-    # plt.ylim(max(ymin - yspan * 0.05, 0), ymax + yspan * 0.05)
+def label_plot(args):
     plt.xlabel('DoF')
-    plt.xticks(unique_x_values_list)
+    plt.xticks([7, 14, 21, 28, 35, 42])
     metric_name = args.metric.capitalize() if len(args.metric) >= 5 else args.metric.upper()
     if args.ylabel:
         plt.ylabel(args.ylabel)
@@ -254,7 +133,10 @@ def main(args):
     # get all the data points
     df_mean_std, baseline_by_dof = load_json_files_pd(args) 
     # plot pareto frontier
-    plot_results(df_mean_std, baseline_by_dof, args)
+    plot_results(df=df_mean_std, baseline_by_level=baseline_by_dof, y_values=df_mean_std[(args.metric, 'mean')].tolist(),
+                 the_metric_key=DOF_KEY, num_test_samples=NUM_TEST_SAMPLES, 
+                 expected_unique_x_val_length=6, args=args)
+    label_plot(args)
 
     return
 

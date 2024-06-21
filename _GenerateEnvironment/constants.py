@@ -44,3 +44,13 @@ FP_NAME = 'false positive'
 FN_NAME = 'false negative'
 
 LAYER_BY_LAYER_TIME = 'layer by layer time'
+
+DL_CUDA = f"{DL}--use_cuda"
+FULL_MODEL_NAME = {DL: 'DeepCollide (Sequential)', FASTRON: 'Fastron FK', DL_CUDA: 'DeepCollide (Parallel)'}
+
+CLF_TO_MAX_MARKER = {DL: 'o', FASTRON: 'x', DL_CUDA: 's'}
+CLF_TO_MEAN_MARKER = {DL: '^', FASTRON: 'v', DL_CUDA: 'D'}
+CLF_TO_MAX_COLOR = {DL: (0.1, 0.8, 0.1, 1.0), FASTRON: (0.8, 0.1, 0.1, 1.0), DL_CUDA: (0.1, 0.1, 0.8, 1.0)}
+CLF_TO_MEAN_COLOR = {DL: (0.2, 0.7, 0.2, 0.5), FASTRON: (0.7, 0.2, 0.2, 0.5), DL_CUDA: (0.2, 0.2, 0.7, 0.5)}
+
+COLLISION_DENSITY_KEY = 'collision_density'
