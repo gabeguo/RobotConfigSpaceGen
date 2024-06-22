@@ -1,8 +1,97 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from constants import *
+import os
+import json
+import re
+import pandas as pd
 
-def plot_results(df, baseline_by_level, y_values, the_metric_key, num_test_samples, 
+# Thanks ChatGPT!
+def get_seed_number(string):
+    match = re.search('seed(\d+)', string)
+    if match:
+        return int(match.group(1))
+    else:
+        return None
+
+# Thanks ChatGPT!
+def load_json_files_pd(args, COMPARISON_VARIABLES, the_x_var_key, expected_num_x_vals):
+    DOF = None
+    NUM_TRAIN_SAMPLES = None
+    NUM_TEST_SAMPLES = None
+    # Load all JSON files in the directory into a list of DataFrames
+    dataframes = []
+    baseline_by_x_var = dict()
+    for filename in os.listdir(args.data_directory):
+        if filename.endswith(".json"):
+            with open(os.path.join(args.data_directory, filename), 'r') as f:
+                data = json.load(f)
+                if get_seed_number(data['dataset_name']) not in args.seeds:
+                    continue
+                df = pd.json_normalize(data)
+                # get DoF
+                df[DOF_KEY] = 7 * df['dataset_name'].str.extract('(\d+)').astype(int)
+                DOF = df[DOF_KEY].unique().tolist()[0]
+                # get collision density
+                df[COLLISION_DENSITY_KEY] = (df[TP_NAME] + df[FN_NAME]) / (df[TP_NAME] + df[TN_NAME] + df[FP_NAME] + df[FN_NAME])
+                # get num train samples
+                curr_num_train_samples = df['num_training_samples'].astype(int).unique().tolist()[0]
+                NUM_TRAIN_SAMPLES = curr_num_train_samples
+                # get num test samples
+                curr_num_test_samples = df['num_testing_samples'].astype(int).unique().tolist()[0]
+                NUM_TEST_SAMPLES = curr_num_test_samples
+
+                # transform data
+                if args.unit_rate_metric:
+                    df[args.metric] /= df[TEST_SIZE]
+
+                dataframes.append(df)
+
+                # get PyBullet baseline
+                baseline_simulation_data_path = f"{args.data_directory}/../simulation_data/argsAndResults_{data['dataset_name']}.json"
+                assert os.path.exists(baseline_simulation_data_path)
+                with open(baseline_simulation_data_path, 'r') as f_sim:
+                    baseline_simulation_data = json.load(f_sim)
+                    the_baseline_col_time = baseline_simulation_data[COLLISION_TIME]
+                    if args.unit_rate_metric:
+                        the_baseline_col_time /= baseline_simulation_data[SAMPLE_SIZE]
+                    assert len(df[the_x_var_key]) == 1
+                    curr_x_val = df[the_x_var_key][0]
+                    if curr_x_val not in baseline_by_x_var:
+                        baseline_by_x_var[curr_x_val] = set()
+                    baseline_by_x_var[curr_x_val].add(the_baseline_col_time)
+    #print(len(dataframes))
+    # Concatenate all the DataFrames into a single DataFrame
+    df = pd.concat(dataframes, ignore_index=True)
+
+    if COMPARISON_VARIABLES is not None:
+        # Take mean over all environments at certain DoF for each model (where distinct hyperparams mean distinct model)
+        # Group by the comparison variables and compute the mean and std of args.metric
+        df = df.groupby(list(COMPARISON_VARIABLES)).agg(
+            {
+                args.metric: ['mean', 'std'], # mean and std over all ENVIRONMENTS; models still separate
+                TP_NAME: ['mean', 'std'],
+                TN_NAME: ['mean', 'std'],
+                FP_NAME: ['mean', 'std'],
+                FN_NAME: ['mean', 'std'],
+            }
+        ).reset_index()
+    else:
+        assert the_x_var_key == COLLISION_DENSITY_KEY
+
+    # sanity check baseline_by_x_var
+    assert len(baseline_by_x_var) == expected_num_x_vals
+    for the_curr_x_var in baseline_by_x_var:
+        if the_x_var_key == COLLISION_DENSITY_KEY:
+            assert len(baseline_by_x_var[the_curr_x_var]) == 1, f"{len(baseline_by_x_var[the_curr_x_var])}, {baseline_by_x_var[the_curr_x_var]}"
+        else:
+            assert len(baseline_by_x_var[the_curr_x_var]) == 3, f"{len(baseline_by_x_var[the_curr_x_var])}, {baseline_by_x_var[the_curr_x_var]}"
+        baseline_by_x_var[the_curr_x_var] = np.mean(list(baseline_by_x_var[the_curr_x_var]))
+    # Group by the comparison variables and compute the mean and std of args.metric
+    return df, baseline_by_x_var, DOF, NUM_TRAIN_SAMPLES, NUM_TEST_SAMPLES
+
+
+def plot_results(df, baseline_by_level, y_values, the_x_var_key, num_test_samples, 
                  expected_unique_x_val_length, args):
     all_y_medians = list()
     all_y_lowers = list()
@@ -13,7 +102,7 @@ def plot_results(df, baseline_by_level, y_values, the_metric_key, num_test_sampl
         df_model = df[df['model_name'] == model_name]
         
         # Extract maxes, means, and standard deviations for x_metric and y_metric
-        unique_x_values_list = df_model[the_metric_key].unique().tolist()
+        unique_x_values_list = df_model[the_x_var_key].unique().tolist()
         unique_x_values_list.sort()
         assert len(unique_x_values_list) == expected_unique_x_val_length # number of distinct collision densities
 
@@ -23,21 +112,21 @@ def plot_results(df, baseline_by_level, y_values, the_metric_key, num_test_sampl
         y_lowers = list()
         baselines = list()
         for x_val in unique_x_values_list:
-            all_rows_with_x_val = df_model[df_model[the_metric_key] == x_val]
+            all_rows_with_x_val = df_model[df_model[the_x_var_key] == x_val]
 
-            if the_metric_key in [DOF_KEY, COLLISION_DENSITY_KEY]:
+            if the_x_var_key in [DOF_KEY, COLLISION_DENSITY_KEY]:
                 if DL in model_name:
                     assert len(all_rows_with_x_val) == 27
                 else:
                     assert len(all_rows_with_x_val) == 54
             else:
-                assert the_metric_key == 'num_training_samples'
+                assert the_x_var_key == 'num_training_samples'
                 if DL in model_name:
                     assert len(all_rows_with_x_val) == 27
                 else:
                     assert len(all_rows_with_x_val) == 16
             
-            if the_metric_key == COLLISION_DENSITY_KEY:
+            if the_x_var_key == COLLISION_DENSITY_KEY:
                 best_metric_val = all_rows_with_x_val[args.metric].min() \
                     if args.invert_metric else all_rows_with_x_val[args.metric].max()
                 median_metric_val = all_rows_with_x_val[args.metric].median()
@@ -56,7 +145,7 @@ def plot_results(df, baseline_by_level, y_values, the_metric_key, num_test_sampl
 
             # get baseline
             if args.metric.lower() in [ACCURACY.lower(), TPR.lower(), TNR.lower()]:
-                if the_metric_key == COLLISION_DENSITY_KEY:
+                if the_x_var_key == COLLISION_DENSITY_KEY:
                     tp = all_rows_with_x_val[TP_NAME]
                     tn = all_rows_with_x_val[TN_NAME]
                     fp = all_rows_with_x_val[FP_NAME]

@@ -4,11 +4,10 @@ from constants import *
 import numpy as np
 import os
 import argparse
-import re
 import pandas as pd
 import scipy.stats as stats
 
-from common_functions import plot_results
+from common_functions import *
 
 import matplotlib
 matplotlib.use('Agg')
@@ -34,74 +33,7 @@ COMPARISON_VARIABLES = {
 
 FULL_MODEL_NAME = {DL: 'DeepCollide (Sequential)', FASTRON: 'Fastron FK', DL_CUDA: 'DeepCollide (Parallel)'}
 
-# Thanks ChatGPT!
-def load_json_files_pd(args):
-    global DOF, NUM_TRAIN_SAMPLES, NUM_TEST_SAMPLES
-    DOF = None
-    NUM_TRAIN_SAMPLES = None
-    NUM_TEST_SAMPLES = None
-    # Load all JSON files in the directory into a list of DataFrames
-    dataframes = []
-    baseline_by_dof = {7:set(), 14:set(), 21:set(), 28:set(), 35:set(), 42:set()}
-    for filename in os.listdir(args.data_directory):
-        if filename.endswith(".json"):
-            with open(os.path.join(args.data_directory, filename), 'r') as f:
-                data = json.load(f)
-                if get_seed_number(data['dataset_name']) not in args.seeds:
-                    continue
-                df = pd.json_normalize(data)
-                # get DoF
-                df[DOF_KEY] = 7 * df['dataset_name'].str.extract('(\d+)').astype(int)
-                # get num train samples
-                curr_num_train_samples = df['num_training_samples'].astype(int).unique().tolist()[0]
-                assert NUM_TRAIN_SAMPLES is None or NUM_TRAIN_SAMPLES == curr_num_train_samples
-                NUM_TRAIN_SAMPLES = curr_num_train_samples
-                # get num test samples
-                curr_num_test_samples = df['num_testing_samples'].astype(int).unique().tolist()[0]
-                assert NUM_TEST_SAMPLES is None or NUM_TEST_SAMPLES == curr_num_test_samples
-                NUM_TEST_SAMPLES = curr_num_test_samples
-
-                # transform data
-                if args.unit_rate_metric:
-                    df[args.metric] /= df[TEST_SIZE]
-
-                dataframes.append(df)
-
-                # get PyBullet baseline
-                baseline_simulation_data_path = f"{args.data_directory}/../simulation_data/argsAndResults_{data['dataset_name']}.json"
-                assert os.path.exists(baseline_simulation_data_path)
-                with open(baseline_simulation_data_path, 'r') as f_sim:
-                    baseline_simulation_data = json.load(f_sim)
-                    the_baseline_col_time = baseline_simulation_data[COLLISION_TIME]
-                    if args.unit_rate_metric:
-                        the_baseline_col_time /= baseline_simulation_data[SAMPLE_SIZE]
-                    assert len(df[DOF_KEY]) == 1
-                    baseline_by_dof[df[DOF_KEY][0]].add(the_baseline_col_time)
-    #print(len(dataframes))
-    # Concatenate all the DataFrames into a single DataFrame
-    df = pd.concat(dataframes, ignore_index=True)
-
-    # Take mean over all environments at certain DoF for each model (where distinct hyperparams mean distinct model)
-    # Group by the comparison variables and compute the mean and std of args.metric
-    df_mean_std = df.groupby(list(COMPARISON_VARIABLES)).agg(
-        {
-            args.metric: ['mean', 'std'], # mean and std over all ENVIRONMENTS; models still separate
-            TP_NAME: ['mean', 'std'],
-            TN_NAME: ['mean', 'std'],
-            FP_NAME: ['mean', 'std'],
-            FN_NAME: ['mean', 'std'],
-        }
-    ).reset_index()
-
-    # sanity check baseline_by_dof
-    assert len(baseline_by_dof) == 6
-    for the_curr_dof in baseline_by_dof:
-        assert len(baseline_by_dof[the_curr_dof]) == 3, f"{len(baseline_by_dof[the_curr_dof])}, {baseline_by_dof[the_curr_dof]}"
-        baseline_by_dof[the_curr_dof] = np.mean(list(baseline_by_dof[the_curr_dof]))
-    # Group by the comparison variables and compute the mean and std of args.metric
-    return df_mean_std, baseline_by_dof
-
-def label_plot(args):
+def label_plot(args, DOF, NUM_TRAIN_SAMPLES, NUM_TEST_SAMPLES):
     plt.xlabel('DoF')
     plt.xticks([7, 14, 21, 28, 35, 42])
     metric_name = args.metric.capitalize() if len(args.metric) >= 5 else args.metric.upper()
@@ -118,25 +50,20 @@ def label_plot(args):
     plt.savefig(f'{args.save_location}/DoF vs {metric_name}.png')
     #plt.show()
 
-# Thanks ChatGPT!
-def get_seed_number(string):
-    match = re.search('seed(\d+)', string)
-    if match:
-        return int(match.group(1))
-    else:
-        return None
-
 def main(args):
     plt.rcParams.update({'figure.figsize': (8, 6)})
     plt.rcParams.update({'font.size': 11})
 
     # get all the data points
-    df_mean_std, baseline_by_dof = load_json_files_pd(args) 
+    df_mean_std, baseline_by_dof, DOF, NUM_TRAIN_SAMPLES, NUM_TEST_SAMPLES \
+        = load_json_files_pd(args=args, COMPARISON_VARIABLES=COMPARISON_VARIABLES,
+                            the_x_var_key=DOF_KEY, expected_num_x_vals=6) 
     # plot pareto frontier
     plot_results(df=df_mean_std, baseline_by_level=baseline_by_dof, y_values=df_mean_std[(args.metric, 'mean')].tolist(),
-                 the_metric_key=DOF_KEY, num_test_samples=NUM_TEST_SAMPLES, 
+                 the_x_var_key=DOF_KEY, num_test_samples=NUM_TEST_SAMPLES, 
                  expected_unique_x_val_length=6, args=args)
-    label_plot(args)
+    label_plot(args, DOF=DOF, NUM_TRAIN_SAMPLES=NUM_TRAIN_SAMPLES, 
+               NUM_TEST_SAMPLES=NUM_TEST_SAMPLES)
 
     return
 
@@ -160,4 +87,5 @@ if __name__ == "__main__":
 
     os.makedirs(args.save_location, exist_ok=True)
 
+    print('graph dof')
     main(args)
