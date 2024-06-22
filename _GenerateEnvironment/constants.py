@@ -46,7 +46,7 @@ FN_NAME = 'false negative'
 LAYER_BY_LAYER_TIME = 'layer by layer time'
 
 DL_CUDA = f"{DL}--use_cuda"
-FULL_MODEL_NAME = {DL: 'DeepCollide (Sequential)', FASTRON: 'Fastron FK', DL_CUDA: 'DeepCollide (Parallel)'}
+FULL_MODEL_NAME = {DL: 'DeepCollide Seq', FASTRON: 'Fastron FK', DL_CUDA: 'DeepCollide Parallel'}
 
 CLF_TO_MAX_MARKER = {DL: 'o', FASTRON: 'x', DL_CUDA: 's'}
 CLF_TO_MEAN_MARKER = {DL: '^', FASTRON: 'v', DL_CUDA: 'D'}

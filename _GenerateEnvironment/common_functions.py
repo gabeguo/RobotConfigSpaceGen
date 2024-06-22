@@ -181,14 +181,16 @@ def plot_results(df, baseline_by_level, y_values, the_x_var_key, num_test_sample
                              np.array(y_uppers) - np.array(y_medians)), 
                              axis=0)
         assert y_errors.shape == (2, len(y_lowers))
+        plt.plot(unique_x_values_list, y_medians, linestyle='--',
+                    color=CLF_TO_MEAN_COLOR[model_name], marker=CLF_TO_MEAN_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Median')
         if args.disable_error_bars:
             y_errors = np.zeros_like(y_errors)
-            plt.plot(unique_x_values_list, y_medians, linestyle='--',
-                     color=CLF_TO_MEAN_COLOR[model_name], marker=CLF_TO_MEAN_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Median')
         else:
-            error_bars=plt.errorbar(unique_x_values_list, y_medians, y_errors, linestyle='--', elinewidth=2, capsize=4,
-                        color=CLF_TO_MEAN_COLOR[model_name], marker=CLF_TO_MEAN_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Median')
-            error_bars[-1][0].set_linestyle('--')
+            plt.fill_between(unique_x_values_list, y_lowers, y_uppers, color=CLF_TO_MEAN_COLOR[model_name], alpha=0.15,
+                             linestyle='--')
+            # error_bars=plt.errorbar(unique_x_values_list, y_medians, y_errors, linestyle='--', elinewidth=2, capsize=4,
+            #             color=CLF_TO_MEAN_COLOR[model_name], marker=CLF_TO_MEAN_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Median')
+            # error_bars[-1][0].set_linestyle('--')
 
         all_y_medians.extend(y_medians)
         all_y_lowers.extend(y_lowers)
@@ -198,7 +200,7 @@ def plot_results(df, baseline_by_level, y_values, the_x_var_key, num_test_sample
     if args.metric.lower() in [ACCURACY.lower(), TPR.lower(), TNR.lower()]:
         # plot baseline (should be same for both models)
         plt.plot(unique_x_values_list, baselines, color=(0.5, 0.5, 0.5, 0.5), 
-                label='Majority Rule (Baseline)' if args.metric.lower() == ACCURACY.lower() else 'Distribution-Aware Guess (Baseline)')
+                label='Majority Rule' if args.metric.lower() == ACCURACY.lower() else 'Distribution-Aware Guess')
 
     if not args.disable_error_bars:
         ymin = min(min(all_y_lowers), min(all_y_best))

@@ -39,7 +39,9 @@ def label_plot(args, DOF, NUM_TRAIN_SAMPLES, NUM_TEST_SAMPLES):
         plt.ylabel(args.ylabel)
     else:
         plt.ylabel(metric_name)
-    plt.legend()
+    plt.legend(bbox_to_anchor=(0, -0.28, 1, -0.02), loc="lower left",
+        mode="expand", borderaxespad=0, ncol=3, fontsize='small')
+    plt.subplots_adjust(bottom=0.2)
     plt.grid()
     plt.title(f'Number Train Samples vs {metric_name}:\n{DOF} DoF, {NUM_TEST_SAMPLES} Test Samples')
     plt.savefig(f'{args.save_location}/Train Samples vs {metric_name}.pdf')
