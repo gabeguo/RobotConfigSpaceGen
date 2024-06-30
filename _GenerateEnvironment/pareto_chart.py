@@ -75,15 +75,16 @@ def load_json_files_pd(args):
                     continue
                 df = pd.json_normalize(data)
                 # rename
-                if df['model_name'] == DL:
-                    if df['num_freq'] == 0:
+                assert len(df) == 1
+                if df['model_name'][0] == DL:
+                    if df['num_freq'][0] == 0:
                         df['model_name'] = DL_NO_FOURIER
-                    if df['disable_skip_connection']:
+                    if df['disable_skip_connection'][0]:
                         df['model_name'] = DL_NO_SKIP
-                        assert df['num_freq'] > 0
-                    if df['disable_batchnorm']:
+                        assert df['num_freq'][0] > 0
+                    if df['disable_batchnorm'][0]:
                         df['model_name'] = DL_NO_BN
-                        assert df['num_freq'] > 0 and (not df['disable_skip_connection'])
+                        assert df['num_freq'][0] > 0 and (not df['disable_skip_connection'][0])
                 # transform data
                 if args.invert_x:
                     df[args.x_metric] = 1 - df[args.x_metric]
