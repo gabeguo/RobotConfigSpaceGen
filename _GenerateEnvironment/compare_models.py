@@ -107,7 +107,9 @@ def run_model(args):
 
     # Initialize Neural Network
     if DL in args.model_name:
-        model = CSpaceNet(dof=data_train.shape[1], num_freq=args.num_freq, sigma=args.sigma).cuda()
+        model = CSpaceNet(dof=data_train.shape[1], num_freq=args.num_freq, sigma=args.sigma,
+                          enable_skip_connection=(not args.disable_skip_connection),
+                          enable_batchnorm=(not args.disable_batchnorm)).cuda()
         if args.time_layers:
             for layer in model.children():
                 if isinstance(layer, nn.Sequential):
@@ -169,7 +171,7 @@ def run_model(args):
     assert args.num_training_samples == data_train.shape[0]
 
     # Get number of params in DL model
-    if args.model_name == DL:
+    if DL in args.model_name:
         # https://discuss.pytorch.org/t/how-do-i-check-the-number-of-parameters-of-a-model/4325/6
         model_parameters = filter(lambda p: p.requires_grad, model.parameters())
         params = sum([np.prod(p.size()) for p in model_parameters])
@@ -275,6 +277,8 @@ def main():
     parser.add_argument('--bias', type=float, default=1)
     parser.add_argument('--num_freq', type=int, default=8)
     parser.add_argument('--sigma', type=float, default=1)
+    parser.add_argument('--disable_skip_connection', action='store_true')
+    parser.add_argument('--disable_batchnorm', action='store_true')
     parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--batch_size', type=int, default=512)
     parser.add_argument('--train_percent', type=float, default=0.95)

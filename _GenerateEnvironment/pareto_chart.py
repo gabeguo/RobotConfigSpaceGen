@@ -27,9 +27,13 @@ COMPARISON_VARIABLES = {
     'epochs'
 }
 DL_CUDA = f'{DL}--use_cuda'
-CLF_TO_MARKER = {DL: 'o', FASTRON: 'x', DL_CUDA: '*'}
-CLF_TO_COLOR = {DL: '#228822', FASTRON: '#882222', DL_CUDA: '#222288'}
-FULL_MODEL_NAME = {DL: 'DeepCollide', FASTRON: 'Fastron FK', DL_CUDA: 'DeepCollide (GPU)'}
+CLF_TO_MARKER = {DL: 'o', FASTRON: 'x', DL_CUDA: '*',
+                 DL_NO_FOURIER: '^', DL_NO_BN: 'v', DL_NO_SKIP: 's'}
+CLF_TO_COLOR = {DL: '#228822', FASTRON: '#882222', DL_CUDA: '#222288',
+                DL_NO_FOURIER: '#888822', DL_NO_BN: '#882288', DL_NO_SKIP: '#228888'}
+FULL_MODEL_NAME = {DL: 'DeepCollide', FASTRON: 'Fastron FK', DL_CUDA: 'DeepCollide (Parallel)',
+                   DL_NO_FOURIER: 'No Fourier Features', DL_NO_SKIP: 'No Skip Connections', 
+                   DL_NO_BN: 'No Ending BatchNorm'}
 
 # Thanks ChatGPT!
 def load_json_files(directory):
@@ -70,6 +74,16 @@ def load_json_files_pd(args):
                 if get_seed_number(data['dataset_name']) not in args.seeds:
                     continue
                 df = pd.json_normalize(data)
+                # rename
+                if df['model_name'] == DL:
+                    if df['num_freq'] == 0:
+                        df['model_name'] = DL_NO_FOURIER
+                    if df['disable_skip_connection']:
+                        df['model_name'] = DL_NO_SKIP
+                        assert df['num_freq'] > 0
+                    if df['disable_batchnorm']:
+                        df['model_name'] = DL_NO_BN
+                        assert df['num_freq'] > 0 and (not df['disable_skip_connection'])
                 # transform data
                 if args.invert_x:
                     df[args.x_metric] = 1 - df[args.x_metric]
@@ -117,11 +131,11 @@ def load_json_files_pd(args):
 
 def plot_pareto(df_mean_std, baseline_times, args):
     # Create a scatter plot with a different color for each 'model_name'
-    possible_models = [DL, FASTRON]
-    if args.include_gpu:
-        possible_models.append(DL_CUDA)
+    possible_models = [DL, FASTRON, DL_NO_BN, DL_NO_SKIP, DL_NO_FOURIER, DL_CUDA]
     for model_name in possible_models:
         df_model = df_mean_std[df_mean_std['model_name'] == model_name]
+        if len(df_model) == 0:
+            continue
         
         # Extract means and standard deviations for x_metric and y_metric
         x_means = df_model[(args.x_metric, 'mean')]
