@@ -30,7 +30,7 @@ DL_CUDA = f'{DL}--use_cuda'
 CLF_TO_MARKER = {DL: 'o', FASTRON: 'x', DL_CUDA: '*',
                  DL_NO_FOURIER: '^', DL_NO_BN: 'v', DL_NO_SKIP: 's'}
 CLF_TO_COLOR = {DL: '#228822', FASTRON: '#882222', DL_CUDA: '#222288',
-                DL_NO_FOURIER: '#888822', DL_NO_BN: '#882288', DL_NO_SKIP: '#228888'}
+                DL_NO_FOURIER: '#CC8800', DL_NO_BN: '#992277', DL_NO_SKIP: '#227799'}
 FULL_MODEL_NAME = {DL: 'DeepCollide', FASTRON: 'Fastron FK', DL_CUDA: 'DeepCollide (Parallel)',
                    DL_NO_FOURIER: 'No Fourier Features', DL_NO_SKIP: 'No Skip Connections', 
                    DL_NO_BN: 'No Ending BatchNorm'}
