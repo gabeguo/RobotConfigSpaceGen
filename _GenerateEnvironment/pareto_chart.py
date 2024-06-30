@@ -27,7 +27,7 @@ COMPARISON_VARIABLES = {
     'epochs'
 }
 DL_CUDA = f'{DL}--use_cuda'
-CLF_TO_MARKER = {DL: 'o', FASTRON: 'x', DL_CUDA: '*',
+CLF_TO_MARKER = {DL: 'o', FASTRON: 'X', DL_CUDA: '*',
                  DL_NO_FOURIER: '^', DL_NO_BN: 'v', DL_NO_SKIP: 's'}
 CLF_TO_COLOR = {DL: '#228822', FASTRON: '#882222', DL_CUDA: '#222288',
                 DL_NO_FOURIER: '#CC8800', DL_NO_BN: '#992277', DL_NO_SKIP: '#227799'}
@@ -79,10 +79,10 @@ def load_json_files_pd(args):
                 if df['model_name'][0] == DL:
                     if df['num_freq'][0] == 0:
                         df['model_name'] = DL_NO_FOURIER
-                    if df['disable_skip_connection'][0]:
+                    if 'disable_skip_connection' in df and df['disable_skip_connection'][0]:
                         df['model_name'] = DL_NO_SKIP
                         assert df['num_freq'][0] > 0
-                    if df['disable_batchnorm'][0]:
+                    if 'disable_batchnorm' in df and df['disable_batchnorm'][0]:
                         df['model_name'] = DL_NO_BN
                         assert df['num_freq'][0] > 0 and (not df['disable_skip_connection'][0])
                 # transform data
@@ -145,7 +145,9 @@ def plot_pareto(df_mean_std, baseline_times, args):
         y_stds = df_model[(args.y_metric, 'std')]
 
         # Create a scatter plot of the means of x_metric vs y_metric for this model_name
-        plt.scatter(x_means, y_means, color=CLF_TO_COLOR[model_name], marker=CLF_TO_MARKER[model_name], s=35, label=FULL_MODEL_NAME[model_name])
+        plt.scatter(x_means, y_means, color=CLF_TO_COLOR[model_name] + "77", 
+                    marker=CLF_TO_MARKER[model_name], s=35, label=FULL_MODEL_NAME[model_name],
+                    edgecolors=CLF_TO_COLOR[model_name])
 
         # Use errorbars to show standard deviation
         if not args.disable_error_bars:
