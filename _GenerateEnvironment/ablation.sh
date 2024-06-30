@@ -18,9 +18,9 @@ do
         do
             for sigma in 0.5 1 2
             do
-                echo "DL ${gpu_flag}: b ${b}, freq ${freq}, sigma ${sigma}"
+                echo "DL ${use_cuda}: b ${b}, freq ${freq}, sigma ${sigma}"
                 echo "vanilla"
-                python compare_models.py --model_name "DL${gpu_flag}" --forward_kinematics_kernel \
+                python compare_models.py --model_name "DL" --forward_kinematics_kernel \
                     --num_training_samples $num_training_samples \
                     --dataset_name $dataset_name \
                     --bias $b --num_freq $freq --sigma $sigma \
@@ -28,7 +28,7 @@ do
                     --results_folder $results_folder \
                     $use_cuda
                 echo "disable_skip"
-                python compare_models.py --model_name "DL${gpu_flag}" --forward_kinematics_kernel \
+                python compare_models.py --model_name "DL" --forward_kinematics_kernel \
                     --num_training_samples $num_training_samples \
                     --dataset_name $dataset_name \
                     --bias $b --num_freq $freq --sigma $sigma \
@@ -36,7 +36,7 @@ do
                     --results_folder $results_folder \
                     $use_cuda --disable_skip_connection
                 echo "disable_batchnorm"
-                python compare_models.py --model_name "DL${gpu_flag}" --forward_kinematics_kernel \
+                python compare_models.py --model_name "DL" --forward_kinematics_kernel \
                     --num_training_samples $num_training_samples \
                     --dataset_name $dataset_name \
                     --bias $b --num_freq $freq --sigma $sigma \
@@ -45,8 +45,8 @@ do
                     $use_cuda --disable_batchnorm
             done
         done
-        echo "DL ${gpu_flag}: b ${b}, disable positional encoding"
-        python compare_models.py --model_name "DL${gpu_flag}" --forward_kinematics_kernel \
+        echo "DL ${use_cuda}: b ${b}, disable positional encoding"
+        python compare_models.py --model_name "DL" --forward_kinematics_kernel \
             --num_training_samples $num_training_samples \
             --dataset_name $dataset_name \
             --bias $b --num_freq 0 --sigma 0 \

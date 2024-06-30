@@ -148,9 +148,10 @@ def plot_pareto(df_mean_std, baseline_times, args):
         plt.scatter(x_means, y_means, color=CLF_TO_COLOR[model_name], marker=CLF_TO_MARKER[model_name], s=35, label=FULL_MODEL_NAME[model_name])
 
         # Use errorbars to show standard deviation
-        plt.errorbar(x_means, y_means, xerr=x_stds, yerr=y_stds, linestyle='None', color=CLF_TO_COLOR[model_name], alpha=0.1)
+        if not args.disable_error_bars:
+            plt.errorbar(x_means, y_means, xerr=x_stds, yerr=y_stds, linestyle='None', color=CLF_TO_COLOR[model_name], alpha=0.1)
 
-    if args.y_metric == 'test_time':
+    if args.y_metric == 'test_time' and (not args.disable_baseline):
         the_baseline_time = np.mean(baseline_times)
         plt.axhline(y=the_baseline_time, color='purple', alpha=0.9,
                     linestyle = '--', label='GJK (PyBullet)')
@@ -254,6 +255,8 @@ if __name__ == "__main__":
     parser.add_argument('--y_label', type=str, default=None)
     parser.add_argument('--include_gpu', action='store_true')
     parser.add_argument('--log_scale', action='store_true')
+    parser.add_argument('--disable_error_bars', action='store_true')
+    parser.add_argument('--disable_baseline', action='store_true')
     parser.add_argument('--title', type=str, default='meh')
     parser.add_argument("--seeds", nargs='+', type=int, default=[0])
     parser.add_argument("--save_location", type=str, default='pareto_charts')
