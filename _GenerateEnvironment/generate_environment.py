@@ -397,15 +397,15 @@ def main():
 
     end = time.time()
     elapsed = round(end - start, 3)
-    print('total time elapsed in checking', args.num_samples, 'configurations for collision:', total_collision_detection_time, 'seconds')
-    print('total time elapsed in calculating', args.num_samples, 'configurations for distance:', total_distance_calculation_time, 'seconds')
-    print('total time elapsed in querying', args.num_samples, 'configurations forward kinematics:', total_fk_query_time, 'seconds')
+    print('total time elapsed in checking', args.num_surface_samples + args.num_samples, 'configurations for collision:', total_collision_detection_time, 'seconds')
+    print('total time elapsed in calculating', args.num_surface_samples + args.num_samples, 'configurations for distance:', total_distance_calculation_time, 'seconds')
+    print('total time elapsed in querying', args.num_surface_samples + args.num_samples, 'configurations forward kinematics:', total_fk_query_time, 'seconds')
 
     results = {TIME_COST : elapsed, 
                FK_QUERY_TIME: total_fk_query_time, 
                COLLISION_TIME : total_collision_detection_time,
                DISTANCE_TIME : total_distance_calculation_time,
-               SAMPLE_SIZE : args.num_samples}
+               SAMPLE_SIZE : args.num_surface_samples + args.num_samples}
 
     os.makedirs(args.data_folder, exist_ok=True)
     configs_to_np(all_configs, args)
