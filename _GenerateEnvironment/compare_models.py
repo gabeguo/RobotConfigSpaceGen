@@ -88,13 +88,13 @@ def log_results(y_test, pred, elapsed_train, elapsed_test, args):
 def run_model(args):
     # load data
     if args.forward_kinematics_kernel:
-        config_filename = '{}/linkPositions_{}.npy'.format(DATA_FOLDER, args.dataset_name)
+        config_filename = '{}/linkPositions_{}.npy'.format(args.data_folder, args.dataset_name)
     else: # use normalized joint angles
-        config_filename = '{}/configs_{}.npy'.format(DATA_FOLDER, args.dataset_name)
+        config_filename = '{}/configs_{}.npy'.format(args.data_folder, args.dataset_name)
     all_data = np.load(config_filename)
     print('min and max: {:.2f}, {:.2f}'.format(all_data.min(), all_data.max()))
 
-    y = np.load('{}/labels_{}.npy'.format(DATA_FOLDER, args.dataset_name))
+    y = np.load('{}/labels_{}.npy'.format(args.data_folder, args.dataset_name))
     y = np.reshape(y, (-1, 1)).astype(float) # -1, 1
 
     # test on args.num_testing_samples, unless we don't have enough data (can't overlap with train set)
@@ -108,7 +108,7 @@ def run_model(args):
     else:
         assert len(args.train_indices) == 2 and args.train_indices[1] > args.train_indices[0], f"{args.train_indices}"
         assert len(args.test_indices) == 2 and args.test_indices[1] > args.test_indices[0], f"{args.test_indices}"
-        assert args.test_indices[0] > args.train_indices[1], f"train: {args.train_indices}, test: {args.test_indices}"
+        assert args.test_indices[0] > args.train_indices[1] or args.test_indices[1] < args.train_indices[0], f"train: {args.train_indices}, test: {args.test_indices}"
         assert args.train_indices[1] < len(all_data), f"{args.train_indices}"
         assert args.test_indices[1] < len(all_data), f"{args.test_indices}"
 
@@ -303,6 +303,8 @@ def main():
     parser.add_argument('--use_cuda', action='store_true')
     # timing parameters
     parser.add_argument('--time_layers', action='store_true')
+    # where to get data
+    parser.add_argument('--data_folder', type=str, default=DATA_FOLDER)
     # where to log output
     parser.add_argument('--results_folder', type=str, default='comparison_results')
 

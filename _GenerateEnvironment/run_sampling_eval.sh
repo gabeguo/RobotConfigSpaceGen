@@ -1,4 +1,5 @@
 results_folder='surfaceSampling_experiment_results'
+data_folder='surface_sampling'
 # use forward kinematics kernel!
 
 # Indices 0-49999 are surface sampling, 50000-99999 are uniform sampling
@@ -15,7 +16,7 @@ do
         echo "Test: ${test_lower[$test_group]} ${test_upper[$test_group]}"
         for seed in 0 1 2
         do
-            dataset_name="surface_sampling"
+            dataset_name="1robots_10obstacles_seed${seed}_surface_sampling"
 
             # Fastron
             updates=50000
@@ -30,7 +31,8 @@ do
                         --test_indices ${test_lower[$test_group]} ${test_upper[$test_group]} \
                         --dataset_name $dataset_name \
                         --g $g --beta $b --maxUpdates $updates --maxSupportPoints $support \
-                        --results_folder $results_folder
+                        --results_folder $results_folder \
+                        --data_folder $data_folder
                 done
             done
 
@@ -51,6 +53,7 @@ do
                                 --bias $b --num_freq $freq --sigma $sigma \
                                 --lr 1e-3 --batch_size 512 --train_percent 0.95 --epochs 50 \
                                 --results_folder $results_folder \
+                                --data_folder $data_folder \
                                 $gpu_flag
                         done
                     done
