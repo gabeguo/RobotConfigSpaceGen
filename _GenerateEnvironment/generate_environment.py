@@ -32,10 +32,11 @@ def sample_points_on_sphere(centers, radius, num_points):
     print(centers.shape)
 
     # pick radius indentation
-    u = np.random.rand(num_points) - 1
+    u = np.random.rand(num_points) - 0.5
     # pick angles
     v = np.random.rand(num_points)
     w = np.random.rand(num_points)
+    print(u)
     assert (u <= 0.5).all() and (u >= -0.5).all()
     assert (v <= 1).all() and (v >= 0).all()
     assert (w <= 1).all() and (w >= 0).all()
