@@ -32,17 +32,17 @@ def sample_points_on_sphere(centers, radius, num_points):
     print(centers.shape)
 
     # pick radius indentation
-    u = np.random.rand(num_points) - 0.5
+    u = np.random.rand(num_points)
     # pick angles
     v = np.random.rand(num_points)
     w = np.random.rand(num_points)
-    print(u)
-    assert (u <= 0.5).all() and (u >= -0.5).all()
+    # print(u)
+    assert (u <= 1).all() and (u >= 0).all()
     assert (v <= 1).all() and (v >= 0).all()
     assert (w <= 1).all() and (w >= 0).all()
     # slightly in or out
-    r = radius * (1 + 0.1 * u)
-    assert (r >= 0.9 * radius).all() and (r <= 1.1 * radius).all()
+    r = radius * (1 + u)
+    assert (r >= radius).all() and (r <= 2 * radius).all()
 
     x = centers[tuple(center_indices),0] + r * np.sin(v * 2 * np.pi) * np.cos(w * 2 * np.pi)
     y = centers[tuple(center_indices),1] + r * np.sin(v * 2 * np.pi) * np.sin(w * 2 * np.pi)
@@ -322,7 +322,7 @@ def main():
         desired_points = sample_points_on_sphere(centers=obstacle_positions, radius=args.obstacle_scale, num_points=args.num_surface_samples)
         assert desired_points.shape == (args.num_surface_samples, 3)
         for curr_point in tqdm(desired_points):
-            curr_config = pyb.calculateInverseKinematics(collision_bodies['robot0'], 6, curr_point)
+            curr_config = pyb.calculateInverseKinematics(collision_bodies['robot0'], 6, curr_point, maxNumIterations=200)
             assert len(curr_config) == 7
             surface_Q_trial_robot.append([curr_config])
             surface_normalized_configurations.append([[curr_config[dof] / MAX_JOINT_ANGLE[dof] for dof in range(7)]])
