@@ -25,24 +25,27 @@ MAX_JOINT_ANGLE = [theta * np.pi / 180 for theta in [170, 120, 170, 120, 170, 12
 # joint limits: https://www.researchgate.net/figure/Joint-limits-of-KUKA-LBR-iiwa-14-R820-45_tbl1_339394448
 
 # Thanks ChatGPT
-def sample_points_inside_box(centers, length, width, height, num_points):
-    center_indices = np.random.choice(range(len(centers)), size=len(centers), replace=True)
-    x = centers[center_indices][0] + (np.random.rand(num_points) - 0.5) * length
-    y = centers[center_indices][1] + (np.random.rand(num_points) - 0.5) * width
-    z = centers[center_indices][2] + (np.random.rand(num_points) - 0.5) * height
-    
-    return np.vstack((x, y, z)).T
+def sample_points_on_sphere(centers, radius, num_points):
+    # pick random sphere
+    center_indices = np.random.choice(range(len(centers)), size=num_points, replace=True)
+    print(center_indices.shape)
+    print(centers.shape)
 
-# Thanks ChatGPT
-def sample_points_inside_sphere(center, radius, num_points):
-    u = np.random.rand(num_points)
+    # pick radius indentation
+    u = np.random.rand(num_points) - 1
+    # pick angles
     v = np.random.rand(num_points)
     w = np.random.rand(num_points)
-    r = radius * np.cbrt(u)
+    assert all(u <= 0.5 and u >= -0.5)
+    assert all(v <= 1 and v >= 0)
+    assert all(w <= 1 and w >= 0)
+    # slightly in or out
+    r = radius * (1 + 0.1 * u)
+    assert all(r >= 0.9 * radius and r <= 1.1 * radius)
 
-    x = center[0] + r * np.sin(v * 2 * np.pi) * np.cos(w * 2 * np.pi)
-    y = center[1] + r * np.sin(v * 2 * np.pi) * np.sin(w * 2 * np.pi)
-    z = center[2] + r * np.cos(v * 2 * np.pi)
+    x = centers[tuple(center_indices),0] + r * np.sin(v * 2 * np.pi) * np.cos(w * 2 * np.pi)
+    y = centers[tuple(center_indices),1] + r * np.sin(v * 2 * np.pi) * np.sin(w * 2 * np.pi)
+    z = centers[tuple(center_indices),2] + r * np.cos(v * 2 * np.pi)
     
     return np.vstack((x, y, z)).T
 
@@ -139,7 +142,7 @@ def load_environment(client_id, num_obstacles, obstacle_positions, obstacle_orie
 
 def write_collision_data(fields, data, args):
     assert len(fields) == len(data[0])
-    filename = f"{DATA_FOLDER}/collision_data_{args.num_robots}robots_{args.num_obstacles}obstacles_seed{args.seed}_{args.keyword_name}.csv"
+    filename = f"{args.data_folder}/collision_data_{args.num_robots}robots_{args.num_obstacles}obstacles_seed{args.seed}_{args.keyword_name}.csv"
     with open(filename, 'w') as output:
         writer = csv.writer(output)
         writer.writerow(fields)
@@ -148,7 +151,7 @@ def write_collision_data(fields, data, args):
 
 def data_to_np(data, field_name, args):
     data = np.array(data)
-    filename = f"{DATA_FOLDER}/{field_name}_{args.num_robots}robots_{args.num_obstacles}obstacles_seed{args.seed}_{args.keyword_name}.npy"
+    filename = f"{args.data_folder}/{field_name}_{args.num_robots}robots_{args.num_obstacles}obstacles_seed{args.seed}_{args.keyword_name}.npy"
     np.save(filename, data)
     return
 
@@ -173,7 +176,7 @@ def save_results(results, args):
     args_dict.update(results)
 
     # construct the filename
-    filename = f"{DATA_FOLDER}/argsAndResults_{args.num_robots}robots_{args.num_obstacles}obstacles_seed{args.seed}_{args.keyword_name}.json"
+    filename = f"{args.data_folder}/argsAndResults_{args.num_robots}robots_{args.num_obstacles}obstacles_seed{args.seed}_{args.keyword_name}.json"
     
     # write the JSON file
     with open(filename, 'w') as f:
@@ -298,6 +301,19 @@ def main():
 
     Q_trial_robot = [] # Q_trial_robot[i][j] = configuration of robot j on trial i
     normalized_configurations = list() # normalized_configurations[i][j] = Q_trial_robot[i][j], but normalized to [-1, +1]
+    
+    # Sample on the surface
+    if args.num_surface_samples > 0:
+        assert args.num_robots == 1
+        desired_points = sample_points_on_sphere(centers=obstacle_positions, radius=args.obstacle_scale, num_points=args.num_surface_samples)
+        assert desired_points.shape == (args.num_surface_samples, 3)
+        for curr_point in tqdm(desired_points):
+            curr_config = pyb.calculateInverseKinematics(collision_bodies['robot0'], 6, curr_point)
+            assert len(curr_config) == 7
+            Q_trial_robot.append([curr_config])
+            normalized_configurations.append([curr_config[dof] / MAX_JOINT_ANGLE[dof] for dof in range(7)])
+    
+    # Sample uniformly
     for i in tqdm(range(0, args.num_samples)):
         Q_trial_robot.append(list())
         normalized_configurations.append(list())
@@ -385,7 +401,7 @@ def main():
                DISTANCE_TIME : total_distance_calculation_time,
                SAMPLE_SIZE : args.num_samples}
 
-    os.makedirs(DATA_FOLDER, exist_ok=True)
+    os.makedirs(args.data_folder, exist_ok=True)
     configs_to_np(all_configs, args)
     labels_to_np(labels, args)
     link_pos_to_np(all_link_pos, args)
@@ -428,6 +444,8 @@ def get_args():
     parser.add_argument('--max_obstacle_z', type=float, default=1.75)
     parser.add_argument('--keyword_name', type=str, default='')
     parser.add_argument('--seed', type=int, default=0)
+    parser.add_argument('--data_folder', type=str, default=DATA_FOLDER)
+    parser.add_argument('--num_surface_samples', type=int, default=0)
     
     args = parser.parse_args()
 
