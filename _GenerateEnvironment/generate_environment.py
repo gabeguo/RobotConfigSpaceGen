@@ -36,9 +36,9 @@ def sample_points_on_sphere(centers, radius, num_points):
     # pick angles
     v = np.random.rand(num_points)
     w = np.random.rand(num_points)
-    assert all(u <= 0.5 and u >= -0.5)
-    assert all(v <= 1 and v >= 0)
-    assert all(w <= 1 and w >= 0)
+    assert (u <= 0.5).all() and (u >= -0.5).all()
+    assert (v <= 1).all() and (v >= 0).all()
+    assert (w <= 1).all() and (w >= 0).all()
     # slightly in or out
     r = radius * (1 + 0.1 * u)
     assert all(r >= 0.9 * radius and r <= 1.1 * radius)
