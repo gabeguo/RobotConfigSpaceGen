@@ -301,19 +301,7 @@ def main():
     start = time.time()
 
     Q_trial_robot = [] # Q_trial_robot[i][j] = configuration of robot j on trial i
-    normalized_configurations = list() # normalized_configurations[i][j] = Q_trial_robot[i][j], but normalized to [-1, +1]
-    
-    # Sample on the surface
-    if args.num_surface_samples > 0:
-        assert args.num_robots == 1
-        desired_points = sample_points_on_sphere(centers=obstacle_positions, radius=args.obstacle_scale, num_points=args.num_surface_samples)
-        assert desired_points.shape == (args.num_surface_samples, 3)
-        for curr_point in tqdm(desired_points):
-            curr_config = pyb.calculateInverseKinematics(collision_bodies['robot0'], 6, curr_point)
-            assert len(curr_config) == 7
-            Q_trial_robot.append([curr_config])
-            normalized_configurations.append([curr_config[dof] / MAX_JOINT_ANGLE[dof] for dof in range(7)])
-    
+    normalized_configurations = list() # normalized_configurations[i][j] = Q_trial_robot[i][j], but normalized to [-1, +1]    
     # Sample uniformly
     for i in tqdm(range(0, args.num_samples)):
         Q_trial_robot.append(list())
@@ -326,11 +314,28 @@ def main():
                 Q_trial_robot[i][j].append(MAX_JOINT_ANGLE[dof] * curr_normalized_config)
                 normalized_configurations[i][j].append(curr_normalized_config)
 
+    # Sample on the surface
+    surface_Q_trial_robot = list()
+    surface_normalized_configurations = list()
+    if args.num_surface_samples > 0:
+        assert args.num_robots == 1
+        desired_points = sample_points_on_sphere(centers=obstacle_positions, radius=args.obstacle_scale, num_points=args.num_surface_samples)
+        assert desired_points.shape == (args.num_surface_samples, 3)
+        for curr_point in tqdm(desired_points):
+            curr_config = pyb.calculateInverseKinematics(collision_bodies['robot0'], 6, curr_point)
+            assert len(curr_config) == 7
+            surface_Q_trial_robot.append([curr_config])
+            surface_normalized_configurations.append([[curr_config[dof] / MAX_JOINT_ANGLE[dof] for dof in range(7)]])
+
+    # combine: surface goes first, so we can use it for train
+    Q_trial_robot = surface_Q_trial_robot + Q_trial_robot
+    normalized_configurations = surface_normalized_configurations + normalized_configurations
+
     end = time.time()
     elapsed = round(end - start, 3)
-    print('time elapsed in generating', args.num_samples, 'configurations:', elapsed, 'seconds')
+    print('time elapsed in generating', args.num_samples + args.num_surface_samples, 'configurations:', elapsed, 'seconds')
 
-    assert len(Q_trial_robot) == args.num_samples
+    assert len(Q_trial_robot) == args.num_samples + args.num_surface_samples
 
     # this contains NORMALIZED CONFIGURATIONS!
     Q = [[theta for robot_data in trial for theta in robot_data] for trial in normalized_configurations]
@@ -351,7 +356,7 @@ def main():
     # start detecting collisions
     start = time.time()
 
-    for i in tqdm(range(0, args.num_samples)):
+    for i in tqdm(range(0, args.num_surface_samples + args.num_samples)):
         # calculate fk query
         start_time_fk = time.time()
         col_detector.set_multi_robot_positions(Q_trial_robot[i])
