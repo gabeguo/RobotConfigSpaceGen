@@ -42,7 +42,7 @@ def sample_points_on_sphere(centers, radius, num_points):
     assert (w <= 1).all() and (w >= 0).all()
     # slightly in or out
     r = radius * (1 + 0.1 * u)
-    assert all(r >= 0.9 * radius and r <= 1.1 * radius)
+    assert (r >= 0.9 * radius).all() and (r <= 1.1 * radius).all()
 
     x = centers[tuple(center_indices),0] + r * np.sin(v * 2 * np.pi) * np.cos(w * 2 * np.pi)
     y = centers[tuple(center_indices),1] + r * np.sin(v * 2 * np.pi) * np.sin(w * 2 * np.pi)
