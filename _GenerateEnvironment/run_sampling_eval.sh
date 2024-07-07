@@ -26,8 +26,8 @@ do
                 do
                     echo "Fastron: support ${support}, updates ${updates}, g ${g}, b ${b}"
                     python compare_models.py --model_name 'Fastron' --forward_kinematics_kernel \
-                        --train_indices $train_lower[$train_group] $train_upper[$train_group] \
-                        --test_indices $test_lower[$test_group] $test_upper[$test_group] \
+                        --train_indices ${train_lower[$train_group]} ${train_upper[$train_group]} \
+                        --test_indices ${test_lower[$test_group]} ${test_upper[$test_group]} \
                         --dataset_name $dataset_name \
                         --g $g --beta $b --maxUpdates $updates --maxSupportPoints $support \
                         --results_folder $results_folder
@@ -45,8 +45,8 @@ do
                         do
                             echo "DL ${gpu_flag}: freq ${freq}, b ${b}, sigma ${sigma}"
                             python compare_models.py --model_name "DL${gpu_flag}" --forward_kinematics_kernel \
-                                --train_indices $train_lower[$train_group] $train_upper[$train_group] \
-                                --test_indices $test_lower[$test_group] $test_upper[$test_group] \
+                                --train_indices ${train_lower[$train_group]} ${train_upper[$train_group]} \
+                                --test_indices ${test_lower[$test_group]} ${test_upper[$test_group]} \
                                 --dataset_name $dataset_name \
                                 --bias $b --num_freq $freq --sigma $sigma \
                                 --lr 1e-3 --batch_size 512 --train_percent 0.95 --epochs 50 \
