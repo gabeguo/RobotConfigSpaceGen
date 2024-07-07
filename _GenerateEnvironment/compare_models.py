@@ -98,12 +98,27 @@ def run_model(args):
     y = np.reshape(y, (-1, 1)).astype(float) # -1, 1
 
     # test on args.num_testing_samples, unless we don't have enough data (can't overlap with train set)
-    assert args.num_training_samples + args.num_testing_samples <= len(all_data)
-    first_test_index = max(args.num_training_samples, len(all_data) - args.num_testing_samples)
-    data_train = all_data[:args.num_training_samples]
-    data_test = all_data[first_test_index:]
-    y_train = y[:args.num_training_samples]
-    y_test = y[first_test_index:]
+    if (args.train_indices is None) and (args.test_indices is None):
+        assert args.num_training_samples + args.num_testing_samples <= len(all_data)
+        first_test_index = max(args.num_training_samples, len(all_data) - args.num_testing_samples)
+        data_train = all_data[:args.num_training_samples]
+        data_test = all_data[first_test_index:]
+        y_train = y[:args.num_training_samples]
+        y_test = y[first_test_index:]
+    else:
+        assert len(args.train_indices) == 2 and args.train_indices[1] > args.train_indices[0], f"{args.train_indices}"
+        assert len(args.test_indices) == 2 and args.test_indices[1] > args.test_indices[0], f"{args.test_indices}"
+        assert args.test_indices[0] > args.train_indices[1], f"train: {args.train_indices}, test: {args.test_indices}"
+        assert args.train_indices[1] < len(all_data), f"{args.train_indices}"
+        assert args.test_indices[1] < len(all_data), f"{args.test_indices}"
+
+        data_train = all_data[args.train_indices[0]:args.train_indices[1]]
+        data_test = all_data[args.test_indices[0]:args.test_indices[1]]
+        y_train = y[args.train_indices[0]:args.train_indices[1]]
+        y_test = y[args.test_indices[0]:args.test_indices[1]]
+
+        args.num_training_samples = args.train_indices[1] - args.train_indices[0]
+        args.num_testing_samples = args.test_indices[1] - args.test_indices[0]
 
     # Initialize Neural Network
     if DL in args.model_name:
@@ -266,6 +281,8 @@ def main():
     # general experimental params
     parser.add_argument('--num_training_samples', type=int, default=30000)
     parser.add_argument('--num_testing_samples', type=int, default=5000)
+    parser.add_argument('--train_indices', type=int, nargs='+', default=None)
+    parser.add_argument('--test_indices', type=int, nargs='+', default=None)
     parser.add_argument('--dataset_name', type=str, default="3robots_25obstacles_seed0_")
     parser.add_argument('--forward_kinematics_kernel', action='store_true')
     # fastron-specific params
