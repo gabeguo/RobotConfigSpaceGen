@@ -130,6 +130,53 @@ def load_json_files_pd(args):
 
     return df_mean_std, list(all_baseline_col_detection_times)
 
+
+ABLATION_MODEL_NAME = {
+    DL: 'Full DeepCollide',
+    DL_NO_BN: 'Remove\nBatchNorm',
+    DL_NO_SKIP: 'Remove\nSkip Connection',
+    DL_NO_FOURIER: 'Remove\nPositional Encoding'
+}
+
+def plot_bar_chart(df_mean_std, baseline_times, args):
+    # Create a scatter plot with a different color for each 'model_name'
+    possible_models = [DL, FASTRON, DL_NO_BN, DL_NO_SKIP, DL_NO_FOURIER, DL_CUDA]
+    used_models = list()
+    best_values = list()
+    median_values = list()
+    for model_name in possible_models:
+        df_model = df_mean_std[df_mean_std['model_name'] == model_name]
+        if len(df_model) == 0:
+            continue
+        
+        used_models.append(ABLATION_MODEL_NAME[model_name])
+        
+        # Extract means and standard deviations for x_metric and y_metric
+        x_means = df_model[(args.x_metric, 'mean')]
+        x_stds = df_model[(args.x_metric, 'std')]
+        y_means = df_model[(args.y_metric, 'mean')]
+        y_stds = df_model[(args.y_metric, 'std')]
+
+        best_values.append(np.max(y_means))
+        median_values.append(np.median(y_means))
+
+    for curr_values, curr_setting in [(best_values, 'Best'), (median_values, 'Median')]:
+        bar_colors = ['tab:green', 'tab:blue', 'tab:orange', 'tab:red']
+        plt.bar(used_models, curr_values, color=bar_colors)
+        for idx, value in enumerate(curr_values):
+            plt.text(idx, value, f"{value:.4f}",
+            horizontalalignment='center', verticalalignment='bottom')
+        plt.ylabel(f"{args.y_metric.capitalize()} ({curr_setting} Hyperparameters)")
+        plt.xlabel('Model')
+        plt.ylim(0.05 * int(min(curr_values) / 0.05), 0.05 * int(max(curr_values) / 0.05 + 1))
+        plt.title('DeepCollide Ablation Study')
+
+        plt.savefig(os.path.join(args.save_location, f"ablation_{args.y_metric}_{curr_setting}.pdf"))
+
+        plt.clf()
+
+    return
+
 def plot_pareto(df_mean_std, baseline_times, args):
     # Create a scatter plot with a different color for each 'model_name'
     possible_models = [DL, FASTRON, DL_NO_BN, DL_NO_SKIP, DL_NO_FOURIER, DL_CUDA]
@@ -237,7 +284,10 @@ def main(args):
     # get all the data points
     df_mean_std, baseline_times = load_json_files_pd(args) 
     # plot pareto frontier
-    plot_pareto(df_mean_std, baseline_times, args)
+    if args.plot_bar_chart:
+        plot_bar_chart(df_mean_std, baseline_times, args)
+    else:
+        plot_pareto(df_mean_std, baseline_times, args)
 
     return
 
@@ -262,6 +312,7 @@ if __name__ == "__main__":
     parser.add_argument('--title', type=str, default='meh')
     parser.add_argument("--seeds", nargs='+', type=int, default=[0])
     parser.add_argument("--save_location", type=str, default='pareto_charts')
+    parser.add_argument("--plot_bar_chart", action='store_true')
 
     # Execute the parse_args() method
     args = parser.parse_args()
