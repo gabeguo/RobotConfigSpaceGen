@@ -297,43 +297,51 @@ def main():
 
     _collision_data = []
 
+    desired_max_distance = max(args.max_robot_robot_distance, args.max_robot_obstacle_distance)
+
     # generate angles (since it is biased to generate them while also detecting if they collide)
     start = time.time()
 
     Q_trial_robot = [] # Q_trial_robot[i][j] = configuration of robot j on trial i
     normalized_configurations = list() # normalized_configurations[i][j] = Q_trial_robot[i][j], but normalized to [-1, +1]    
+    
+    num_rejected_samples = 0
+
     # Sample uniformly
-    for i in tqdm(range(0, args.num_samples)):
-        Q_trial_robot.append(list())
-        normalized_configurations.append(list())
-        for j in range(args.num_robots):
-            Q_trial_robot[i].append(list())
-            normalized_configurations[i].append(list())
-            for dof in range(7):
-                curr_normalized_config = 2 * np.random.random() - 1 # [-1, +1]
-                Q_trial_robot[i][j].append(MAX_JOINT_ANGLE[dof] * curr_normalized_config)
-                normalized_configurations[i][j].append(curr_normalized_config)
+    for i in tqdm(range(0, args.num_surface_samples + args.num_samples)):
+        while True: # keep going until we find an acceptable sample
+            Q_trial_robot.append(list())
+            normalized_configurations.append(list())
+            for j in range(args.num_robots):
+                Q_trial_robot[i].append(list())
+                normalized_configurations[i].append(list())
+                for dof in range(7):
+                    curr_normalized_config = 2 * np.random.random() - 1 # [-1, +1]
+                    Q_trial_robot[i][j].append(MAX_JOINT_ANGLE[dof] * curr_normalized_config)
+                    normalized_configurations[i][j].append(curr_normalized_config)
+            if i < args.num_surface_samples: # rejection sampling of within-obstacle collisions
+                # calculate fk query
+                col_detector.set_multi_robot_positions(Q_trial_robot[i])
+                # compute shortest distances for a configuration
+                distances = col_detector.compute_multi_robot_distances_after_moving(Q_trial_robot[i], 
+                    max_distance=desired_max_distance)
+                the_distance = np.min(distances)
+                if the_distance > -0.1 * args.obstacle_scale:
+                    break # accept, if we're less than 10% indented into the obstacle
+                else:
+                    Q_trial_robot.pop() # remove the bad sample, and try again
+                    normalized_configurations.pop()
+                    num_rejected_samples += 1
+            else: # we are doing uniform sampling, can break
+                break
 
-    # Sample on the surface
-    surface_Q_trial_robot = list()
-    surface_normalized_configurations = list()
-    if args.num_surface_samples > 0:
-        assert args.num_robots == 1
-        desired_points = sample_points_on_sphere(centers=obstacle_positions, radius=args.obstacle_scale, num_points=args.num_surface_samples)
-        assert desired_points.shape == (args.num_surface_samples, 3)
-        for curr_point in tqdm(desired_points):
-            curr_config = pyb.calculateInverseKinematics(collision_bodies['robot0'], 6, curr_point, maxNumIterations=200)
-            assert len(curr_config) == 7
-            surface_Q_trial_robot.append([curr_config])
-            surface_normalized_configurations.append([[curr_config[dof] / MAX_JOINT_ANGLE[dof] for dof in range(7)]])
-
-    # combine: surface goes first, so we can use it for train
-    Q_trial_robot = surface_Q_trial_robot + Q_trial_robot
-    normalized_configurations = surface_normalized_configurations + normalized_configurations
+    assert len(Q_trial_robot) == args.num_surface_samples + args.num_samples
+    assert len(Q_trial_robot) == len(normalized_configurations)
 
     end = time.time()
     elapsed = round(end - start, 3)
     print('time elapsed in generating', args.num_samples + args.num_surface_samples, 'configurations:', elapsed, 'seconds')
+    print(f'rejected {num_rejected_samples} samples')
 
     assert len(Q_trial_robot) == args.num_samples + args.num_surface_samples
 
@@ -350,8 +358,6 @@ def main():
 
     print('plane id:', collision_bodies['plane'])
     plane_id = collision_bodies['plane']
-
-    desired_max_distance = max(args.max_robot_robot_distance, args.max_robot_obstacle_distance)
 
     # start detecting collisions
     start = time.time()
@@ -376,6 +382,7 @@ def main():
                               if cp[1] != plane_id and cp[2] != plane_id and cp[8] < 0]
         # cp[1] is first collision object, cp[2] is second collision object
         # cp[8] is collision distance, where NEGATIVE value indicates penetration (pos value is separation)
+        # manually verified that cp[8] is consistent with custom calculation function
         in_col = len(all_contact_points) > 0
         total_collision_detection_time += (time.time() - start_time_collision)
 
