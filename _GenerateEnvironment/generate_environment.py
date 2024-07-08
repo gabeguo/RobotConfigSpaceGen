@@ -326,7 +326,7 @@ def main():
                 distances = col_detector.compute_multi_robot_distances_after_moving(Q_trial_robot[i], 
                     max_distance=desired_max_distance)
                 the_distance = np.min(distances)
-                if the_distance > -0.1 * args.obstacle_scale:
+                if the_distance > -args.indent_ratio * args.obstacle_scale:
                     break # accept, if we're less than 10% indented into the obstacle
                 else:
                     Q_trial_robot.pop() # remove the bad sample, and try again
@@ -459,6 +459,7 @@ def get_args():
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--data_folder', type=str, default=DATA_FOLDER)
     parser.add_argument('--num_surface_samples', type=int, default=0)
+    parser.add_argument('--indent_ratio', type=float, default=0.05)
     
     args = parser.parse_args()
 
