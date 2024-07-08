@@ -15,7 +15,8 @@ def get_seed_number(string):
         return None
 
 # Thanks ChatGPT!
-def load_json_files_pd(args, COMPARISON_VARIABLES, the_x_var_key, expected_num_x_vals):
+def load_json_files_pd(args, COMPARISON_VARIABLES, the_x_var_key, expected_num_x_vals,
+                       baseline_data_dir='simulation_data'):
     DOF = None
     NUM_TRAIN_SAMPLES = None
     NUM_TEST_SAMPLES = None
@@ -48,7 +49,7 @@ def load_json_files_pd(args, COMPARISON_VARIABLES, the_x_var_key, expected_num_x
                 dataframes.append(df)
 
                 # get PyBullet baseline
-                baseline_simulation_data_path = f"{args.data_directory}/../simulation_data/argsAndResults_{data['dataset_name']}.json"
+                baseline_simulation_data_path = f"{args.data_directory}/../{baseline_data_dir}/argsAndResults_{data['dataset_name']}.json"
                 assert os.path.exists(baseline_simulation_data_path)
                 with open(baseline_simulation_data_path, 'r') as f_sim:
                     baseline_simulation_data = json.load(f_sim)
@@ -56,7 +57,9 @@ def load_json_files_pd(args, COMPARISON_VARIABLES, the_x_var_key, expected_num_x
                     if args.unit_rate_metric:
                         the_baseline_col_time /= baseline_simulation_data[SAMPLE_SIZE]
                     assert len(df[the_x_var_key]) == 1
-                    curr_x_val = df[the_x_var_key][0]
+                    curr_x_val = df[the_x_var_key].iloc[0]
+                    if isinstance(curr_x_val, pd.Series):
+                        curr_x_val = tuple(curr_x_val)
                     if curr_x_val not in baseline_by_x_var:
                         baseline_by_x_var[curr_x_val] = set()
                     baseline_by_x_var[curr_x_val].add(the_baseline_col_time)
@@ -92,17 +95,23 @@ def load_json_files_pd(args, COMPARISON_VARIABLES, the_x_var_key, expected_num_x
 
 
 def plot_results(df, baseline_by_level, y_values, the_x_var_key, num_test_samples, 
-                 expected_unique_x_val_length, args):
+                 expected_unique_x_val_length, args, 
+                 x_val_to_label=None, all_model_names=None):
     all_y_medians = list()
     all_y_lowers = list()
     all_y_uppers = list()
     all_y_best = list()
-    all_model_names = [DL, DL_CUDA, FASTRON] if args.include_gpu else [DL, FASTRON]
+    if all_model_names is None:
+        all_model_names = [DL, DL_CUDA, FASTRON] if args.include_gpu else [DL, FASTRON]
     for model_name in all_model_names:
         df_model = df[df['model_name'] == model_name]
         
         # Extract maxes, means, and standard deviations for x_metric and y_metric
-        unique_x_values_list = df_model[the_x_var_key].unique().tolist()
+        if isinstance(the_x_var_key, list) or isinstance(the_x_var_key, tuple):
+            unique_x_values_list = df_model[the_x_var_key].drop_duplicates().values.tolist()
+            print(unique_x_values_list)
+        else:
+            unique_x_values_list = df_model[the_x_var_key].unique().tolist()
         unique_x_values_list.sort()
         assert len(unique_x_values_list) == expected_unique_x_val_length # number of distinct collision densities
 
@@ -112,7 +121,15 @@ def plot_results(df, baseline_by_level, y_values, the_x_var_key, num_test_sample
         y_lowers = list()
         baselines = list()
         for x_val in unique_x_values_list:
-            all_rows_with_x_val = df_model[df_model[the_x_var_key] == x_val]
+            print(df_model[the_x_var_key])
+            if isinstance(the_x_var_key, tuple) or isinstance(the_x_var_key, list):
+                mask = (df_model[the_x_var_key[0]] == x_val[0]) & \
+                        (df_model[the_x_var_key[1]] == x_val[1]) & \
+                        (df_model[the_x_var_key[2]] == x_val[2]) & \
+                        (df_model[the_x_var_key[3]] == x_val[3])
+                all_rows_with_x_val = df_model[mask]
+            else:
+                all_rows_with_x_val = df_model[df_model[the_x_var_key] == x_val]
 
             if the_x_var_key in [DOF_KEY, COLLISION_DENSITY_KEY]:
                 if DL in model_name:
@@ -120,7 +137,8 @@ def plot_results(df, baseline_by_level, y_values, the_x_var_key, num_test_sample
                 else:
                     assert len(all_rows_with_x_val) == 54
             else:
-                assert the_x_var_key == 'num_training_samples'
+                assert the_x_var_key == 'num_training_samples' or \
+                    isinstance(the_x_var_key, tuple) or isinstance(the_x_var_key, list)
                 if DL in model_name:
                     assert len(all_rows_with_x_val) == 27
                 else:
@@ -175,22 +193,27 @@ def plot_results(df, baseline_by_level, y_values, the_x_var_key, num_test_sample
                     value = number_free / (number_collisions + number_free) # random guess free proportion
                 baselines.append(value)
 
-        plt.plot(unique_x_values_list, y_best, 
+        if x_val_to_label is not None:
+            assert isinstance(unique_x_values_list[0], tuple) or isinstance(unique_x_values_list[0], list)
+            print('unique x values:', unique_x_values_list)
+            horizontal_plot_values = [_ for _ in range(len(x_val_to_label))]
+            horizontal_plot_labels = [x_val_to_label[tuple(the_x_val)] for the_x_val in unique_x_values_list]
+            plt.xticks(ticks=horizontal_plot_values, labels=horizontal_plot_labels)
+        else:
+            horizontal_plot_values = unique_x_values_list
+        plt.plot(horizontal_plot_values, y_best, 
                  color=CLF_TO_MAX_COLOR[model_name], marker=CLF_TO_MAX_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Best')
         y_errors = np.stack((np.array(y_medians) - np.array(y_lowers), 
                              np.array(y_uppers) - np.array(y_medians)), 
                              axis=0)
         assert y_errors.shape == (2, len(y_lowers))
-        plt.plot(unique_x_values_list, y_medians, linestyle='--',
+        plt.plot(horizontal_plot_values, y_medians, linestyle='--',
                     color=CLF_TO_MEAN_COLOR[model_name], marker=CLF_TO_MEAN_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Median')
         if args.disable_error_bars:
             y_errors = np.zeros_like(y_errors)
         else:
-            plt.fill_between(unique_x_values_list, y_lowers, y_uppers, color=CLF_TO_MEAN_COLOR[model_name], alpha=0.15,
+            plt.fill_between(horizontal_plot_values, y_lowers, y_uppers, color=CLF_TO_MEAN_COLOR[model_name], alpha=0.15,
                              linestyle='--')
-            # error_bars=plt.errorbar(unique_x_values_list, y_medians, y_errors, linestyle='--', elinewidth=2, capsize=4,
-            #             color=CLF_TO_MEAN_COLOR[model_name], marker=CLF_TO_MEAN_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Median')
-            # error_bars[-1][0].set_linestyle('--')
 
         all_y_medians.extend(y_medians)
         all_y_lowers.extend(y_lowers)
@@ -199,7 +222,7 @@ def plot_results(df, baseline_by_level, y_values, the_x_var_key, num_test_sample
     
     if args.metric.lower() in [ACCURACY.lower(), TPR.lower(), TNR.lower()]:
         # plot baseline (should be same for both models)
-        plt.plot(unique_x_values_list, baselines, color=(0.5, 0.5, 0.5, 0.5), 
+        plt.plot(horizontal_plot_values, baselines, color=(0.5, 0.5, 0.5, 0.5), 
                 label='Majority Rule' if args.metric.lower() == ACCURACY.lower() else 'Distribution-Aware Guess')
 
     if not args.disable_error_bars:
@@ -225,4 +248,4 @@ def plot_results(df, baseline_by_level, y_values, the_x_var_key, num_test_sample
     yspan = ymax - ymin
     plt.ylim(ymin - yspan * 0.1 , ymax + yspan * 0.1)
 
-    #plt.show()
+    return
