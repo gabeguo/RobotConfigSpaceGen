@@ -109,8 +109,8 @@ def run_model(args):
         assert len(args.train_indices) == 2 and args.train_indices[1] > args.train_indices[0], f"{args.train_indices}"
         assert len(args.test_indices) == 2 and args.test_indices[1] > args.test_indices[0], f"{args.test_indices}"
         assert args.test_indices[0] > args.train_indices[1] or args.test_indices[1] < args.train_indices[0], f"train: {args.train_indices}, test: {args.test_indices}"
-        assert args.train_indices[1] < len(all_data), f"{args.train_indices}"
-        assert args.test_indices[1] < len(all_data), f"{args.test_indices}"
+        assert args.train_indices[1] <= len(all_data), f"{args.train_indices}"
+        assert args.test_indices[1] <= len(all_data), f"{args.test_indices}"
 
         data_train = all_data[args.train_indices[0]:args.train_indices[1]]
         data_test = all_data[args.test_indices[0]:args.test_indices[1]]
