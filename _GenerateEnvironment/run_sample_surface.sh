@@ -7,5 +7,6 @@ do
     --num_obstacles 10 \
     --num_robots 1 \
     --keyword_name 'surface_sampling' \
-    --data_folder 'surface_sampling'
+    --data_folder 'surface_sampling' \
+    --indent_ratio 0.15
 done
