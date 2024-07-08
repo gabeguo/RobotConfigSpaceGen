@@ -57,3 +57,8 @@ CLF_TO_MAX_COLOR = {DL: (0.1, 0.8, 0.1, 1.0), FASTRON: (0.8, 0.1, 0.1, 1.0), DL_
 CLF_TO_MEAN_COLOR = {DL: (0.2, 0.7, 0.2, 0.5), FASTRON: (0.7, 0.2, 0.2, 0.5), DL_CUDA: (0.2, 0.2, 0.7, 0.5)}
 
 COLLISION_DENSITY_KEY = 'collision_density'
+
+TRAIN_IDX_LOW = 'train_idx_low'
+TRAIN_IDX_HIGH = 'train_idx_high'
+TEST_IDX_LOW = 'test_idx_low'
+TEST_IDX_HIGH = 'test_idx_high'

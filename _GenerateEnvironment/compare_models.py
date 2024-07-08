@@ -68,6 +68,10 @@ def log_results(y_test, pred, elapsed_train, elapsed_test, args):
         TEST_TIME:elapsed_test,
         TRAIN_SIZE:args.num_training_samples,
         TEST_SIZE:y_test.flatten().shape[0],
+        TRAIN_IDX_LOW:args.train_indices[0],
+        TRAIN_IDX_HIGH:args.train_indices[1],
+        TEST_IDX_LOW:args.test_indices[0],
+        TEST_IDX_HIGH:args.test_indices[1]
     }
     results.update(vars(args)) # update with args
     if args.time_layers:
