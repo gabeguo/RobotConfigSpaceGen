@@ -16,7 +16,7 @@ do
         echo "Test: ${test_lower[$test_group]} ${test_upper[$test_group]}"
         for seed in 0 1 2
         do
-            dataset_name="1robots_10obstacles_seed${seed}_surface_sampling"
+            dataset_name="3robots_25obstacles_seed${seed}_surface_sampling"
 
             # Fastron
             updates=50000
