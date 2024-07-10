@@ -227,7 +227,7 @@ def plot_results(df, baseline_by_level, y_values, the_x_var_key, num_test_sample
         # plot baseline (should be same for both models)
         plt.plot(horizontal_plot_values, baselines, color=(0.5, 0.5, 0.5, 0.7), 
                 label='Majority Rule' if args.metric.lower() == ACCURACY.lower() else 'Distribution-Aware Guess',
-                linestyle=linestyle, marker='8')
+                linestyle=linestyle, marker=('8' if linestyle == '' else None))
 
     if not args.disable_error_bars:
         ymin = min(min(all_y_lowers), min(all_y_best))
