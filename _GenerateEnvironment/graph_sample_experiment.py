@@ -27,36 +27,36 @@ COMPARISON_VARIABLES = {
 X_VAR_KEY = [TRAIN_IDX_LOW, TRAIN_IDX_HIGH, TEST_IDX_LOW, TEST_IDX_HIGH]
 
 TRAIN_RANGES = {
-    (25000, 50000):'Train: Surface', 
-    (50000, 75000):'Train: Uniform',
-    (37500, 62500):'Train: Both'
+    (25000, 50000):'Surface', 
+    (50000, 75000):'Uniform',
+    (37500, 62500):'Both'
 }
 
 TEST_RANGES = {
-    (0, 5000):'Test: Surface',
-    (95000, 100000):'Test: Uniform'
+    (0, 5000):'Surface',
+    (95000, 100000):'Uniform'
 }
 
 X_VAL_TO_LABEL = {
-    tuple(list(key_train) + list(key_test)):f"{TRAIN_RANGES[key_train]}\n{TEST_RANGES[key_test]}"
+    tuple(list(key_train) + list(key_test)):f"{TRAIN_RANGES[key_train]},\n{TEST_RANGES[key_test]}"
     for key_train in TRAIN_RANGES for key_test in TEST_RANGES
 }
 
 def label_plot(args):
-    plt.xlabel('Sampling Scheme')
+    plt.xlabel('Sampling Scheme (Train, Test)')
     #plt.xticks(unique_x_values_list)
-    metric_name = args.metric.capitalize() if len(args.metric) >= 5 else args.metric.upper()
+    metric_name = args.metric.capitalize() if args.metric not in [TPR, TNR] else args.metric.upper()
     if args.ylabel:
         plt.ylabel(args.ylabel)
     else:
-        plt.ylabel(metric_name.capitalize())
+        plt.ylabel(metric_name)
     plt.legend(bbox_to_anchor=(0, -0.28, 1, -0.02), loc="lower left",
         mode="expand", borderaxespad=0, ncol=3, fontsize='small')
     plt.subplots_adjust(bottom=0.2)
-    if args.metric == 'tpr':
-        plt.ylim(0, 1)
-    else:
-        plt.ylim(0.75, 1)
+    # if args.metric == 'tpr':
+    #     plt.ylim(0, 1)
+    # else:
+    #     plt.ylim(0.75, 1)
     plt.grid()
     plt.title(f'Impact of Sampling Scheme on Model Performance')
     plt.savefig(f'{args.save_location}/Sampling Scheme {metric_name}.pdf')
@@ -96,6 +96,7 @@ if __name__ == "__main__":
     parser.add_argument("--save_location", type=str, default='graphs')
     parser.add_argument("--disable_error_bars", action='store_true')
     parser.add_argument("--include_gpu", action='store_true')
+    parser.add_argument("--plot_medians", action='store_true')
 
     # Execute the parse_args() method
     args = parser.parse_args()

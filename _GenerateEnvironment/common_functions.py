@@ -207,13 +207,14 @@ def plot_results(df, baseline_by_level, y_values, the_x_var_key, num_test_sample
                              np.array(y_uppers) - np.array(y_medians)), 
                              axis=0)
         assert y_errors.shape == (2, len(y_lowers))
-        plt.plot(horizontal_plot_values, y_medians, linestyle='--',
-                    color=CLF_TO_MEAN_COLOR[model_name], marker=CLF_TO_MEAN_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Median')
-        if args.disable_error_bars:
-            y_errors = np.zeros_like(y_errors)
-        else:
-            plt.fill_between(horizontal_plot_values, y_lowers, y_uppers, color=CLF_TO_MEAN_COLOR[model_name], alpha=0.15,
-                             linestyle='--')
+        if args.plot_medians:
+            plt.plot(horizontal_plot_values, y_medians, linestyle='--',
+                        color=CLF_TO_MEAN_COLOR[model_name], marker=CLF_TO_MEAN_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Median')
+            if args.disable_error_bars:
+                y_errors = np.zeros_like(y_errors)
+            else:
+                plt.fill_between(horizontal_plot_values, y_lowers, y_uppers, color=CLF_TO_MEAN_COLOR[model_name], alpha=0.15,
+                                linestyle='--')
 
         all_y_medians.extend(y_medians)
         all_y_lowers.extend(y_lowers)

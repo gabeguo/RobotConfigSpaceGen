@@ -1,4 +1,4 @@
-results_folder='surfaceSampling_experiment_results'
+results_folder='surfaceSampling_experiment_results_moreDoF'
 data_folder='surface_sampling'
 # use forward kinematics kernel!
 
