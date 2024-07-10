@@ -53,11 +53,17 @@ def label_plot(args):
     plt.legend(bbox_to_anchor=(0, -0.28, 1, -0.02), loc="lower left",
         mode="expand", borderaxespad=0, ncol=3, fontsize='small')
     plt.subplots_adjust(bottom=0.2)
-    # if args.metric == 'tpr':
-    #     plt.ylim(0, 1)
-    # else:
-    #     plt.ylim(0.75, 1)
+    
+    if args.metric != TPR:
+        plt.ylim(0.4, 1)
+        plt.yticks(np.linspace(0.4, 1, 13))
+    else:
+        plt.ylim(0, 1)
+        plt.yticks(np.linspace(0, 1, 11))
+
+    
     plt.grid()
+
     plt.title(f'Impact of Sampling Scheme on Model Performance')
     plt.savefig(f'{args.save_location}/Sampling Scheme {metric_name}.pdf')
     plt.savefig(f'{args.save_location}/Sampling Scheme {metric_name}.png')
