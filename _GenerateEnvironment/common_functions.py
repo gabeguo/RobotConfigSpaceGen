@@ -201,8 +201,10 @@ def plot_results(df, baseline_by_level, y_values, the_x_var_key, num_test_sample
             plt.xticks(ticks=horizontal_plot_values, labels=horizontal_plot_labels)
         else:
             horizontal_plot_values = unique_x_values_list
+        linestyle='' if 'surface' in args.data_directory else '-'
         plt.plot(horizontal_plot_values, y_best, 
-                 color=CLF_TO_MAX_COLOR[model_name], marker=CLF_TO_MAX_MARKER[model_name], label=f'{FULL_MODEL_NAME[model_name]}: Best')
+                 color=CLF_TO_MAX_COLOR[model_name], marker=CLF_TO_MAX_MARKER[model_name], 
+                 label=f'{FULL_MODEL_NAME[model_name]}: Best', linestyle=linestyle)
         y_errors = np.stack((np.array(y_medians) - np.array(y_lowers), 
                              np.array(y_uppers) - np.array(y_medians)), 
                              axis=0)
@@ -223,8 +225,9 @@ def plot_results(df, baseline_by_level, y_values, the_x_var_key, num_test_sample
     
     if args.metric.lower() in [ACCURACY.lower(), TPR.lower(), TNR.lower()]:
         # plot baseline (should be same for both models)
-        plt.plot(horizontal_plot_values, baselines, color=(0.5, 0.5, 0.5, 0.5), 
-                label='Majority Rule' if args.metric.lower() == ACCURACY.lower() else 'Distribution-Aware Guess')
+        plt.plot(horizontal_plot_values, baselines, color=(0.5, 0.5, 0.5, 0.7), 
+                label='Majority Rule' if args.metric.lower() == ACCURACY.lower() else 'Distribution-Aware Guess',
+                linestyle=linestyle, marker='8')
 
     if not args.disable_error_bars:
         ymin = min(min(all_y_lowers), min(all_y_best))
