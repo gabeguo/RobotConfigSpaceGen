@@ -26,14 +26,17 @@ COMPARISON_VARIABLES = {
     'train_percent',
     'epochs'
 }
+BASELINE_NAME = 'PyBullet (GJK)'
 DL_CUDA = f'{DL}--use_cuda'
 CLF_TO_MARKER = {DL: 'o', FASTRON: 'X', DL_CUDA: '*',
-                 DL_NO_FOURIER: '^', DL_NO_BN: 'v', DL_NO_SKIP: 's'}
+                 DL_NO_FOURIER: '^', DL_NO_BN: 'v', DL_NO_SKIP: 's',
+                 BASELINE_NAME: 'D'}
 CLF_TO_COLOR = {DL: '#228822', FASTRON: '#882222', DL_CUDA: '#222288',
-                DL_NO_FOURIER: '#CC8800', DL_NO_BN: '#992277', DL_NO_SKIP: '#227799'}
+                DL_NO_FOURIER: '#CC8800', DL_NO_BN: '#992277', DL_NO_SKIP: '#227799',
+                BASELINE_NAME: '#882288'}
 FULL_MODEL_NAME = {DL: 'DeepCollide', FASTRON: 'Fastron FK', DL_CUDA: 'DeepCollide (Parallel)',
                    DL_NO_FOURIER: 'No Fourier Features', DL_NO_SKIP: 'No Skip Connections', 
-                   DL_NO_BN: 'No Ending BatchNorm'}
+                   DL_NO_BN: 'No Ending BatchNorm', BASELINE_NAME: BASELINE_NAME}
 
 # Thanks ChatGPT!
 def load_json_files(directory):
@@ -191,19 +194,16 @@ def plot_pareto(df_mean_std, baseline_times, args):
         y_means = df_model[(args.y_metric, 'mean')]
         y_stds = df_model[(args.y_metric, 'std')]
 
+        curr_pareto_x, curr_pareto_y = calculate_pareto_frontier(x_means, y_means)
+
         # Create a scatter plot of the means of x_metric vs y_metric for this model_name
-        plt.scatter(x_means, y_means, color=CLF_TO_COLOR[model_name] + "77", 
+        plt.scatter(curr_pareto_x, curr_pareto_y, color=CLF_TO_COLOR[model_name] + "77", 
                     marker=CLF_TO_MARKER[model_name], s=35, label=FULL_MODEL_NAME[model_name],
                     edgecolors=CLF_TO_COLOR[model_name])
 
         # Use errorbars to show standard deviation
         if not args.disable_error_bars:
             plt.errorbar(x_means, y_means, xerr=x_stds, yerr=y_stds, linestyle='None', color=CLF_TO_COLOR[model_name], alpha=0.1)
-
-    if args.y_metric == 'test_time' and (not args.disable_baseline):
-        the_baseline_time = np.mean(baseline_times)
-        plt.axhline(y=the_baseline_time, color='purple', alpha=0.9,
-                    linestyle = '--', label='GJK (PyBullet)')
 
     # Add labels
     x_label = args.x_label if args.x_label else args.x_metric
@@ -218,6 +218,41 @@ def plot_pareto(df_mean_std, baseline_times, args):
 
     if args.log_scale:
         plt.yscale('log')
+
+    # # Fill the area under and to the left of the Pareto frontier
+    # plt.fill_between(pareto_x, pareto_y, color='black', alpha=0.1, step='post')
+
+    title = args.title.replace('\\n', '\n')
+    plt.title(title)
+
+    # Print Pareto optimal settings
+    pareto_indices = []
+    for x, y in zip(pareto_x, pareto_y):
+        match_indices = df_mean_std[(df_mean_std[(args.x_metric, 'mean')] == x) & (df_mean_std[(args.y_metric, 'mean')] == y)].index.tolist()
+        if len(match_indices) == 0:
+            continue
+        pareto_indices.extend(match_indices)
+        assert len(match_indices) == 1
+        model_name = df_mean_std.iloc[match_indices[0]]['model_name'][0]
+        print(model_name)
+        # plt.scatter([x], [y], color=CLF_TO_COLOR[model_name] + "77", 
+        #             marker=CLF_TO_MARKER[model_name], s=100, label=FULL_MODEL_NAME[model_name],
+        #             edgecolors=CLF_TO_COLOR[model_name])
+
+    pareto_df = df_mean_std.loc[pareto_indices]
+    pd.set_option('display.max_rows', 30)
+    pd.set_option('display.max_columns', 30)
+    print('Pareto optimal models:\n', pareto_df)
+
+    pareto_df.to_csv(os.path.join(args.save_location, f'{title}.csv'), index=False)
+
+    if args.y_metric == 'test_time' and (not args.disable_baseline):
+        the_baseline_time = np.mean(list(baseline_times))
+        plt.scatter([0], [the_baseline_time], color=CLF_TO_COLOR[BASELINE_NAME] + "77", 
+                    marker=CLF_TO_MARKER[BASELINE_NAME], s=35, label=FULL_MODEL_NAME[BASELINE_NAME],
+                    edgecolors=CLF_TO_COLOR[BASELINE_NAME])
+        pareto_x.insert(0, 0)
+        pareto_y.insert(0, the_baseline_time)
 
     # set axis limits
     ymin, ymax = plt.ylim()
@@ -237,9 +272,6 @@ def plot_pareto(df_mean_std, baseline_times, args):
     # Draw the Pareto frontier as a step plot
     plt.step(pareto_x, pareto_y, color='black', where='post')
 
-    # # Fill the area under and to the left of the Pareto frontier
-    # plt.fill_between(pareto_x, pareto_y, color='black', alpha=0.1, step='post')
-
     plt.grid()
 
     # Create a custom legend with unique labels - Thanks ChatGPT!
@@ -247,25 +279,10 @@ def plot_pareto(df_mean_std, baseline_times, args):
     by_label = dict(zip(labels, handles))
     plt.legend(by_label.values(), by_label.keys())
 
-    title = args.title.replace('\\n', '\n')
-    plt.title(title)
-
     title = title.replace('\n', '_')
     plt.savefig(os.path.join(args.save_location, title + '.pdf'))
     plt.savefig(os.path.join(args.save_location, title + '.png'))
     #plt.show()
-
-    # Print Pareto optimal settings
-    pareto_indices = []
-    for x, y in zip(pareto_x, pareto_y):
-        match_indices = df_mean_std[(df_mean_std[(args.x_metric, 'mean')] == x) & (df_mean_std[(args.y_metric, 'mean')] == y)].index.tolist()
-        pareto_indices.extend(match_indices)
-    pareto_df = df_mean_std.loc[pareto_indices]
-    pd.set_option('display.max_rows', 30)
-    pd.set_option('display.max_columns', 30)
-    print('Pareto optimal models:\n', pareto_df)
-
-    pareto_df.to_csv(os.path.join(args.save_location, f'{title}.csv'), index=False)
 
     return
 
