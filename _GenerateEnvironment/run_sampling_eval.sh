@@ -1,16 +1,16 @@
-results_folder='surfaceSampling_experiment_results_moreDoF'
+results_folder='surfaceSampling_experiment_results'
 data_folder='surface_sampling'
 # use forward kinematics kernel!
 
 # Indices 0-49999 are surface sampling, 50000-99999 are uniform sampling
-train_lower=(25000 50000 37500)
-train_upper=(50000 75000 62500)
-test_lower=(0 95000)
-test_upper=(5000 100000)
+train_lower=(20000 50000 35000)
+train_upper=(50000 80000 65000)
+test_lower=(95000)
+test_upper=(100000)
 
 for train_group in 0 1 2
 do
-    for test_group in 0 1
+    for test_group in 0
     do
         echo "Train: ${train_lower[$train_group]} ${train_upper[$train_group]}"
         echo "Test: ${test_lower[$test_group]} ${test_upper[$test_group]}"
