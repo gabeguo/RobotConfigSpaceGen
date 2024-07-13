@@ -89,8 +89,10 @@ def main(args):
     # https://stackoverflow.com/a/25449186
     ax = result_df.plot(x=SAMPLING_SCENARIO_KEY, kind='bar', stacked=False, rot=0, width=0.9,
                         color=['tab:orange', 'tab:green', 'tab:blue'])
+    hatches = ['x', 'x', 'x', '+', '+', '+', 'o', 'o', 'o']
     for p in ax.patches:
         ax.annotate(f"{p.get_height():.2f}", (p.get_x() + 0.05, p.get_height() + 0.01))
+        p.set_hatch(hatches.pop())
     print(result_df)
 
     label_plot(args, df_mean_std)
