@@ -28,8 +28,8 @@ X_VAR_KEY = [TRAIN_IDX_LOW, TRAIN_IDX_HIGH, TEST_IDX_LOW, TEST_IDX_HIGH]
 
 TRAIN_RANGES = {
     (20000, 50000):'Rejection', 
+    (35000, 65000):'Combo',
     (50000, 80000):'Uniform',
-    (35000, 65000):'Combo'
 }
 
 TEST_RANGES = {
