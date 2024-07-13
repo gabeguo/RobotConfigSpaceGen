@@ -27,13 +27,13 @@ COMPARISON_VARIABLES = {
 X_VAR_KEY = [TRAIN_IDX_LOW, TRAIN_IDX_HIGH, TEST_IDX_LOW, TEST_IDX_HIGH]
 
 TRAIN_RANGES = {
-    (25000, 50000):'Surface', 
-    (50000, 75000):'Uniform',
-    (37500, 62500):'Both'
+    (20000, 50000):'Surface', 
+    (50000, 80000):'Uniform',
+    (35000, 65000):'Both'
 }
 
 TEST_RANGES = {
-    (0, 5000):'Surface',
+    # (0, 5000):'Surface',
     (95000, 100000):'Uniform'
 }
 
@@ -42,7 +42,7 @@ X_VAL_TO_LABEL = {
     for key_train in TRAIN_RANGES for key_test in TEST_RANGES
 }
 
-def label_plot(args):
+def label_plot(args, df_mean_std):
     plt.xlabel('Sampling Scheme (Train, Test)')
     #plt.xticks(unique_x_values_list)
     metric_name = args.metric.capitalize() if args.metric not in [TPR, TNR] else args.metric.upper()
@@ -64,7 +64,11 @@ def label_plot(args):
     
     plt.grid()
 
-    plt.title(f'Impact of Sampling Scheme on Model Performance')
+    num_training_samples = df_mean_std['train_idx_high'][0] - df_mean_std['train_idx_low'][0]
+    num_testing_samples = df_mean_std['test_idx_high'][0] - df_mean_std['test_idx_low'][0]
+
+    plt.title(f'Impact of Sampling Scheme on Model Performance:' + 
+              f'\n{num_training_samples} Train, {num_testing_samples} Test')
     plt.savefig(f'{args.save_location}/Sampling Scheme {metric_name}.pdf')
     plt.savefig(f'{args.save_location}/Sampling Scheme {metric_name}.png')
     #plt.show()
@@ -78,13 +82,13 @@ def main(args):
     df_mean_std, baseline, DOF, NUM_TRAIN_SAMPLES, NUM_TEST_SAMPLES \
         = load_json_files_pd(args=args, COMPARISON_VARIABLES=COMPARISON_VARIABLES,
                             the_x_var_key=X_VAR_KEY, 
-                            expected_num_x_vals=6, baseline_data_dir='surface_sampling') 
+                            expected_num_x_vals=3, baseline_data_dir='surface_sampling') 
     plot_results(df=df_mean_std, baseline_by_level=baseline, y_values=df_mean_std[(args.metric, 'mean')].tolist(), 
                 the_x_var_key=X_VAR_KEY, num_test_samples=NUM_TEST_SAMPLES, 
-                expected_unique_x_val_length=6, args=args, x_val_to_label=X_VAL_TO_LABEL,
+                expected_unique_x_val_length=3, args=args, x_val_to_label=X_VAL_TO_LABEL,
                 all_model_names=[DL_CUDA, FASTRON])
 
-    label_plot(args)
+    label_plot(args, df_mean_std)
 
     return
 

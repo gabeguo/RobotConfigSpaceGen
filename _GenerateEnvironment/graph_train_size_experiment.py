@@ -87,6 +87,7 @@ if __name__ == "__main__":
     parser.add_argument("--save_location", type=str, default='graphs')
     parser.add_argument("--disable_error_bars", action='store_true')
     parser.add_argument("--include_gpu", action='store_true')
+    parser.add_argument("--plot_medians", action='store_true')
 
     # Execute the parse_args() method
     args = parser.parse_args()
