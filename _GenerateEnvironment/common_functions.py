@@ -96,20 +96,33 @@ def load_json_files_pd(args, COMPARISON_VARIABLES, the_x_var_key, expected_num_x
 
 def plot_results(df, baseline_by_level, y_values, the_x_var_key, num_test_samples, 
                  expected_unique_x_val_length, args, 
-                 x_val_to_label=None, all_model_names=None):
+                 x_val_to_label=None, all_model_names=None, return_df=False):
     all_y_medians = list()
     all_y_lowers = list()
     all_y_uppers = list()
     all_y_best = list()
     if all_model_names is None:
         all_model_names = [DL, DL_CUDA, FASTRON] if args.include_gpu else [DL, FASTRON]
+
+    if return_df:
+        result_df = pd.DataFrame({
+            **{
+                SAMPLING_SCENARIO_KEY: [label for label in x_val_to_label.values()],
+                BASELINE_KEY: [None for _ in range(len(x_val_to_label))]
+            }, 
+            **{
+                model_name: [None for _ in range(len(x_val_to_label))] \
+                    for model_name in all_model_names
+            }
+        })
+
     for model_name in all_model_names:
         df_model = df[df['model_name'] == model_name]
         
         # Extract maxes, means, and standard deviations for x_metric and y_metric
         if isinstance(the_x_var_key, list) or isinstance(the_x_var_key, tuple):
             unique_x_values_list = df_model[the_x_var_key].drop_duplicates().values.tolist()
-            print(unique_x_values_list)
+            #print(unique_x_values_list)
         else:
             unique_x_values_list = df_model[the_x_var_key].unique().tolist()
         unique_x_values_list.sort()
@@ -121,7 +134,7 @@ def plot_results(df, baseline_by_level, y_values, the_x_var_key, num_test_sample
         y_lowers = list()
         baselines = list()
         for x_val in unique_x_values_list:
-            print(df_model[the_x_var_key])
+            #print(df_model[the_x_var_key])
             if isinstance(the_x_var_key, tuple) or isinstance(the_x_var_key, list):
                 mask = (df_model[the_x_var_key[0]] == x_val[0]) & \
                         (df_model[the_x_var_key[1]] == x_val[1]) & \
@@ -195,7 +208,7 @@ def plot_results(df, baseline_by_level, y_values, the_x_var_key, num_test_sample
 
         if x_val_to_label is not None:
             assert isinstance(unique_x_values_list[0], tuple) or isinstance(unique_x_values_list[0], list)
-            print('unique x values:', unique_x_values_list)
+            #print('unique x values:', unique_x_values_list)
             horizontal_plot_values = [_ for _ in range(len(x_val_to_label))]
             horizontal_plot_labels = [x_val_to_label[tuple(the_x_val)] for the_x_val in unique_x_values_list]
             plt.xticks(ticks=horizontal_plot_values, labels=horizontal_plot_labels)
@@ -205,6 +218,14 @@ def plot_results(df, baseline_by_level, y_values, the_x_var_key, num_test_sample
         plt.plot(horizontal_plot_values, y_best, 
                  color=CLF_TO_MAX_COLOR[model_name], marker=CLF_TO_MAX_MARKER[model_name], 
                  label=f'{FULL_MODEL_NAME[model_name]}: Best', linestyle=linestyle)
+
+        if return_df:
+            for i in range(len(horizontal_plot_labels)):
+                curr_sampling_strat = horizontal_plot_labels[i]
+                curr_performance = y_best[i]
+                result_df.loc[result_df[SAMPLING_SCENARIO_KEY] == curr_sampling_strat, model_name] = curr_performance
+                result_df.loc[result_df[SAMPLING_SCENARIO_KEY] == curr_sampling_strat, BASELINE_KEY] = baselines[i]
+        
         y_errors = np.stack((np.array(y_medians) - np.array(y_lowers), 
                              np.array(y_uppers) - np.array(y_medians)), 
                              axis=0)
@@ -251,5 +272,8 @@ def plot_results(df, baseline_by_level, y_values, the_x_var_key, num_test_sample
         plt.yscale('log')
     yspan = ymax - ymin
     plt.ylim(ymin - yspan * 0.1 , ymax + yspan * 0.1)
+
+    if return_df:
+        return result_df
 
     return

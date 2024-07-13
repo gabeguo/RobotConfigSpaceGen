@@ -62,3 +62,6 @@ TRAIN_IDX_LOW = 'train_idx_low'
 TRAIN_IDX_HIGH = 'train_idx_high'
 TEST_IDX_LOW = 'test_idx_low'
 TEST_IDX_HIGH = 'test_idx_high'
+
+SAMPLING_SCENARIO_KEY = 'Sampling Scenario'
+BASELINE_KEY = 'Distribution-Aware Guess'

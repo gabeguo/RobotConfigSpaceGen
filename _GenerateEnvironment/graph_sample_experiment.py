@@ -54,21 +54,18 @@ def label_plot(args, df_mean_std):
         mode="expand", borderaxespad=0, ncol=3, fontsize='small')
     plt.subplots_adjust(bottom=0.2)
     
-    if args.metric != TPR:
-        plt.ylim(0.4, 1)
-        plt.yticks(np.linspace(0.4, 1, 13))
-    else:
-        plt.ylim(0, 1)
-        plt.yticks(np.linspace(0, 1, 11))
-
-    
-    plt.grid()
+    # if args.metric != TPR:
+    #     plt.ylim(0.4, 1)
+    #     plt.yticks(np.linspace(0.4, 1, 13))
+    # else:
+    #     plt.ylim(0, 1)
+    #     plt.yticks(np.linspace(0, 1, 11))
 
     num_training_samples = df_mean_std['train_idx_high'][0] - df_mean_std['train_idx_low'][0]
     num_testing_samples = df_mean_std['test_idx_high'][0] - df_mean_std['test_idx_low'][0]
 
     plt.title(f'Impact of Sampling Scheme on Model Performance:' + 
-              f'\n{num_training_samples} Train, {num_testing_samples} Test')
+              f'\n21 DoF, {num_training_samples} Train, {num_testing_samples} Test')
     plt.savefig(f'{args.save_location}/Sampling Scheme {metric_name}.pdf')
     plt.savefig(f'{args.save_location}/Sampling Scheme {metric_name}.png')
     #plt.show()
@@ -83,10 +80,17 @@ def main(args):
         = load_json_files_pd(args=args, COMPARISON_VARIABLES=COMPARISON_VARIABLES,
                             the_x_var_key=X_VAR_KEY, 
                             expected_num_x_vals=3, baseline_data_dir='surface_sampling') 
-    plot_results(df=df_mean_std, baseline_by_level=baseline, y_values=df_mean_std[(args.metric, 'mean')].tolist(), 
+    result_df = plot_results(df=df_mean_std, baseline_by_level=baseline, y_values=df_mean_std[(args.metric, 'mean')].tolist(), 
                 the_x_var_key=X_VAR_KEY, num_test_samples=NUM_TEST_SAMPLES, 
                 expected_unique_x_val_length=3, args=args, x_val_to_label=X_VAL_TO_LABEL,
-                all_model_names=[DL_CUDA, FASTRON])
+                all_model_names=[DL_CUDA, FASTRON], return_df=True)
+
+    plt.clf()
+    # https://stackoverflow.com/a/25449186
+    ax = result_df.plot(x=SAMPLING_SCENARIO_KEY, kind='bar', stacked=False, rot=0, width=0.9)
+    for p in ax.patches:
+        ax.annotate(f"{p.get_height():.2f}", (p.get_x() + 0.05, p.get_height() + 0.01))
+    print(result_df)
 
     label_plot(args, df_mean_std)
 
