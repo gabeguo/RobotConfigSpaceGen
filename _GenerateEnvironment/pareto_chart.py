@@ -172,7 +172,7 @@ def plot_bar_chart(df_mean_std, baseline_times, args):
         plt.ylabel(f"{args.y_metric.capitalize()} ({curr_setting} Hyperparameters)")
         plt.xlabel('Model')
         plt.ylim(0.05 * int(min(curr_values) / 0.05), 0.05 * int(max(curr_values) / 0.05 + 1))
-        plt.title('DeepCollide Ablation Study')
+        plt.title(f'DeepCollide Ablation Study: {args.title}')
 
         plt.savefig(os.path.join(args.save_location, f"ablation_{args.y_metric}_{curr_setting}.pdf"))
 
