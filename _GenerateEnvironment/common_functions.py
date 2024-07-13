@@ -111,7 +111,7 @@ def plot_results(df, baseline_by_level, y_values, the_x_var_key, num_test_sample
                 BASELINE_KEY: [None for _ in range(len(x_val_to_label))]
             }, 
             **{
-                model_name: [None for _ in range(len(x_val_to_label))] \
+                FULL_MODEL_NAME[model_name]: [None for _ in range(len(x_val_to_label))] \
                     for model_name in all_model_names
             }
         })
@@ -223,7 +223,7 @@ def plot_results(df, baseline_by_level, y_values, the_x_var_key, num_test_sample
             for i in range(len(horizontal_plot_labels)):
                 curr_sampling_strat = horizontal_plot_labels[i]
                 curr_performance = y_best[i]
-                result_df.loc[result_df[SAMPLING_SCENARIO_KEY] == curr_sampling_strat, model_name] = curr_performance
+                result_df.loc[result_df[SAMPLING_SCENARIO_KEY] == curr_sampling_strat, FULL_MODEL_NAME[model_name]] = curr_performance
                 result_df.loc[result_df[SAMPLING_SCENARIO_KEY] == curr_sampling_strat, BASELINE_KEY] = baselines[i]
         
         y_errors = np.stack((np.array(y_medians) - np.array(y_lowers), 
