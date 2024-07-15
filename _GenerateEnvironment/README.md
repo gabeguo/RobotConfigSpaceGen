@@ -50,7 +50,22 @@ Section IX: "Impact of Sample Size"
 Sections VI-IX (the previous commands generate the data, but do not make the super awesome plots)
 
     bash graph_experiments.sh
+
+## To get and graph sampling strategy results:
+
+Section X: "Impact of Sampling Strategy"
     
+    bash run_sample_surface.sh
+    CUDA_VISIBLE_DEVICES=x bash run_sampling_eval.sh
+    bash graph_sampling.sh
+
+## To get and graph ablation study results:
+
+Section XI: "Model Ablation"
+
+    bash run_ablation.sh
+    bash graph_ablation.sh
+
 ---
 
 ## Miscellaneous (Unnecessary)
