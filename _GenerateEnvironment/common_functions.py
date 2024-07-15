@@ -89,7 +89,10 @@ def load_json_files_pd(args, COMPARISON_VARIABLES, the_x_var_key, expected_num_x
             assert len(baseline_by_x_var[the_curr_x_var]) == 1, f"{len(baseline_by_x_var[the_curr_x_var])}, {baseline_by_x_var[the_curr_x_var]}"
         else:
             assert len(baseline_by_x_var[the_curr_x_var]) == 3, f"{len(baseline_by_x_var[the_curr_x_var])}, {baseline_by_x_var[the_curr_x_var]}"
-        baseline_by_x_var[the_curr_x_var] = np.mean(list(baseline_by_x_var[the_curr_x_var]))
+        baseline_by_x_var[the_curr_x_var] = (
+            np.mean(list(baseline_by_x_var[the_curr_x_var])), 
+            np.std(list(baseline_by_x_var[the_curr_x_var]))
+        )
     # Group by the comparison variables and compute the mean and std of args.metric
     return df, baseline_by_x_var, DOF, NUM_TRAIN_SAMPLES, NUM_TEST_SAMPLES
 
@@ -129,6 +132,7 @@ def plot_results(df, baseline_by_level, y_values, the_x_var_key, num_test_sample
         assert len(unique_x_values_list) == expected_unique_x_val_length # number of distinct collision densities
 
         y_best = list()
+        y_best_stds = list()
         y_medians = list()
         y_uppers = list()
         y_lowers = list()
@@ -160,16 +164,19 @@ def plot_results(df, baseline_by_level, y_values, the_x_var_key, num_test_sample
             if the_x_var_key == COLLISION_DENSITY_KEY:
                 best_metric_val = all_rows_with_x_val[args.metric].min() \
                     if args.invert_metric else all_rows_with_x_val[args.metric].max()
+                best_metric_std = 0
                 median_metric_val = all_rows_with_x_val[args.metric].median()
                 lower_bound = np.percentile(all_rows_with_x_val[args.metric], q=25)
                 upper_bound = np.percentile(all_rows_with_x_val[args.metric], q=75)
             else:
                 best_metric_val = all_rows_with_x_val[(args.metric, 'mean')].min() \
                     if args.invert_metric else all_rows_with_x_val[(args.metric, 'mean')].max()
+                best_metric_std = all_rows_with_x_val[all_rows_with_x_val[(args.metric, 'mean')] == best_metric_val][(args.metric, 'std')].iloc[0].item()
                 median_metric_val = all_rows_with_x_val[(args.metric, 'mean')].median()
                 lower_bound = np.percentile(all_rows_with_x_val[(args.metric, 'mean')], q=25)
                 upper_bound = np.percentile(all_rows_with_x_val[(args.metric, 'mean')], q=75)
             y_best.append(best_metric_val)
+            y_best_stds.append(best_metric_std)
             y_medians.append(median_metric_val)
             y_lowers.append(lower_bound)
             y_uppers.append(upper_bound)
@@ -218,6 +225,10 @@ def plot_results(df, baseline_by_level, y_values, the_x_var_key, num_test_sample
         plt.plot(horizontal_plot_values, y_best, 
                  color=CLF_TO_MAX_COLOR[model_name], marker=CLF_TO_MAX_MARKER[model_name], 
                  label=f'{FULL_MODEL_NAME[model_name]}: Best', linestyle=linestyle)
+        plt.fill_between(horizontal_plot_values, 
+                         np.array(y_best) - np.array(y_best_stds), np.array(y_best) + np.array(y_best_stds), 
+                         color=CLF_TO_MEAN_COLOR[model_name], alpha=0.15,
+                        linestyle='--')
 
         if return_df:
             for i in range(len(horizontal_plot_labels)):
@@ -261,12 +272,17 @@ def plot_results(df, baseline_by_level, y_values, the_x_var_key, num_test_sample
         the_values = [the_curr_val for \
                                    the_curr_val in baseline_by_level]
         the_values.sort()
-        the_baseline_times = [baseline_by_level[the_curr_val] for \
-                              the_curr_val in the_values]
-        plt.plot(the_values, the_baseline_times,
+        the_baseline_times_mean = np.array([baseline_by_level[the_curr_val][0] for \
+                              the_curr_val in the_values])
+        the_baseline_times_std = np.array([baseline_by_level[the_curr_val][1] for \
+                              the_curr_val in the_values])
+        plt.plot(the_values, the_baseline_times_mean,
                  color='purple', linestyle='-.', marker='p', alpha=0.5, label='GJK (PyBullet)')
-        ymin = min(ymin, min(the_baseline_times))
-        ymax = max(ymax, max(the_baseline_times))
+        plt.fill_between(the_values, the_baseline_times_mean - the_baseline_times_std,
+                         the_baseline_times_mean + the_baseline_times_std,
+                         color='purple', linestyle='--', alpha=0.15)
+        ymin = min(ymin, min(the_baseline_times_mean))
+        ymax = max(ymax, max(the_baseline_times_mean))
     
     if args.include_gpu:
         plt.yscale('log')
