@@ -225,10 +225,10 @@ def plot_results(df, baseline_by_level, y_values, the_x_var_key, num_test_sample
         plt.plot(horizontal_plot_values, y_best, 
                  color=CLF_TO_MAX_COLOR[model_name], marker=CLF_TO_MAX_MARKER[model_name], 
                  label=f'{FULL_MODEL_NAME[model_name]}: Best', linestyle=linestyle)
-        plt.fill_between(horizontal_plot_values, 
-                         np.array(y_best) - np.array(y_best_stds), np.array(y_best) + np.array(y_best_stds), 
-                         color=CLF_TO_MEAN_COLOR[model_name], alpha=0.15,
-                        linestyle='--')
+        # plt.fill_between(horizontal_plot_values, 
+        #                  np.array(y_best) - np.array(y_best_stds), np.array(y_best) + np.array(y_best_stds), 
+        #                  color=CLF_TO_MEAN_COLOR[model_name], alpha=0.15,
+        #                 linestyle='--')
 
         if return_df:
             for i in range(len(horizontal_plot_labels)):
@@ -278,9 +278,9 @@ def plot_results(df, baseline_by_level, y_values, the_x_var_key, num_test_sample
                               the_curr_val in the_values])
         plt.plot(the_values, the_baseline_times_mean,
                  color='purple', linestyle='-.', marker='p', alpha=0.5, label='GJK (PyBullet)')
-        plt.fill_between(the_values, the_baseline_times_mean - the_baseline_times_std,
-                         the_baseline_times_mean + the_baseline_times_std,
-                         color='purple', linestyle='--', alpha=0.15)
+        # plt.fill_between(the_values, the_baseline_times_mean - the_baseline_times_std,
+        #                  the_baseline_times_mean + the_baseline_times_std,
+        #                  color='purple', linestyle='--', alpha=0.15)
         ymin = min(ymin, min(the_baseline_times_mean))
         ymax = max(ymax, max(the_baseline_times_mean))
     
