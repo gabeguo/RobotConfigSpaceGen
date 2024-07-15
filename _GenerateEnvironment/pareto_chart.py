@@ -146,7 +146,9 @@ def plot_bar_chart(df_mean_std, baseline_times, args):
     possible_models = [DL, FASTRON, DL_NO_BN, DL_NO_SKIP, DL_NO_FOURIER, DL_CUDA]
     used_models = list()
     best_values = list()
+    std_best_values = list()
     median_values = list()
+    std_median_values = list()
     for model_name in possible_models:
         df_model = df_mean_std[df_mean_std['model_name'] == model_name]
         if len(df_model) == 0:
@@ -160,12 +162,22 @@ def plot_bar_chart(df_mean_std, baseline_times, args):
         y_means = df_model[(args.y_metric, 'mean')]
         y_stds = df_model[(args.y_metric, 'std')]
 
-        best_values.append(np.max(y_means))
-        median_values.append(np.median(y_means))
+        best_y_value = np.max(y_means)
+        best_corresponding_std = df_model[df_model[(args.y_metric, 'mean')] == best_y_value][(args.y_metric, 'std')].item()
+        best_values.append(best_y_value)
+        std_best_values.append(best_corresponding_std)
 
-    for curr_values, curr_setting in [(best_values, 'Best'), (median_values, 'Median')]:
+        median_y_value = np.median(y_means)
+        median_corresponding_std = df_model[df_model[(args.y_metric, 'mean')] == median_y_value][(args.y_metric, 'std')].iloc[0].item()
+        median_values.append(median_y_value)
+        std_median_values.append(median_corresponding_std)
+
+    for curr_values, curr_stds, curr_setting in [(best_values, std_best_values, 'Best'), 
+                                                 (median_values, std_median_values, 'Median')]:
         bar_colors = ['tab:green', 'tab:blue', 'tab:orange', 'tab:red']
         plt.bar(used_models, curr_values, color=bar_colors)
+        # plt.errorbar([_ for _ in range(len(used_models))], curr_values, curr_stds,
+        #              fmt='.', color=(0.7, 0.7, 0.7, 0.7), elinewidth=2, capsize=5)
         for idx, value in enumerate(curr_values):
             plt.text(idx, value, f"{value:.4f}",
             horizontalalignment='center', verticalalignment='bottom')
