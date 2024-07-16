@@ -194,7 +194,9 @@ def plot_bar_chart(df_mean_std, baseline_times, args):
 
 def plot_pareto(df_mean_std, baseline_times, args):
     # Create a scatter plot with a different color for each 'model_name'
-    possible_models = [DL, FASTRON, DL_NO_BN, DL_NO_SKIP, DL_NO_FOURIER, DL_CUDA]
+    possible_models = [DL, FASTRON]
+    if args.include_gpu:
+        possible_models.append(DL_CUDA)
     for model_name in possible_models:
         df_model = df_mean_std[df_mean_std['model_name'] == model_name]
         if len(df_model) == 0:
