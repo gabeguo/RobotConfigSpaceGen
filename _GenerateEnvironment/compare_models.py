@@ -109,6 +109,8 @@ def run_model(args):
         data_test = all_data[first_test_index:]
         y_train = y[:args.num_training_samples]
         y_test = y[first_test_index:]
+        args.train_indices = (0, args.num_training_samples)
+        args.test_indices = (first_test_index, len(y))
     else:
         assert len(args.train_indices) == 2 and args.train_indices[1] > args.train_indices[0], f"{args.train_indices}"
         assert len(args.test_indices) == 2 and args.test_indices[1] > args.test_indices[0], f"{args.test_indices}"
