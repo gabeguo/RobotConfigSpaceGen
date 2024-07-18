@@ -50,13 +50,13 @@ class CSpaceNet(nn.Module):
         self.block1 = nn.Sequential(
             #nn.Linear(self.dof, 256),
             nn.Linear(self.num_freq * 2 * self.dof, 256) if self.num_freq > 0 else nn.Linear(self.dof, 256),
-            nn.BatchNorm1d(num_features=256),
+            nn.BatchNorm1d(num_features=256) if self.enable_batchnorm else nn.Identity(),
             nn.ReLU(),
             nn.Linear(256, 256),
-            nn.BatchNorm1d(num_features=256),
+            nn.BatchNorm1d(num_features=256) if self.enable_batchnorm else nn.Identity(),
             nn.ReLU(),
             nn.Linear(256, 256),
-            nn.BatchNorm1d(num_features=256),
+            nn.BatchNorm1d(num_features=256) if self.enable_batchnorm else nn.Identity(),
             nn.ReLU(),
         )
 
@@ -70,10 +70,10 @@ class CSpaceNet(nn.Module):
         self.block2 = nn.Sequential(
             #nn.Linear(self.dof + 256, 256),
             first_layer_block2,
-            nn.BatchNorm1d(num_features=256),
+            nn.BatchNorm1d(num_features=256) if self.enable_batchnorm else nn.Identity(),
             nn.ReLU(),
             nn.Linear(256, 256),
-            nn.BatchNorm1d(num_features=256),
+            nn.BatchNorm1d(num_features=256) if self.enable_batchnorm else nn.Identity(),
             nn.ReLU(),
             nn.Linear(256, 1),
             nn.BatchNorm1d(num_features=1) if self.enable_batchnorm else nn.Identity(),
