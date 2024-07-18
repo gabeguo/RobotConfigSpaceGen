@@ -137,8 +137,8 @@ def load_json_files_pd(args):
 ABLATION_MODEL_NAME = {
     DL: 'Full DeepCollide',
     DL_NO_BN: 'Remove\nBatchNorm',
-    DL_NO_SKIP: 'Remove\nSkip Connection',
-    DL_NO_FOURIER: 'Remove\nPositional Encoding'
+    DL_NO_SKIP: 'Remove\nSkip Connect',
+    DL_NO_FOURIER: 'Remove\nPosition Encoding'
 }
 
 def plot_bar_chart(df_mean_std, baseline_times, args):
@@ -184,7 +184,9 @@ def plot_bar_chart(df_mean_std, baseline_times, args):
         plt.ylabel(f"{args.y_metric.capitalize()} ({curr_setting} Hyperparameters)")
         plt.xlabel('Model')
         plt.ylim(0.05 * int(min(curr_values) / 0.05), 0.05 * int(max(curr_values) / 0.05 + 1))
-        plt.title(f'DeepCollide Ablation Study: {args.title}')
+        plt.title(f'DeepCollide Ablation Study:\n{args.title}')
+
+        plt.tight_layout()
 
         plt.savefig(os.path.join(args.save_location, f"ablation_{args.y_metric}_{curr_setting}.pdf"))
 
