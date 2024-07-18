@@ -100,6 +100,8 @@ def load_json_files_pd(args, COMPARISON_VARIABLES, the_x_var_key, expected_num_x
 def plot_results(df, baseline_by_level, y_values, the_x_var_key, num_test_samples, 
                  expected_unique_x_val_length, args, 
                  x_val_to_label=None, all_model_names=None, return_df=False):
+    plt.rcParams.update({'font.size': 14})
+    
     all_y_medians = list()
     all_y_lowers = list()
     all_y_uppers = list()
@@ -277,7 +279,7 @@ def plot_results(df, baseline_by_level, y_values, the_x_var_key, num_test_sample
         the_baseline_times_std = np.array([baseline_by_level[the_curr_val][1] for \
                               the_curr_val in the_values])
         plt.plot(the_values, the_baseline_times_mean,
-                 color='purple', linestyle='-.', marker='p', alpha=0.5, label='GJK (PyBullet)')
+                 color='purple', linestyle='-.', marker='p', alpha=0.5, label='PyBullet (GJK)')
         # plt.fill_between(the_values, the_baseline_times_mean - the_baseline_times_std,
         #                  the_baseline_times_mean + the_baseline_times_std,
         #                  color='purple', linestyle='--', alpha=0.15)
