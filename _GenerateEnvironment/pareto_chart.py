@@ -310,7 +310,7 @@ def get_seed_number(string):
 
 def main(args):
     plt.rcParams.update({'figure.figsize': (8, 6)})
-    plt.rcParams.update({'font.size': 11})
+    plt.rcParams.update({'font.size': 14})
 
     # get all the data points
     df_mean_std, baseline_times = load_json_files_pd(args) 
